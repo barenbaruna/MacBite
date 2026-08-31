@@ -1,0 +1,29 @@
+# Xcode user settings
+xcuserdata/
+*.xcuserdatad
+*.xcuserstate
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Build artifacts
+build/
+DerivedData/
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcarchive
+
+# Swift Package Manager
+.build/
+.swiftpm/xcode/xcuserdata/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Secrets
+Secrets.xcconfig
+*.env
