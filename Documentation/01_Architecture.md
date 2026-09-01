@@ -7,7 +7,7 @@ CallBite menggunakan arsitektur **MVVM (Model-View-ViewModel) + Feature-Based** 
 | Item | Value |
 |------|-------|
 | Architecture Pattern | MVVM (Model-View-ViewModel) |
-| Organisasi Kode | Feature-based folders |
+| Organisasi Kode | Feature-based folders + Shared Domain |
 | UI Framework | SwiftUI |
 | Target iOS | 26+ |
 | Language | Swift 6.0+ |
@@ -90,105 +90,219 @@ CallBite/
 ├── App/                              # App lifecycle dan navigasi
 │   ├── CallBiteApp.swift
 │   ├── AppContainer.swift            # Dependency container utama
-│   ├── Navigation/
-│   │   ├── AppRoute.swift            # Enum semua route navigasi
-│   │   └── AppRouter.swift           # Router logic
-│   └── Root/
-│       ├── RootView.swift
-│       └── RootViewModel.swift
+│   └── AppRoute.swift                # Enum semua route navigasi
 │
 ├── Core/                             # Kode yang dipakai bersama oleh semua fitur
+│   ├── Domain/                       # Domain models (dipakai lintas fitur)
+│   │   ├── Meals/
+│   │   │   ├── MealDraft.swift       # Draft sebelum disimpan (saat user masih edit)
+│   │   │   ├── MealEntry.swift       # Meal yang sudah dikonfirmasi dan disimpan
+│   │   │   └── FoodItem.swift        # Satu item makanan (nama, porsi, preparation)
+│   │   ├── Nutrition/
+│   │   │   ├── NutritionFacts.swift   # Data nutrisi: kalori, protein, carbs, fat
+│   │   │   ├── DailySummary.swift     # Ringkasan harian: intake vs target
+│   │   │   └── NutritionSource.swift  # Enum sumber data (USDA, FatSecret, manual)
+│   │   ├── Goals/
+│   │   │   ├── NutritionGoal.swift    # Target harian user (kalori, protein, dll)
+│   │   │   └── GoalCalculator.swift   # Logika hitung sisa target
+│   │   └── Analysis/
+│   │       ├── FoodCandidate.swift    # Hasil deteksi AI (nama + confidence score)
+│   │       └── FoodAnalyzing.swift    # Protocol untuk analyzer (Gemini/CoreML/Mock)
+│   │
+│   ├── Persistence/                  # Penyimpanan data lokal
+│   │   ├── Models/
+│   │   │   ├── MealRecord.swift      # Representasi database (terpisah dari domain)
+│   │   │   └── FoodItemRecord.swift
+│   │   └── SwiftDataMealStore.swift  # Implementasi store
+│   │
 │   ├── DesignSystem/
-│   │   ├── Components/               # Komponen UI reusable (AppCard, PrimaryButton, dsb.)
+│   │   ├── Components/               # Komponen UI reusable (AppCard, PrimaryButton)
 │   │   ├── Modifiers/                # Custom view modifiers
-│   │   └── Tokens/                   # Konstanta visual (AppColor, AppSpacing, AppTypography)
-│   ├── Error/                        # AppError enum dan error mapping
-│   ├── Extensions/                   # Extension Swift/SwiftUI yang dipakai global
-│   ├── Logging/                      # Logger utility
-│   └── State/                        # Generic state types (loading, error, loaded)
+│   │   └── Tokens/                   # Konstanta visual (AppColor, AppSpacing)
+│   │
+│   ├── Errors/
+│   │   └── AppError.swift            # Error enum dan error mapping
+│   │
+│   └── Extensions/                   # Extension Swift/SwiftUI yang dipakai global
 │
 ├── Features/                         # Semua fitur, masing-masing folder mandiri
 │   ├── Dashboard/                    # Goal Based Progress + ringkasan harian
 │   │   ├── DashboardFactory.swift
-│   │   ├── Models/
 │   │   ├── ViewModels/
 │   │   │   └── DashboardViewModel.swift
 │   │   └── Views/
 │   │       ├── DashboardView.swift
-│   │       └── Components/           # Sub-views khusus Dashboard (ProgressRing, MacroCard)
+│   │       └── Components/           # Sub-views khusus Dashboard
+│   │           ├── CalorieProgressView.swift
+│   │           └── MacroProgressView.swift
 │   │
-│   ├── FoodScan/                     # Camera capture + AI food detection
-│   │   ├── FoodScanFactory.swift
-│   │   ├── Models/
-│   │   │   └── DetectedFoodItem.swift
-│   │   ├── Services/
-│   │   │   └── FoodDetectionService.swift
+│   ├── FoodCapture/                  # Camera capture + AI food detection
+│   │   ├── FoodCaptureFactory.swift
+│   │   ├── Models/                   # Model khusus fitur ini (CameraState, dsb)
 │   │   ├── ViewModels/
-│   │   │   └── FoodScanViewModel.swift
+│   │   │   └── FoodCaptureViewModel.swift
 │   │   └── Views/
-│   │       ├── FoodScanView.swift
+│   │       ├── FoodCaptureView.swift
 │   │       └── Components/
+│   │           ├── CameraPreview.swift
+│   │           └── CaptureButton.swift
 │   │
-│   ├── PortionConfirmation/          # Portion & Ingredient Confirmation (bottom sheet)
-│   │   ├── PortionConfirmationFactory.swift
-│   │   ├── Models/
+│   ├── MealReview/                   # Konfirmasi porsi + ingredient
+│   │   ├── MealReviewFactory.swift
 │   │   ├── ViewModels/
 │   │   └── Views/
 │   │
-│   ├── NutritionResult/              # Nutrition Calculation + Actionable Insight
-│   │   ├── NutritionResultFactory.swift
-│   │   ├── Models/
-│   │   │   └── NutritionData.swift
-│   │   ├── Services/
-│   │   │   └── InsightService.swift
-│   │   ├── ViewModels/
-│   │   └── Views/
-│   │
-│   ├── ManualInput/                  # Manual food search dan input
-│   │   ├── ManualInputFactory.swift
-│   │   ├── Models/
+│   ├── ManualLogging/                # Manual food search dan input
+│   │   ├── ManualLoggingFactory.swift
+│   │   ├── Models/                   # Model khusus (SearchResult, dsb)
 │   │   ├── ViewModels/
 │   │   └── Views/
 │   │
 │   ├── MealHistory/                  # Riwayat makanan harian
 │   │   ├── MealHistoryFactory.swift
-│   │   ├── Models/
 │   │   ├── ViewModels/
 │   │   └── Views/
 │   │
-│   └── Profile/                      # Profil pengguna dan target nutrisi
-│       ├── ProfileFactory.swift
-│       ├── Models/
+│   ├── Goals/                        # Pengaturan target nutrisi
+│   │   ├── GoalsFactory.swift
+│   │   ├── ViewModels/
+│   │   └── Views/
+│   │
+│   └── Settings/                     # Pengaturan aplikasi dan profil
+│       ├── SettingsFactory.swift
 │       ├── ViewModels/
 │       └── Views/
 │
-├── Services/                         # Service yang dipakai lintas fitur
-│   ├── NutritionService/             # Facade: USDA + FatSecret API
-│   │   ├── NutritionServiceProtocol.swift
-│   │   ├── NutritionServiceFacade.swift
-│   │   ├── USDAClient.swift
-│   │   └── FatSecretClient.swift
-│   ├── HealthKit/                    # Integrasi HealthKit (eksplorasi)
-│   └── Persistence/                  # Penyimpanan data lokal
-│       ├── MealStore.swift
-│       └── UserPreferencesStore.swift
+├── AI/                               # Semua implementasi AI/ML
+│   ├── Gemini/
+│   │   ├── GeminiFoodAnalyzer.swift  # Implementasi FoodAnalyzing via Gemini
+│   │   ├── GeminiAnalysisResponse.swift
+│   │   └── GeminiResponseMapper.swift
+│   ├── CoreML/
+│   │   ├── CoreMLFoodAnalyzer.swift  # Implementasi FoodAnalyzing via Core ML
+│   │   └── FoodClassifier.mlmodel    # Model file (dikelola Fathimah Az Zahra Sanjani)
+│   └── Mock/
+│       └── MockFoodAnalyzer.swift    # Untuk testing tanpa model asli
 │
-└── Infrastructure/                   # Aset ML dan konfigurasi external
-    └── ML/
-        └── FoodClassifier.mlpackage  # Model Core ML (dikelola oleh Fathimah Az Zahra Sanjani)
+└── Services/                         # Service yang dipakai lintas fitur
+    ├── NutritionService/             # Facade: USDA + FatSecret API
+    │   ├── NutritionServiceProtocol.swift
+    │   ├── NutritionServiceFacade.swift
+    │   ├── USDAClient.swift
+    │   └── FatSecretClient.swift
+    └── Health/
+        └── HealthKitClient.swift     # Integrasi HealthKit (eksplorasi)
 ```
 
-### Penjelasan Setiap Layer
+---
 
-**App/** -- Entry point aplikasi. Berisi konfigurasi awal, dependency container, dan sistem navigasi. Hanya diubah saat menambah route baru atau mengubah cara bootstrapping aplikasi.
+## Mengapa Domain Models di Core, Bukan di Setiap Feature?
 
-**Core/** -- Kode infrastruktur yang tidak terikat dengan fitur spesifik. Design system, error handling, dan utility. Perubahan di sini berdampak ke seluruh aplikasi, jadi perlu hati-hati dan selalu dikomunikasikan.
+Ini adalah keputusan arsitektur yang paling penting untuk dipahami.
 
-**Features/** -- Setiap fitur dari PRD menjadi satu folder mandiri. Folder ini berisi semua yang dibutuhkan fitur tersebut: model data, ViewModel, View, dan Service khusus (jika ada). Satu developer bisa mengerjakan satu folder tanpa mengganggu pekerjaan developer lain.
+### Masalah: Model yang Dipakai Banyak Fitur
 
-**Services/** -- Service yang dibutuhkan oleh lebih dari satu fitur. Contoh: `NutritionServiceFacade` dipakai oleh FoodScan (untuk mendapatkan data nutrisi setelah deteksi) dan ManualInput (untuk mencari makanan secara manual). Lihat [08_Design_Patterns.md](./08_Design_Patterns.md) untuk penjelasan Facade Pattern.
+Perhatikan model `FoodItem` (satu item makanan). Model ini dibutuhkan oleh:
 
-**Infrastructure/** -- File external yang tidak ditulis manual: model Core ML, konfigurasi build, dsb.
+| Fitur | Kebutuhan |
+|-------|-----------|
+| FoodCapture | Menerima hasil deteksi AI sebagai daftar FoodItem |
+| MealReview | Menampilkan daftar FoodItem untuk diedit porsinya |
+| ManualLogging | Membuat FoodItem baru dari pencarian manual |
+| Dashboard | Menampilkan total nutrisi dari semua FoodItem hari ini |
+| MealHistory | Menampilkan daftar FoodItem per meal yang tercatat |
+
+Jika `FoodItem` didefinisikan di dalam folder `FoodCapture/Models/`, maka fitur-fitur lain harus `import FoodCapture` untuk mengakses model tersebut. Ini membuat fitur-fitur yang seharusnya independen menjadi saling bergantung. Jika suatu hari fitur FoodCapture dihapus atau di-refactor, semua fitur yang import-nya akan ikut rusak.
+
+### Solusi: Core/Domain sebagai Shared Layer
+
+Dengan meletakkan `FoodItem` di `Core/Domain/Meals/`, semua fitur cukup mengakses `Core` -- layer yang memang dirancang untuk dipakai bersama. Tidak ada fitur yang bergantung pada fitur lain.
+
+```
+FoodCapture  --import-->  Core/Domain    <--import--  Dashboard
+MealReview   --import-->  Core/Domain    <--import--  MealHistory
+ManualLogging --import--> Core/Domain    <--import--  Goals
+```
+
+Aliran dependency hanya satu arah: **Feature -> Core**. Tidak pernah sebaliknya.
+
+### Mengapa Dikelompokkan Per Sub-Domain (Meals, Nutrition, Goals, Analysis)?
+
+Daripada melempar semua model ke satu folder datar (`Core/Domain/FoodItem.swift`, `Core/Domain/NutritionFacts.swift`, `Core/Domain/NutritionGoal.swift`), kita mengelompokkan berdasarkan sub-domain:
+
+- `Meals/` -- Semua yang terkait makanan yang dicatat (item, draft, entry)
+- `Nutrition/` -- Semua yang terkait angka nutrisi (fakta nutrisi, ringkasan, sumber data)
+- `Goals/` -- Semua yang terkait target harian user
+- `Analysis/` -- Semua yang terkait proses deteksi AI
+
+Alasannya: Saat jumlah model bertambah (dan pasti akan bertambah), sub-folder ini mencegah satu folder berisi 15+ file yang sulit dinavigasi. Pengelompokan ini juga membantu developer baru memahami domain proyek: "Oh, semua yang berhubungan dengan target nutrisi ada di `Goals/`."
+
+### Aturan untuk Domain Models
+
+1. **Harus berupa struct.** Bukan class. Struct menggunakan value semantics, artinya setiap copy adalah salinan independen. Ini mencegah bug di mana dua fitur tanpa sengaja memodifikasi data yang sama.
+2. **Hanya import Foundation.** Tidak boleh import SwiftUI, Combine, atau framework lain. Domain model murni menyimpan data, bukan logika UI.
+3. **Tidak boleh berisi logika side-effect.** Tidak ada network call, tidak ada akses database. Logika tersebut ada di Service.
+
+Contoh domain model yang benar:
+
+```swift
+//
+//  FoodItem.swift
+//  CallBite
+//
+//  Created by Joshua Valentine Manik on 01/09/26.
+//
+
+import Foundation
+
+struct FoodItem: Identifiable, Equatable, Codable {
+    let id: UUID
+    let name: String
+    let portionSize: Double
+    let portionUnit: String
+    let preparationMethod: String?
+
+    init(id: UUID = UUID(), name: String, portionSize: Double,
+         portionUnit: String, preparationMethod: String? = nil) {
+        self.id = id
+        self.name = name
+        self.portionSize = portionSize
+        self.portionUnit = portionUnit
+        self.preparationMethod = preparationMethod
+    }
+}
+```
+
+### Kapan Model Boleh Tetap di Dalam Feature?
+
+Jika sebuah model **hanya dipakai oleh satu fitur** dan tidak relevan di tempat lain, letakkan di folder feature tersebut. Contoh:
+
+| Model | Lokasi | Alasan |
+|-------|--------|--------|
+| `CameraState` (enum: idle, capturing, processing) | `Features/FoodCapture/Models/` | Hanya relevan untuk UI kamera |
+| `SearchResult` (wrapper hasil pencarian API) | `Features/ManualLogging/Models/` | Hanya untuk flow pencarian |
+| `ProfileFormData` (temporary state form) | `Features/Settings/Models/` | Hanya untuk UI form profil |
+
+Aturan sederhana:
+- Dipakai oleh 2+ fitur -> `Core/Domain/`
+- Dipakai oleh 1 fitur saja -> `Features/[Nama]/Models/`
+
+---
+
+## Mengapa Persistence Models Terpisah dari Domain Models?
+
+Di `Core/Persistence/Models/` ada `MealRecord.swift` yang terlihat mirip dengan `MealEntry.swift` di `Core/Domain/Meals/`. Mengapa tidak pakai satu model saja?
+
+Jawaban: **Domain model dan persistence model punya lifecycle yang berbeda.**
+
+- `MealEntry` (domain) adalah representasi data yang dimengerti oleh seluruh aplikasi. Strukturnya ditentukan oleh kebutuhan fitur.
+- `MealRecord` (persistence) adalah representasi data yang dimengerti oleh database (SwiftData). Strukturnya ditentukan oleh kebutuhan penyimpanan.
+
+Saat ini mungkin terlihat identik. Tapi saat aplikasi berkembang, keduanya akan berevolusi secara independen:
+- Database mungkin perlu menyimpan field tambahan (timestamp sinkronisasi, versi schema).
+- Domain model mungkin perlu computed property yang tidak ada di database.
+
+Mapping antara keduanya dilakukan di `SwiftDataMealStore.swift`. Ini memastikan bahwa jika kita mengganti database (dari SwiftData ke yang lain), hanya store yang berubah -- bukan seluruh aplikasi.
 
 ---
 
@@ -202,10 +316,10 @@ User Action --> View --> ViewModel --> Service (jika ada) --> ViewModel --> View
 
 Penjelasan langkah demi langkah (contoh: user memfoto makanan):
 
-1. **User menekan tombol kamera** di `FoodScanView`.
-2. **View memanggil method** di `FoodScanViewModel` (misalnya `capturePhoto()`).
-3. **ViewModel menjalankan logika**: memanggil `FoodDetectionService` untuk menjalankan inferensi model AI.
-4. **Service mengembalikan hasil** (daftar makanan yang terdeteksi) ke ViewModel.
+1. **User menekan tombol kamera** di `FoodCaptureView`.
+2. **View memanggil method** di `FoodCaptureViewModel` (misalnya `capturePhoto()`).
+3. **ViewModel menjalankan logika**: memanggil AI analyzer (yang conform ke protocol `FoodAnalyzing` di `Core/Domain/Analysis/`) untuk deteksi makanan.
+4. **Analyzer mengembalikan hasil** berupa `[FoodCandidate]` (domain model dari `Core/Domain/Analysis/`).
 5. **ViewModel memperbarui `@Published` property** (misalnya `detectedItems`).
 6. **SwiftUI secara otomatis merender ulang View** karena state berubah.
 
@@ -223,8 +337,7 @@ Setiap fitur baru mengikuti struktur ini. Template lengkap dan panduan langkah d
 ```
 Features/[NamaFitur]/
 ├── [NamaFitur]Factory.swift      # Factory method: membuat view beserta semua dependency-nya
-├── Models/                        # Struct, enum, data model khusus fitur ini
-├── Services/                      # Logika bisnis khusus fitur ini (opsional)
+├── Models/                        # Struct khusus fitur ini (jika ada, bukan domain model)
 ├── ViewModels/
 │   └── [NamaFitur]ViewModel.swift
 └── Views/
@@ -232,11 +345,13 @@ Features/[NamaFitur]/
     └── Components/                # Sub-views kecil yang hanya dipakai di fitur ini
 ```
 
+Catatan: Folder `Models/` di dalam feature hanya untuk model yang eksklusif milik fitur tersebut. Model yang dipakai lintas fitur harus di `Core/Domain/`.
+
 ---
 
 ## Navigasi
 
-Navigasi menggunakan `AppRouter` dengan `NavigationStack`:
+Navigasi menggunakan `AppRoute` enum di `App/`:
 
 - `AppRoute` adalah enum yang mendefinisikan semua route yang tersedia dalam aplikasi.
 - Route baru ditambahkan sebagai case baru di `AppRoute`.
