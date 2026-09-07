@@ -128,8 +128,10 @@ Chatbot AI di WhatsApp belum membuat pengguna merasa terbantu secara konsisten k
 | Context over isolated numbers | Tampilkan asupan relatif terhadap target personal, bukan angka terisolasi |
 | Make the next action clear | Terjemahkan data menjadi implikasi yang bisa dipahami untuk jadwal makan berikutnya |
 | Trust through transparency | Komunikasikan bahwa hasil adalah estimasi dan izinkan koreksi |
-| One glance over chat digging | Progres harian yang penting harus selalu terlihat dalam satu pandangan |
+| One glance over chat digging | Progres harian yang penting harus selalu terlihat dalam satu pandangan (*glanceable*) |
 | Progressive disclosure | Prioritaskan kalori, makro utama, dan insight; tampilkan detail lebih dalam hanya saat diminta |
+| Native Apple Typography & Dynamic Type | Wajib menggunakan font sistem Apple (SF Pro & SF Pro Rounded) dengan dukungan Dynamic Type penuh (xSmall hingga AX5). Hindari font custom statis demi aksesibilitas optimal dan layout stability |
+| Liquid Glass & Ergonomic Navigation | Mengadopsi prinsip navigasi iOS 26: bottom-aligned search untuk jangkauan satu tangan yang ergonomis, dan Liquid Glass hanya pada navigation/floating layer |
 
 ---
 

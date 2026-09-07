@@ -233,11 +233,12 @@ Sebelum membuat Pull Request untuk fitur baru, pastikan:
 - [ ] View menerima ViewModel via init (bukan buat sendiri)
 - [ ] Dependencies di-inject via constructor (lihat [09_Dependency_Injection.md](./09_Dependency_Injection.md))
 - [ ] Error ditampilkan dalam Bahasa Indonesia
-- [ ] Menggunakan design tokens (`AppSpacing`, `AppColor`, `AppTypography`)
+- [ ] Menggunakan design tokens (`AppSpacing`, `AppCornerRadius`, `AppColor`, `AppTypography`, `AppAnimation`, `AppHaptics`)
+- [ ] Memenuhi semua kriteria [05_HIG_Checklist.md](./05_HIG_Checklist.md) (Dynamic Type xSmall-AX5, minimum 44×44pt touch target, semantic modal dismiss/confirm, Liquid Glass layer compliance)
 - [ ] Tidak ada kode yang duplikat dengan Core
 - [ ] Commit message sesuai Conventional Commits
 - [ ] Minimal satu unit test untuk ViewModel (jika ada logika bisnis)
-- [ ] SwiftLint tidak menampilkan error
+- [ ] SwiftLint tidak menampilkan error atau warning yang melanggar rules
 
 ---
 
