@@ -1,0 +1,76 @@
+# ==================================================================
+# .swiftlint.yml -- CallBite
+# ==================================================================
+# Referensi lengkap semua rules:
+# https://realm.github.io/SwiftLint/rule-directory.html
+#
+# Lihat semua rules yang tersedia di versi kamu:
+# $ swiftlint rules
+# ==================================================================
+
+# --- Folder yang Diabaikan ---
+excluded:
+  - DerivedData
+  - .build
+  - Pods
+  - Carthage
+
+# --- Aturan Default yang Dinonaktifkan ---
+disabled_rules:
+  - trailing_whitespace
+  - void_return
+
+# --- Aturan Tambahan yang Diaktifkan ---
+opt_in_rules:
+  - force_unwrapping
+  - force_cast
+  - fatal_error_message
+  - empty_count
+  - first_where
+  - toggle_bool
+  - sorted_imports
+  - modifier_order
+  - convenience_type
+  - closure_body_length
+  - accessibility_label_for_image
+
+analyzer_rules:
+# --- Aturan Identifier Name ---
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  excluded:
+    - xs
+    - sm
+    - md
+    - lg
+    - xl
+    - id
+    - x
+    - y
+
+# --- Batas Baris ---
+line_length:
+  warning: 120
+  error: 200
+  ignores_urls: true
+  ignores_comments: true
+
+# --- Batas Panjang Fungsi ---
+function_body_length:
+  warning: 50
+  error: 100
+
+# --- Batas Panjang Tipe ---
+type_body_length:
+  warning: 250
+  error: 400
+
+# --- Batas Panjang File ---
+file_length:
+  warning: 400
+  error: 600
+
+# --- Format Output ---
+reporter: xcode
