@@ -5,8 +5,8 @@
 //  Created by Baren Baruna Harahap on 31/08/26.
 //
 
-import Testing
 @testable import CallBite
+import Testing
 
 struct CallBiteTests {
 

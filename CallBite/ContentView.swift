@@ -7,15 +7,28 @@
 
 import SwiftUI
 
+enum AppTab: Int, CaseIterable {
+    case addFood = 0
+    case weightGoal = 1
+}
+
 struct ContentView: View {
+    @State private var selectedTab: AppTab = .addFood
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView(selection: $selectedTab) {
+            SaveFoodAnimationProofView()
+                .tabItem {
+                    Label("Add Food", systemImage: "fork.knife")
+                }
+                .tag(AppTab.addFood)
+
+            WeightGoalFactory.createView()
+                .tabItem {
+                    Label("Weight Goal", systemImage: "scalemass.fill")
+                }
+                .tag(AppTab.weightGoal)
         }
-        .padding()
     }
 }
 
