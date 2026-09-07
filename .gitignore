@@ -27,3 +27,6 @@ DerivedData/
 # Secrets
 Secrets.xcconfig
 *.env
+
+# IDE
+.agents
