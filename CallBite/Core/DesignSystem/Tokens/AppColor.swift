@@ -23,6 +23,13 @@ enum AppColor {
     static let white = Color(hex: 0xFFFFFF)
     static let gray200 = Color(hex: 0xD1D1D2)
     static let gray300 = Color(hex: 0xB2B2B4)
+    
+    // Semantic Accents
+    static let healthBlue = Color(hex: 0x007AFF)
+    static let goalCyan = Color(hex: 0x00F0FF)
+    static let goalGreen = Color(hex: 0x30D158)
+    static let goalCoral = Color(hex: 0xFF6B4A)
+    static let buttonDisabled = Color(hex: 0x5A5A5E)
 }
 
 // MARK: - Hex Initializer Helper
