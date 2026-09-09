@@ -8,6 +8,6 @@
 import SwiftUI
 
 enum AppCornerRadius {
-    static let small: CGFloat = 16
-    static let medium: CGFloat = 20
+    static let small: CGFloat = 20
+    static let medium: CGFloat = 24
 }
