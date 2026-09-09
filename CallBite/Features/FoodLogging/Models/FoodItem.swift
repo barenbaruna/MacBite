@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/// Model data nutrisi makanan dinamis untuk Food Logging
 struct FoodItem: Identifiable, Equatable, Hashable {
     let id: UUID
     var name: String
@@ -40,8 +39,7 @@ struct FoodItem: Identifiable, Equatable, Hashable {
         self.fat = fat
         self.photoSystemName = photoSystemName
     }
-
-    /// Presets untuk memudahkan pengujian cepat oleh developer / junior
+    
     static let dimsumMentai = FoodItem(
         name: "Dimsum Mentai",
         mealType: "1st Meal",

@@ -9,9 +9,23 @@ import SwiftUI
 
 @main
 struct CallBiteApp: App {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasCompletedOnboarding {
+                ContentView(onResetOnboarding: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        hasCompletedOnboarding = false
+                    }
+                })
+            } else {
+                OnboardingFactory.makeView(onFinish: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        hasCompletedOnboarding = true
+                    }
+                })
+            }
         }
     }
 }

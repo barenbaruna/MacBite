@@ -12,4 +12,5 @@ enum AppCornerRadius {
     static let medium: CGFloat = 20
     static let large: CGFloat = 24
     static let xlarge: CGFloat = 28
+    static let button: CGFloat = 20
 }

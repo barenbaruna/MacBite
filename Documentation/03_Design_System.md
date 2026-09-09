@@ -29,41 +29,65 @@ Gunakan `AppSpacing` untuk semua padding dan gap. Jangan hardcode angka. Ini men
 
 ```swift
 enum AppCornerRadius {
-    static let sm: CGFloat = 8
-    static let md: CGFloat = 12    // Cards, buttons
-    static let lg: CGFloat = 16    // Large containers, modals, bottom sheets
+    static let small: CGFloat = 16
+    static let medium: CGFloat = 20    // Cards, buttons
+    static let large: CGFloat = 24     // Large containers, modals
+    static let xlarge: CGFloat = 28    // Bottom sheets
+    static let button: CGFloat = 20
 }
 ```
 
 ### Typography (`AppTypography`)
 
+Menggunakan SF Pro (System Font) yang mendukung Dynamic Type secara otomatis.
+
 ```swift
 enum AppTypography {
-    static let title = Font.custom("AvenirNext-DemiBold", size: 28)
-    static let subtitle = Font.custom("AvenirNext-Regular", size: 18)
-    static let body = Font.custom("AvenirNext-Regular", size: 16)
-    static let bodyBold = Font.custom("AvenirNext-DemiBold", size: 16)
-    static let caption = Font.custom("AvenirNext-Regular", size: 13)
+    static let largeTitle = Font.largeTitle.weight(.bold)
+    static let title1 = Font.title.weight(.semibold)
+    static let title2 = Font.title2.weight(.semibold)
+    static let title3 = Font.title3.weight(.regular)
+    static let headline = Font.headline.weight(.semibold)
+    static let body = Font.body.weight(.regular)
+    static let subheadline = Font.subheadline.weight(.regular)
+    static let footnote = Font.footnote.weight(.regular)
+    static let caption = Font.caption.weight(.regular)
+    static let caption2 = Font.caption2.weight(.regular)
+    static let button = Font.body.weight(.semibold)
 }
 ```
 
-Catatan: Typography token akan disesuaikan setelah Hi-Fi design dari tim designer tersedia.
-
 ### Colors (`AppColor`)
+
+Palet brand dari designer + semantic system colors untuk adaptasi Dark/Light Mode.
 
 ```swift
 enum AppColor {
-    static let textPrimary = Color(...)
-    static let textSecondary = Color(...)
-    static let accentPrimary = Color(...)    // Brand color utama
-    static let accentDanger = Color(...)     // Errors, destructive actions
-    static let borderSubtle = Color(...)
+    // Brand Primary (Orange)
+    static let primary100 = Color(hex: 0xFFDCCE)
+    static let primary200 = Color(hex: 0xFFBBA3)
+    static let primary300 = Color(hex: 0xFF9878)
+    static let primary400 = Color(hex: 0xED7445)
+    static let primary500 = Color(hex: 0xD85F34)
 
-    // Warna khusus nutrisi
-    static let calorieColor = Color(...)     // Untuk progress bar kalori
-    static let proteinColor = Color(...)     // Untuk progress bar protein
-    static let carbsColor = Color(...)       // Untuk progress bar karbohidrat
-    static let fatColor = Color(...)         // Untuk progress bar lemak
+    // Brand Secondary (Dark)
+    static let secondary900 = Color(hex: 0x19191B)
+    static let secondary950 = Color(hex: 0x0C0C0E)
+
+    // Neutral / Grayscale
+    static let neutral100 = Color(hex: 0xF7F7F7)
+    static let neutral200 = Color(hex: 0xE8E8E8)
+    // ... neutral300-800
+
+    // Semantic (Adaptive Light/Dark)
+    static let background = Color(uiColor: .systemBackground)
+    static let secondaryBackground = Color(uiColor: .secondarySystemBackground)
+
+    // Domain Nutrisi
+    static let calorie = Color.orange
+    static let protein = Color.blue
+    static let carbs = Color.yellow
+    static let fat = Color.purple
 }
 ```
 
