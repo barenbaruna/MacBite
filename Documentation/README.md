@@ -42,8 +42,8 @@ Setiap dokumen membahas satu topik spesifik. Baca secara berurutan jika ini pert
 | No | Dokumen | Isi |
 |----|---------|-----|
 | 01 | [Architecture](./01_Architecture.md) | Mengapa MVVM + Feature-Based, struktur folder, alur data |
-| 02 | [Coding Standards](./02_Coding_Standards.md) | Konvensi penamaan, formatting, pengorganisasian kode, dan prinsip Clean Code |
-| 03 | [Design System](./03_Design_System.md) | Token visual (spacing, color, typography), komponen reusable |
+| 02 | [Coding Standards](./02_Coding_Standards.md) | Konvensi penamaan, formatting, pengorganisasian kode, token principles, dan Clean Code |
+| 03 | [Design System](./03_Design_System.md) | Token visual (spacing, corner radius, color, typography, animation, haptics), komponen reusable, dan aturan Liquid Glass iOS 26 |
 
 ### Design Pattern dan Strategi Teknis
 
@@ -59,9 +59,9 @@ Setiap dokumen membahas satu topik spesifik. Baca secara berurutan jika ini pert
 | No | Dokumen | Isi |
 |----|---------|-----|
 | 04 | [New Feature Guide](./04_New_Feature_Guide.md) | Langkah-langkah membuat fitur baru dengan template dan checklist |
-| 05 | [HIG Checklist](./05_HIG_Checklist.md) | Checklist Apple Human Interface Guidelines per screen |
+| 05 | [HIG Checklist](./05_HIG_Checklist.md) | Checklist resmi Apple HIG & iOS 26 (Dynamic Type, Liquid Glass, ButtonRole close/confirm, touch target 44×44pt) |
 | 06 | [Project Setup](./06_Project_Setup.md) | Setup environment, build, konfigurasi proyek |
-| 07 | [SwiftUI & iOS 26 Reference](./07_SwiftUI_iOS26_Reference.md) | Quick reference API dan pattern SwiftUI |
+| 07 | [SwiftUI & iOS 26 Reference](./07_SwiftUI_iOS26_Reference.md) | Quick reference API & pattern SwiftUI di iOS 26 (Liquid Glass, ButtonRole, ToolbarSpacer, Draw transitions) |
 | 12 | [SwiftLint Configuration](./12_SwiftLint_Configuration.md) | Konfigurasi SwiftLint, penjelasan setiap rule, dan panduan instalasi |
 
 ---
