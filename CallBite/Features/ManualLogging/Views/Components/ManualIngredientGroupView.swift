@@ -17,7 +17,7 @@ struct ManualIngredientGroupView: View {
         VStack(spacing: .zero) {
             ManualTextInputRow(
                 title: "Ingredients",
-                placeholder: "Ingredient",
+                placeholder: "Chicken",
                 text: ingredient.ingredient,
                 onTextChanged: onIngredientChanged
             )
@@ -28,7 +28,7 @@ struct ManualIngredientGroupView: View {
 
             ManualTextInputRow(
                 title: "Portion",
-                placeholder: "0",
+                placeholder: "100",
                 text: ingredient.portionGrams,
                 suffix: "g",
                 onTextChanged: onPortionChanged
@@ -39,8 +39,8 @@ struct ManualIngredientGroupView: View {
                 .padding(.horizontal, AppSpacing.regular)
 
             ManualTextInputRow(
-                title: "Cooking Method",
-                placeholder: "Optional",
+                title: "Cooking method",
+                placeholder: "Steamed",
                 text: ingredient.cookingMethod,
                 onTextChanged: onCookingMethodChanged
             )

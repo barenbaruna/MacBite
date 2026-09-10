@@ -10,55 +10,65 @@ import SwiftUI
 struct LoggingOptionsOverlay: View {
     let onCameraSelected: () -> Void
     let onManualInputSelected: () -> Void
+    let onDismiss: () -> Void
 
     var body: some View {
         ZStack {
-            AppColor.dark950.opacity(0.95)
-                .ignoresSafeArea()
+            dimmedBackdrop
 
             VStack(spacing: AppSpacing.large) {
-                Spacer(minLength: AppSpacing.extraExtraLarge)
+                Spacer()
 
                 Text("Logging Food")
-                    .font(AppTypography.title2)
+                    .font(AppTypography.title2.weight(.bold))
                     .foregroundStyle(AppColor.white)
 
                 optionCards
 
                 Spacer()
-                    .frame(height: AppSpacing.loggingOptionsBottomClearance)
+
+                closeButton
             }
             .padding(.horizontal, AppSpacing.medium)
         }
     }
 
-    private var optionCards: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: AppSpacing.small) {
-                cameraCard
-                manualInputCard
+    private var dimmedBackdrop: some View {
+        Color.black.opacity(0.85)
+            .background(.ultraThinMaterial)
+            .ignoresSafeArea()
+            .onTapGesture {
+                onDismiss()
             }
+    }
 
-            VStack(spacing: AppSpacing.small) {
-                cameraCard
-                manualInputCard
-            }
+    private var optionCards: some View {
+        HStack(spacing: AppSpacing.medium) {
+            LoggingOptionCard(
+                title: "Take Photo",
+                systemImage: "camera.fill",
+                action: onCameraSelected
+            )
+
+            LoggingOptionCard(
+                title: "Manual Input",
+                systemImage: "pencil",
+                action: onManualInputSelected
+            )
         }
     }
 
-    private var cameraCard: some View {
-        LoggingOptionCard(
-            title: "Take Photo",
-            systemImage: "camera.fill",
-            action: onCameraSelected
-        )
-    }
-
-    private var manualInputCard: some View {
-        LoggingOptionCard(
-            title: "Input Manual",
-            systemImage: "pencil",
-            action: onManualInputSelected
-        )
+    private var closeButton: some View {
+        Button(action: onDismiss) {
+            Image(systemName: "xmark")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.black)
+        }
+        .buttonStyle(.glassProminent)
+        .buttonBorderShape(.circle)
+        .controlSize(.large)
+        .tint(.white)
+        .accessibilityLabel("Close Logging Options")
+        .padding(.bottom, AppSpacing.large)
     }
 }

@@ -15,38 +15,54 @@ struct ManualIngredientListView: View {
     let onAddIngredient: () -> Void
 
     var body: some View {
+        VStack(spacing: AppSpacing.large) {
+            ingredientsCard
+            addIngredientButton
+        }
+    }
+
+    private var ingredientsCard: some View {
         VStack(spacing: .zero) {
-            ForEach(ingredients) { ingredient in
-                ManualIngredientGroupView(
-                    ingredient: ingredient,
-                    onIngredientChanged: { value in
-                        onIngredientChanged(ingredient.id, value)
-                    },
-                    onPortionChanged: { value in
-                        onPortionChanged(ingredient.id, value)
-                    },
-                    onCookingMethodChanged: { value in
-                        onCookingMethodChanged(ingredient.id, value)
-                    }
-                )
+            ForEach(Array(ingredients.enumerated()), id: \.element.id) { index, ingredient in
+                if index > 0 {
+                    Divider()
+                        .overlay(AppColor.manualSeparator)
+                        .padding(.horizontal, AppSpacing.regular)
+                }
 
-                Divider()
-                    .overlay(AppColor.manualSeparator)
-                    .padding(.horizontal, AppSpacing.regular)
+                ingredientGroup(for: ingredient)
             }
-
-            Button(action: onAddIngredient) {
-                Label("Add Ingredients", systemImage: "plus.circle")
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColor.white)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(minHeight: AppSize.manualAddIngredientHeight)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, AppSpacing.regular)
         }
         .background(AppColor.manualFieldBackground)
-        .clipShape(.rect(cornerRadius: AppCornerRadius.medium))
+        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
+    }
+
+    private func ingredientGroup(for ingredient: ManualIngredientInput) -> some View {
+        ManualIngredientGroupView(
+            ingredient: ingredient,
+            onIngredientChanged: { value in
+                onIngredientChanged(ingredient.id, value)
+            },
+            onPortionChanged: { value in
+                onPortionChanged(ingredient.id, value)
+            },
+            onCookingMethodChanged: { value in
+                onCookingMethodChanged(ingredient.id, value)
+            }
+        )
+    }
+
+    private var addIngredientButton: some View {
+        Button(action: onAddIngredient) {
+            Image(systemName: "plus")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(AppColor.calorie)
+                .frame(width: 44, height: 44)
+                .background(AppColor.manualFieldBackground)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add Ingredient")
+        .frame(maxWidth: .infinity)
     }
 }

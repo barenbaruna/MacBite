@@ -15,20 +15,28 @@ struct LoggingOptionCard: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: AppSpacing.large) {
+                Spacer()
+
                 Image(systemName: systemImage)
-                    .font(AppTypography.largeTitle)
-                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 38, weight: .regular))
+                    .foregroundStyle(AppColor.white)
                     .accessibilityHidden(true)
 
                 Text(title)
                     .font(AppTypography.headline)
+                    .foregroundStyle(AppColor.white)
                     .multilineTextAlignment(.center)
+
+                Spacer()
             }
-            .foregroundStyle(AppColor.loggingOptionForeground)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, AppSpacing.medium)
-            .padding(.vertical, AppSpacing.extraExtraLarge)
-            .dynamicGlassSurface(cornerRadius: AppCornerRadius.large)
+            .frame(height: 190)
+            .background(Color(hex: 0x242426))
+            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }

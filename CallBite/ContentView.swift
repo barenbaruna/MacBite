@@ -19,6 +19,10 @@ struct ContentView: View {
             return .testFoodCard
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboardExpanded") {
             return .testDashboardExpanded
+        } else if ProcessInfo.processInfo.arguments.contains("-testLoggingOverlay") {
+            return .testLoggingOverlay
+        } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
+            return .testManualLogging
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
             return .dashboard
         }
@@ -111,7 +115,33 @@ struct ContentView: View {
 
         case .testDashboardExpanded:
             testDashboardExpandedView
+
+        case .testLoggingOverlay:
+            testLoggingOverlayView
+
+        case .testManualLogging:
+            testManualLoggingView
         }
+    }
+
+    private var testLoggingOverlayView: some View {
+        DashboardView(
+            viewModel: {
+                let vm = DashboardViewModel()
+                vm.isShowingLoggingOptions = true
+                return vm
+            }()
+        )
+        .preferredColorScheme(.dark)
+    }
+
+    private var testManualLoggingView: some View {
+        ManualLoggingView(
+            viewModel: ManualLoggingViewModel(),
+            onDismiss: {},
+            onCalculate: { _, _ in }
+        )
+        .preferredColorScheme(.dark)
     }
 
     private var testDashboardExpandedView: some View {
@@ -175,6 +205,8 @@ private enum AppScreenState {
     case testFoodCardFront
     case testEditSheet
     case testDashboardExpanded
+    case testLoggingOverlay
+    case testManualLogging
 }
 
 #Preview {

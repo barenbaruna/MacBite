@@ -43,7 +43,7 @@ public struct DashboardView: View {
                 presentedSheetRoute = nil
             }
             .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
+            .presentationDragIndicator(.hidden)
             .presentationBackground(AppColor.dark950)
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.triggerTapHaptic)
@@ -211,14 +211,6 @@ public struct DashboardView: View {
             Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
-            if viewModel.isShowingLoggingOptions {
-                LoggingOptionsOverlay(
-                    onCameraSelected: showCamera,
-                    onManualInputSelected: showManualInput
-                )
-                .transition(loggingOptionsTransition)
-            }
-
             VStack(spacing: 0) {
                 Spacer(minLength: AppSpacing.sm)
 
@@ -235,11 +227,19 @@ public struct DashboardView: View {
                 Spacer(minLength: AppSpacing.xl)
             }
             .padding(.horizontal, AppSpacing.lg)
-            .opacity(viewModel.isShowingLoggingOptions ? 0 : 1)
             .overlay(alignment: .bottomTrailing) {
                 floatingActionBar
                     .padding(.trailing, AppSpacing.lg)
                     .padding(.bottom, AppSpacing.md)
+            }
+
+            if viewModel.isShowingLoggingOptions {
+                LoggingOptionsOverlay(
+                    onCameraSelected: showCamera,
+                    onManualInputSelected: showManualInput,
+                    onDismiss: toggleLoggingOptions
+                )
+                .transition(loggingOptionsTransition)
             }
         }
     }
@@ -319,18 +319,16 @@ private extension DashboardView {
     }
 
     var floatingActionBar: some View {
-        Button(
-            viewModel.isShowingLoggingOptions ? "Close Logging Options" : "Log Food",
-            systemImage: viewModel.isShowingLoggingOptions ? "xmark" : "plus",
-            action: toggleLoggingOptions
-        )
-        .font(AppTypography.title1)
-        .labelStyle(.iconOnly)
+        Button(action: toggleLoggingOptions) {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.black)
+        }
         .buttonStyle(.glassProminent)
-        .controlSize(.extraLarge)
-        .tint(AppColor.floatingAction)
-        .contentTransition(.symbolEffect(.replace))
-        .accessibilityLabel(viewModel.isShowingLoggingOptions ? "Close Logging Options" : "Log Food")
+        .buttonBorderShape(.circle)
+        .controlSize(.large)
+        .tint(.white)
+        .accessibilityLabel("Log Food")
     }
 
     var loggingOptionsTransition: AnyTransition {

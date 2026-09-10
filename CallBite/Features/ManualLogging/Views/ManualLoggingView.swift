@@ -23,57 +23,72 @@ struct ManualLoggingView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppColor.dark950
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                AppColor.dark950
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.manualSectionGap) {
-                    header
-                    formCard
+                ScrollView {
+                    VStack(alignment: .leading, spacing: AppSpacing.large) {
+                        foodSection
+                        foodDetailsSection
+                    }
+                    .padding(.horizontal, AppSpacing.manualScreenMargin)
+                    .padding(.top, AppSpacing.small)
+                    .padding(.bottom, AppSpacing.manualSectionGap)
                 }
-                .padding(.horizontal, AppSpacing.manualScreenMargin)
-                .padding(.top, AppSpacing.small)
-                .padding(.bottom, AppSpacing.manualSectionGap)
+                .scrollDismissesKeyboard(.interactively)
             }
-            .scrollDismissesKeyboard(.interactively)
-        }
-        .safeAreaInset(edge: .bottom, spacing: .zero) {
-            calculateButton
+            .safeAreaInset(edge: .bottom, spacing: .zero) {
+                calculateButton
+            }
+            .navigationTitle("Log Meal")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    dismissButton
+                }
+            }
         }
     }
 
-    private var header: some View {
-        HStack {
-            Text("Log Meal")
+    private var dismissButton: some View {
+        Button(action: onDismiss) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AppColor.white)
+                .frame(
+                    width: AppSize.minimumTouchTarget,
+                    height: AppSize.minimumTouchTarget
+                )
+                .background(Color.white.opacity(0.12))
+                .clipShape(Circle())
+        }
+        .accessibilityLabel("Kembali")
+    }
+
+    private var foodSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.small) {
+            Text("Food")
                 .font(AppTypography.headline)
                 .foregroundStyle(AppColor.white)
 
-            Spacer()
-
-            Button(role: .close, action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(AppTypography.body)
-                    .frame(
-                        width: AppSize.minimumTouchTarget,
-                        height: AppSize.minimumTouchTarget
-                    )
-            }
-            .buttonStyle(.glass)
-            .accessibilityLabel("Close")
-        }
-    }
-
-    private var formCard: some View {
-        VStack(spacing: AppSpacing.small) {
             ManualTextInputRow(
                 title: "Food Name",
-                placeholder: "Meal name",
+                placeholder: "Dimsum",
                 text: viewModel.foodName,
                 onTextChanged: viewModel.updateFoodName
             )
             .background(AppColor.manualFieldBackground)
-            .clipShape(.rect(cornerRadius: AppCornerRadius.medium))
+            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
+        }
+    }
+
+    private var foodDetailsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.small) {
+            Text("Food Details")
+                .font(AppTypography.headline)
+                .foregroundStyle(AppColor.white)
 
             ManualIngredientListView(
                 ingredients: viewModel.ingredients,
@@ -89,9 +104,6 @@ struct ManualLoggingView: View {
                 onAddIngredient: viewModel.addIngredient
             )
         }
-        .padding(AppSpacing.manualCardInset)
-        .background(AppColor.dark900)
-        .clipShape(.rect(cornerRadius: AppCornerRadius.medium))
     }
 
     private var calculateButton: some View {
@@ -99,12 +111,12 @@ struct ManualLoggingView: View {
             onCalculate(viewModel.foodName, viewModel.ingredients)
         } label: {
             Text("Calculate")
-                .font(AppTypography.button)
+                .font(AppTypography.headline)
                 .foregroundStyle(AppColor.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: AppSize.manualCalculateHeight)
-                .background(AppColor.orange400)
-                .clipShape(.capsule)
+                .frame(height: 52)
+                .background(AppColor.calorie)
+                .clipShape(Capsule())
         }
         .buttonStyle(.plain)
         .padding(.horizontal, AppSpacing.manualScreenMargin)
