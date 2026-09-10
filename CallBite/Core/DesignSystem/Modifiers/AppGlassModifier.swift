@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/// Modifier pendukung efek material kartu CallBite
 struct AppGlassModifier: ViewModifier {
     func body(content: Content) -> some View {
         content

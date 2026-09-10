@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/// Tombol shutter kamera
 struct CaptureButton: View {
     let action: () -> Void
 

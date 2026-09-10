@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/// Tampilan input manual untuk pencatatan makanan
 struct ManualLoggingView: View {
     @ObservedObject private var viewModel: ManualLoggingViewModel
     let onDismiss: () -> Void

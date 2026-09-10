@@ -8,7 +8,6 @@
 import PhotosUI
 import SwiftUI
 
-/// Full-screen camera flow for capturing or importing a food photo.
 struct FoodCaptureView: View {
     @ObservedObject private var viewModel: FoodCaptureViewModel
     @State private var selectedPhoto: PhotosPickerItem?

@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/// Tampilan utama Dashboard progres nutrisi harian
 struct DashboardView: View {
     @ObservedObject private var viewModel: DashboardViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

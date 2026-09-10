@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/// Kontainer kartu visual standar Design System CallBite
 struct AppCard<Content: View>: View {
     let content: Content
 
