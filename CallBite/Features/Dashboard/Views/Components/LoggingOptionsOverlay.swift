@@ -19,17 +19,18 @@ struct LoggingOptionsOverlay: View {
             VStack(spacing: AppSpacing.large) {
                 Spacer()
 
-                Text("Logging Food")
-                    .font(AppTypography.title2.weight(.bold))
-                    .foregroundStyle(AppColor.white)
+                VStack(spacing: AppSpacing.large) {
+                    Text("Logging Food")
+                        .font(AppTypography.title2.weight(.bold))
+                        .foregroundStyle(AppColor.white)
 
-                optionCards
-
-                Spacer()
+                    optionCards
+                }
 
                 closeButton
             }
             .padding(.horizontal, AppSpacing.medium)
+            .padding(.bottom, AppSpacing.large)
         }
     }
 
@@ -69,6 +70,5 @@ struct LoggingOptionsOverlay: View {
         .controlSize(.large)
         .tint(.white)
         .accessibilityLabel("Close Logging Options")
-        .padding(.bottom, AppSpacing.large)
     }
 }

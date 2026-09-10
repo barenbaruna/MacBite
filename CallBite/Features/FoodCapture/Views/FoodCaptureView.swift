@@ -164,11 +164,13 @@ struct FoodCaptureView: View {
     private var cameraBottomControls: some View {
         HStack {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                CameraControlLabel(
-                    systemImage: "photo",
-                    accessibilityLabel: "Choose from Gallery"
-                )
+                Image(systemName: "photo")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.white)
             }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Choose from Gallery")
 
             Spacer()
 
@@ -203,12 +205,13 @@ struct FoodCaptureView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            CameraControlLabel(
-                systemImage: systemImage,
-                accessibilityLabel: accessibilityLabel
-            )
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(AppColor.white)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private func retakePhoto() {

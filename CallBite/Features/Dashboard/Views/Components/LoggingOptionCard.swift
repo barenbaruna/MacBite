@@ -19,25 +19,19 @@ struct LoggingOptionCard: View {
 
                 Image(systemName: systemImage)
                     .font(.system(size: 38, weight: .regular))
-                    .foregroundStyle(AppColor.white)
                     .accessibilityHidden(true)
 
                 Text(title)
                     .font(AppTypography.headline)
-                    .foregroundStyle(AppColor.white)
                     .multilineTextAlignment(.center)
 
                 Spacer()
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 190)
-            .background(Color(hex: 0x242426))
-            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
+            .frame(height: 180)
+            .foregroundStyle(AppColor.white)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.roundedRectangle(radius: AppCornerRadius.extraLarge))
     }
 }

@@ -57,11 +57,9 @@ struct ManualIngredientListView: View {
             Image(systemName: "plus")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(AppColor.calorie)
-                .frame(width: 44, height: 44)
-                .background(AppColor.manualFieldBackground)
-                .clipShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
         .accessibilityLabel("Add Ingredient")
         .frame(maxWidth: .infinity)
     }

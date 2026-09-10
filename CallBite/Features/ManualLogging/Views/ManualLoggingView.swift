@@ -53,18 +53,8 @@ struct ManualLoggingView: View {
     }
 
     private var dismissButton: some View {
-        Button(action: onDismiss) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(AppColor.white)
-                .frame(
-                    width: AppSize.minimumTouchTarget,
-                    height: AppSize.minimumTouchTarget
-                )
-                .background(Color.white.opacity(0.12))
-                .clipShape(Circle())
-        }
-        .accessibilityLabel("Kembali")
+        Button(role: .close, action: onDismiss)
+            .accessibilityLabel("Dismiss")
     }
 
     private var foodSection: some View {
@@ -112,15 +102,14 @@ struct ManualLoggingView: View {
         } label: {
             Text("Calculate")
                 .font(AppTypography.headline)
-                .foregroundStyle(AppColor.white)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(AppColor.calorie)
-                .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glassProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .tint(AppColor.calorie)
         .padding(.horizontal, AppSpacing.manualScreenMargin)
         .padding(.vertical, AppSpacing.manualBottomButtonInset)
-        .background(AppColor.dark950)
     }
 }
