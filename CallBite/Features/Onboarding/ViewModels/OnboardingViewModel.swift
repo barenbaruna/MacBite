@@ -9,14 +9,6 @@ import Combine
 import Foundation
 import UIKit
 
-enum OnboardingStep: Int, CaseIterable {
-    case splash = 0
-    case healthPrompt = 1
-    case personalize = 2
-    case lifestyle = 3
-    case targetGoal = 4
-}
-
 @MainActor
 final class OnboardingViewModel: ObservableObject {
 

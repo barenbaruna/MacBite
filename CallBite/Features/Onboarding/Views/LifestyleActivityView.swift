@@ -109,7 +109,7 @@ struct LifestyleActivityView: View {
 
 #Preview {
     LifestyleActivityView(
-        viewModel: OnboardingViewModel(),
+        viewModel: OnboardingFactory.makePreviewViewModel(initialStep: .lifestyle),
         onFinish: {}
     )
     .preferredColorScheme(.dark)

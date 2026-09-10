@@ -51,7 +51,7 @@ struct PersonalizeFormCard: View {
 
                 Text(value)
                     .font(AppTypography.body)
-                    .foregroundStyle(isActive ? AppColor.orange400 : Color(uiColor: .secondaryLabel))
+//                    .foregroundStyle(isActive ? AppColor.orange400 : Color(uiColor: .secondaryLabel))
                     .contentTransition(.identity)
             }
             .contentShape(Rectangle())

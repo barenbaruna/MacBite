@@ -93,6 +93,6 @@ struct HealthPermissionPromptView: View {
 
 #Preview {
     NavigationStack {
-        HealthPermissionPromptView(viewModel: OnboardingViewModel())
+        HealthPermissionPromptView(viewModel: OnboardingFactory.makePreviewViewModel(initialStep: .healthPrompt))
     }
 }

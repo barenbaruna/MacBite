@@ -60,7 +60,7 @@ struct OnboardingContainerView: View {
 
 #Preview {
     OnboardingContainerView(
-        viewModel: OnboardingViewModel(initialStep: .healthPrompt),
+        viewModel: OnboardingFactory.makePreviewViewModel(initialStep: .healthPrompt),
         onFinish: {}
     )
 }

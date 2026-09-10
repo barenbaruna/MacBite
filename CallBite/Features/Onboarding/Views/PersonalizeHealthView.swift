@@ -253,7 +253,7 @@ private extension PersonalizeHealthView {
 
 #Preview {
     NavigationStack {
-        PersonalizeHealthView(viewModel: OnboardingViewModel())
+        PersonalizeHealthView(viewModel: OnboardingFactory.makePreviewViewModel())
     }
     .preferredColorScheme(.dark)
 }
