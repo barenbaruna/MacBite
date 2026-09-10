@@ -14,16 +14,17 @@ struct CameraGuideView: View {
         ZStack {
             AppColor.dark950.opacity(0.72)
 
-            VStack(spacing: .zero) {
+            ZStack(alignment: .bottom) {
                 Text("Keep the whole meal visible, use good lighting, and make sure the photo is clear and not blurry.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColor.cameraGuideForeground)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, AppSpacing.extraExtraLarge)
-                    .padding(.top, AppSpacing.cameraGuideTextTop)
-
-                Spacer()
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: .infinity,
+                        alignment: .center
+                    )
 
                 Button(action: onConfirm) {
                     Text("Got It")

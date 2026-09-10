@@ -31,7 +31,6 @@ enum AppSpacing {
     static let loggingOptionsBottomClearance: CGFloat = 104
     static let cameraTopControl: CGFloat = 52
     static let cameraGuideInset: CGFloat = 29
-    static let cameraGuideTextTop: CGFloat = 148
     static let manualScreenMargin: CGFloat = 24
     static let manualCardInset: CGFloat = 12
     static let manualSectionGap: CGFloat = 24
