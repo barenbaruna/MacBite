@@ -7,14 +7,6 @@
 
 import SwiftUI
 
-/// Active field being edited in the health personalization form.
-private enum PersonalizeField: Hashable {
-    case dateOfBirth
-    case sex
-    case height
-    case weight
-}
-
 /// Manual health data entry view supporting both presentation and wheel-picker editing modes.
 struct PersonalizeHealthView: View {
     @ObservedObject private var viewModel: OnboardingViewModel
@@ -49,61 +41,40 @@ struct PersonalizeHealthView: View {
         return "\(selectedDay) \(monthName) \(selectedYear)"
     }
 
-    private var fullMonthSymbols: [String] {
-        [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ]
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: .zero) {
             titleSection
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.lg)
+                .padding(.top, AppSpacing.small)
+                .padding(.bottom, AppSpacing.large)
 
-            formCard
-                .padding(.bottom, AppSpacing.md)
+            PersonalizeFormCard(
+                formattedDate: formattedDateString,
+                selectedSex: selectedSex,
+                selectedHeightCm: selectedHeightCm,
+                selectedWeightKg: selectedWeightKg,
+                activeField: activeField,
+                onSelectField: startEditing
+            )
+            .padding(.bottom, AppSpacing.medium)
 
             if activeField != nil {
                 middleDoneButton
-                    .padding(.bottom, AppSpacing.sm)
+                    .padding(.bottom, AppSpacing.small)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: .zero)
 
-            if activeField != nil {
-                bottomPickerContainer
-                    .frame(height: 216)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            } else {
-                continueButton
-                    .padding(.bottom, AppSpacing.xl)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            bottomSection
         }
-        .padding(.horizontal, AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.large)
         .background(Color(uiColor: .systemBackground))
         .preferredColorScheme(.dark)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(activeField != nil)
         .toolbar {
             if activeField != nil {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
-                        cancelEditing()
-                    }
-                    .tint(AppColor.orange500)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        doneEditing()
-                    }
-                    .buttonStyle(.glassProminent)
-                    .tint(AppColor.orange500)
-                }
+                editingToolbar
             }
         }
         .onAppear {
@@ -114,15 +85,14 @@ struct PersonalizeHealthView: View {
     // MARK: - Title Section
 
     private var titleSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
             Text("Personalize Fitness and Health")
-                .font(AppTypography.title2.weight(.bold))
+                .font(AppTypography.title1.weight(.bold))
                 .foregroundStyle(Color(uiColor: .label))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(
-                "This information ensures Fitness and Health data are as accurate as possible. " +
-                "These details are not shared with Apple."
+                "We use the information you share to personalize your daily calorie and macronutrients needs."
             )
             .font(AppTypography.subheadline)
             .foregroundStyle(Color(uiColor: .secondaryLabel))
@@ -131,70 +101,7 @@ struct PersonalizeHealthView: View {
         }
     }
 
-    // MARK: - Form Card
-
-    private var formCard: some View {
-        VStack(spacing: 0) {
-            dataRow(
-                title: "Date of Birth",
-                value: formattedDateString,
-                field: .dateOfBirth
-            )
-
-            Divider().background(Color(uiColor: .separator).opacity(0.3))
-
-            dataRow(
-                title: "Sex",
-                value: selectedSex.displayName,
-                field: .sex
-            )
-
-            Divider().background(Color(uiColor: .separator).opacity(0.3))
-
-            dataRow(
-                title: "Height",
-                value: "\(selectedHeightCm) cm",
-                field: .height
-            )
-
-            Divider().background(Color(uiColor: .separator).opacity(0.3))
-
-            dataRow(
-                title: "Weight",
-                value: "\(selectedWeightKg) kg",
-                field: .weight
-            )
-        }
-        .padding(.horizontal, AppSpacing.md)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
-    }
-
-    private func dataRow(title: String, value: String, field: PersonalizeField) -> some View {
-        let isActive = activeField == field
-
-        return Button {
-            startEditing(field: field)
-        } label: {
-            HStack {
-                Text(title)
-                    .font(AppTypography.body)
-                    .foregroundStyle(Color(uiColor: .label))
-
-                Spacer()
-
-                Text(value)
-                    .font(AppTypography.body)
-                    .foregroundStyle(isActive ? AppColor.orange400 : Color(uiColor: .secondaryLabel))
-                    .contentTransition(.identity)
-            }
-            .contentShape(Rectangle())
-            .padding(.vertical, 16)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Middle Done Button (Edit Mode - Native Liquid Glass Standard Size)
+    // MARK: - Buttons & Bottom Section
 
     private var middleDoneButton: some View {
         Button(action: doneEditing) {
@@ -208,8 +115,6 @@ struct PersonalizeHealthView: View {
         .tint(AppColor.orange500)
     }
 
-    // MARK: - Bottom Continue Button (Normal Mode - Native Liquid Glass Standard Size)
-
     private var continueButton: some View {
         Button(action: saveAndContinue) {
             Text("Continue")
@@ -222,76 +127,44 @@ struct PersonalizeHealthView: View {
         .tint(AppColor.orange500)
     }
 
-    // MARK: - Bottom Picker Container (Edit Mode)
-
     @ViewBuilder
-    private var bottomPickerContainer: some View {
-        switch activeField {
-        case .dateOfBirth:
-            dateOfBirthWheelPicker
-        case .sex:
-            sexWheelPicker
-        case .height:
-            heightWheelPicker
-        case .weight:
-            weightWheelPicker
-        case .none:
-            EmptyView()
+    private var bottomSection: some View {
+        if activeField != nil {
+            PersonalizeWheelPickers(
+                activeField: activeField,
+                selectedDay: $selectedDay,
+                selectedMonth: $selectedMonth,
+                selectedYear: $selectedYear,
+                selectedSex: $selectedSex,
+                selectedHeightCm: $selectedHeightCm,
+                selectedWeightKg: $selectedWeightKg,
+                onDateChanged: { clampDayForMonth(selectedMonth, year: selectedYear) }
+            )
+            .frame(height: 216)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else {
+            continueButton
+                .padding(.bottom, AppSpacing.extraLarge)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
-}
 
-// MARK: - Wheel Pickers
-
-private extension PersonalizeHealthView {
-    var dateOfBirthWheelPicker: some View {
-        HStack(spacing: 0) {
-            Picker("Day", selection: $selectedDay) {
-                ForEach(1...31, id: \.self) { Text("\($0)").tag($0) }
+    @ToolbarContentBuilder
+    private var editingToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button("Cancel") {
+                cancelEditing()
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
+            .tint(AppColor.orange500)
+        }
 
-            Picker("Month", selection: $selectedMonth) {
-                ForEach(1...12, id: \.self) { Text(fullMonthSymbols[$0 - 1]).tag($0) }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button("Done") {
+                doneEditing()
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-
-            Picker("Year", selection: $selectedYear) {
-                ForEach(1920...2026, id: \.self) { Text(verbatim: "\($0)").tag($0) }
-            }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
+            .buttonStyle(.glassProminent)
+            .tint(AppColor.orange500)
         }
-        .onChange(of: selectedMonth) { _, newMonth in clampDayForMonth(newMonth, year: selectedYear) }
-        .onChange(of: selectedYear) { _, newYear in clampDayForMonth(selectedMonth, year: newYear) }
-    }
-
-    var sexWheelPicker: some View {
-        Picker("Sex", selection: $selectedSex) {
-            ForEach(BiologicalSex.selectableCases) { sex in
-                Text(sex.displayName).tag(sex)
-            }
-        }
-        .pickerStyle(.wheel)
-        .frame(maxWidth: .infinity)
-    }
-
-    var heightWheelPicker: some View {
-        Picker("Height", selection: $selectedHeightCm) {
-            ForEach(100...250, id: \.self) { Text("\($0) cm").tag($0) }
-        }
-        .pickerStyle(.wheel)
-        .frame(maxWidth: .infinity)
-    }
-
-    var weightWheelPicker: some View {
-        Picker("Weight", selection: $selectedWeightKg) {
-            ForEach(30...250, id: \.self) { Text("\($0) kg").tag($0) }
-        }
-        .pickerStyle(.wheel)
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -340,7 +213,9 @@ private extension PersonalizeHealthView {
         let calendar = Calendar.current
         if let date = calendar.date(from: components),
            let range = calendar.range(of: .day, in: .month, for: date) {
-            if selectedDay > range.count { selectedDay = range.count }
+            if selectedDay > range.count {
+                selectedDay = range.count
+            }
         }
     }
 

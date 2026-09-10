@@ -23,6 +23,8 @@ struct ContentView: View {
             return .testLoggingOverlay
         } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
             return .testManualLogging
+        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
+            return .testPersonalize
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
             return .dashboard
         }
@@ -121,6 +123,12 @@ struct ContentView: View {
 
         case .testManualLogging:
             testManualLoggingView
+
+        case .testPersonalize:
+            NavigationStack {
+                PersonalizeHealthView(viewModel: OnboardingViewModel())
+            }
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -207,6 +215,7 @@ private enum AppScreenState {
     case testDashboardExpanded
     case testLoggingOverlay
     case testManualLogging
+    case testPersonalize
 }
 
 #Preview {
