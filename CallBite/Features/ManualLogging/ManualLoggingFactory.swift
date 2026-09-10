@@ -6,3 +6,19 @@
 //
 
 import SwiftUI
+
+enum ManualLoggingFactory {
+    @MainActor
+    static func makeView(
+        onDismiss: @escaping () -> Void = {},
+        onCalculate: @escaping (String, [ManualIngredientInput]) -> Void = { _, _ in }
+    ) -> some View {
+        let viewModel = ManualLoggingViewModel()
+
+        return ManualLoggingView(
+            viewModel: viewModel,
+            onDismiss: onDismiss,
+            onCalculate: onCalculate
+        )
+    }
+}
