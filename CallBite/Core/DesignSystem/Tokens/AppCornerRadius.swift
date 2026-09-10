@@ -24,4 +24,5 @@ enum AppCornerRadius {
     static let sheet: CGFloat = extraLarge
     static let modalCard: CGFloat = ultraLarge
     static let pill: CGFloat = full
+    static let cameraGuide: CGFloat = 36
 }

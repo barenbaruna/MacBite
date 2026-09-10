@@ -83,6 +83,24 @@ enum AppColor {
     static let glassAmbientAmberDeep = Color(hex: 0x7A4C1E)
     static let glassAmbientAmberSoft = Color(hex: 0xD48A3C)
     static let glassTextMuted = Color(hex: 0xA69F94)
+
+    // Logging Flow
+    static let loggingOptionBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let loggingOptionForeground = Color(uiColor: .label)
+    static let floatingAction = Color(uiColor: .label)
+
+    // Camera Flow
+    static let cameraControlBackground = Color(hex: 0xEAEAEA)
+    static let cameraGuideForeground = Color(hex: 0x332B20)
+    static let cameraGuideButtonBackground = Color(hex: 0x5E5E5E)
+    static let cameraTipBackground = Color(hex: 0x8A8A8A)
+    static let cameraTipHeaderBackground = Color(hex: 0x727272)
+    static let cameraActionBar = Color(hex: 0x000000)
+
+    // Manual Logging Flow
+    static let manualFieldBackground = Color(hex: 0x2C2C2E)
+    static let manualInputForeground = Color(hex: 0xCCCCCC)
+    static let manualSeparator = Color(hex: 0x3A3A3C)
 }
 
 // MARK: - Hex Initializer Helper
