@@ -15,6 +15,8 @@ public struct DashboardView: View {
 
     @State private var screenWidth: CGFloat = 393
     @State private var containerCenterY: CGFloat = 426
+    @State private var presentedFullScreenRoute: AppRoute?
+    @State private var presentedSheetRoute: AppRoute?
 
     public init(viewModel: DashboardViewModel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -30,6 +32,19 @@ public struct DashboardView: View {
         .sheet(isPresented: $viewModel.isShowingProfile) {
             profileSheet
                 .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(item: $presentedFullScreenRoute) { route in
+            LoggingDestinationView(route: route) {
+                presentedFullScreenRoute = nil
+            }
+        }
+        .sheet(item: $presentedSheetRoute) { route in
+            LoggingDestinationView(route: route) {
+                presentedSheetRoute = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(AppColor.dark950)
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.triggerTapHaptic)
         .sensoryFeedback(.success, trigger: viewModel.triggerSuccessHaptic)
@@ -196,6 +211,14 @@ public struct DashboardView: View {
             Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
+            if viewModel.isShowingLoggingOptions {
+                LoggingOptionsOverlay(
+                    onCameraSelected: showCamera,
+                    onManualInputSelected: showManualInput
+                )
+                .transition(loggingOptionsTransition)
+            }
+
             VStack(spacing: 0) {
                 Spacer(minLength: AppSpacing.sm)
 
@@ -212,6 +235,7 @@ public struct DashboardView: View {
                 Spacer(minLength: AppSpacing.xl)
             }
             .padding(.horizontal, AppSpacing.lg)
+            .opacity(viewModel.isShowingLoggingOptions ? 0 : 1)
             .overlay(alignment: .bottomTrailing) {
                 floatingActionBar
                     .padding(.trailing, AppSpacing.lg)
@@ -295,18 +319,48 @@ private extension DashboardView {
     }
 
     var floatingActionBar: some View {
-        Button {
-            viewModel.resetAndOpenAddFood()
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.black)
-        }
+        Button(
+            viewModel.isShowingLoggingOptions ? "Close Logging Options" : "Log Food",
+            systemImage: viewModel.isShowingLoggingOptions ? "xmark" : "plus",
+            action: toggleLoggingOptions
+        )
+        .font(AppTypography.title1)
+        .labelStyle(.iconOnly)
         .buttonStyle(.glassProminent)
-        .buttonBorderShape(.circle)
-        .controlSize(.large)
-        .tint(.white)
-        .accessibilityLabel("Log Food")
+        .controlSize(.extraLarge)
+        .tint(AppColor.floatingAction)
+        .contentTransition(.symbolEffect(.replace))
+        .accessibilityLabel(viewModel.isShowingLoggingOptions ? "Close Logging Options" : "Log Food")
+    }
+
+    var loggingOptionsTransition: AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom))
+    }
+
+    var loggingAnimation: Animation {
+        reduceMotion ? AppAnimation.reducedMotion : AppAnimation.smooth
+    }
+
+    func toggleLoggingOptions() {
+        AppHaptics.primaryAction()
+        withAnimation(loggingAnimation) {
+            viewModel.toggleLoggingOptions()
+        }
+    }
+
+    func showCamera() {
+        prepareForLoggingPresentation()
+        presentedFullScreenRoute = .foodCapture
+    }
+
+    func showManualInput() {
+        prepareForLoggingPresentation()
+        presentedSheetRoute = .manualLogging
+    }
+
+    func prepareForLoggingPresentation() {
+        AppHaptics.selectionChanged()
+        viewModel.hideLoggingOptions()
     }
 
     func dismissReviewCard() {

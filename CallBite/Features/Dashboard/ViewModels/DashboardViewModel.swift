@@ -48,6 +48,7 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var isCardCompressed: Bool = false
     @Published public var isShowingWeightGoal: Bool = false
     @Published public var isShowingProfile: Bool = false
+    @Published public var isShowingLoggingOptions: Bool = false
 
     // Card & Flow Motion Properties
     @Published public var flipAngle: Double = 0.0
@@ -146,6 +147,14 @@ public final class DashboardViewModel: ObservableObject {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
             isShowingAddFood = true
         }
+    }
+
+    public func toggleLoggingOptions() {
+        isShowingLoggingOptions.toggle()
+    }
+
+    public func hideLoggingOptions() {
+        isShowingLoggingOptions = false
     }
 
     // MARK: - Internal Animation Sequence
