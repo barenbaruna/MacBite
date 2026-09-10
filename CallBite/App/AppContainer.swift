@@ -7,11 +7,3 @@
 
 import Combine
 import Foundation
-
-/// Dependency container utama aplikasi CallBite
-@MainActor
-final class AppContainer: ObservableObject {
-    @Published var activeRoute: AppRoute = .dashboard
-
-    init() {}
-}

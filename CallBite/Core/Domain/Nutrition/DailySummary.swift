@@ -2,8 +2,71 @@
 //  DailySummary.swift
 //  CallBite
 //
-//  Created by Joshua Valentine Manik on 01/09/26.
+//  Created by Baren Baruna Harahap on 09/09/26.
 //
 
 import Foundation
 
+/// Daily progress summary of caloric intake and macronutrient totals against target goals.
+public struct DailySummary: Equatable, Hashable, Sendable {
+    public var dateString: String
+    public var targetCalories: Int
+    public var consumedCalories: Int
+    public var totalCarbs: Int
+    public var totalProtein: Int
+    public var totalFat: Int
+    public var totalFiber: Int
+    public var streakDays: Int
+
+    public var remainingCalories: Int {
+        max(0, targetCalories - consumedCalories)
+    }
+
+    public var progressRatio: Double {
+        guard targetCalories > 0 else { return 0.0 }
+        return min(1.0, Double(consumedCalories) / Double(targetCalories))
+    }
+
+    public var coachInsight: String {
+        if remainingCalories <= 0 {
+            return "Goal reached! You've met your target for today."
+        } else if remainingCalories <= 300 {
+            return "Heads up! You have \(remainingCalories) kcal remaining.\n" +
+                "Consider a lighter option for your next meal."
+        } else {
+            return "Heads up! You have 200 kcal remaining.\n" +
+                "Consider a lighter option for your next meal."
+        }
+    }
+
+    public init(
+        dateString: String = "Today, 4 Sep 2026",
+        targetCalories: Int = 2654,
+        consumedCalories: Int = 200,
+        totalCarbs: Int = 17,
+        totalProtein: Int = 100,
+        totalFat: Int = 17,
+        totalFiber: Int = 100,
+        streakDays: Int = 0
+    ) {
+        self.dateString = dateString
+        self.targetCalories = targetCalories
+        self.consumedCalories = consumedCalories
+        self.totalCarbs = totalCarbs
+        self.totalProtein = totalProtein
+        self.totalFat = totalFat
+        self.totalFiber = totalFiber
+        self.streakDays = streakDays
+    }
+
+    public static let sampleDashboard = DailySummary(
+        dateString: "Today, 4 Sep 2026",
+        targetCalories: 2654,
+        consumedCalories: 200,
+        totalCarbs: 17,
+        totalProtein: 100,
+        totalFat: 17,
+        totalFiber: 100,
+        streakDays: 0
+    )
+}
