@@ -6,3 +6,11 @@
 //
 
 import Foundation
+
+enum AppRoute: Hashable, Identifiable {
+    case dashboard
+    case foodCapture
+    case manualLogging
+
+    var id: Self { self }
+}

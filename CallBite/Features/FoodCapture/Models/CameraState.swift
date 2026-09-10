@@ -6,3 +6,12 @@
 //
 
 import Foundation
+
+enum CameraState: Equatable {
+    case preparing
+    case live
+    case capturing
+    case captured
+    case permissionDenied
+    case unavailable
+}

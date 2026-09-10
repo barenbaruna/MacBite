@@ -8,12 +8,24 @@
 import Testing
 @testable import CallBite
 
-struct CallBiteTests {
+@Suite("DashboardViewModel Tests")
+struct DashboardViewModelTests {
+    @Test("Membuka dan menutup pilihan pencatatan makanan")
+    @MainActor
+    func togglesLoggingOptions() {
+        // Given
+        let viewModel = DashboardViewModel()
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-        // Swift Testing Documentation
-        // https://developer.apple.com/documentation/testing
+        // When
+        viewModel.toggleLoggingOptions()
+
+        // Then
+        #expect(viewModel.isShowingLoggingOptions)
+
+        // When
+        viewModel.hideLoggingOptions()
+
+        // Then
+        #expect(!viewModel.isShowingLoggingOptions)
     }
-
 }
