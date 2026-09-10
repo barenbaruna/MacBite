@@ -8,7 +8,7 @@
 import SwiftUI
 
 extension View {
-    /// Menerapkan alignment center secara horizontal dalam lebar maksimum
+    /// Centers the view horizontally within an infinite maximum width.
     func hCentered() -> some View {
         frame(maxWidth: .infinity, alignment: .center)
     }
