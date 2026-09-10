@@ -13,28 +13,51 @@ struct ManualIngredientListView: View {
     let onPortionChanged: (UUID, String) -> Void
     let onCookingMethodChanged: (UUID, String) -> Void
     let onAddIngredient: () -> Void
+    var onRemoveIngredient: ((UUID) -> Void)?
 
     var body: some View {
-        VStack(spacing: AppSpacing.large) {
-            ingredientsCard
+        VStack(spacing: AppSpacing.medium) {
+            ForEach(Array(ingredients.enumerated()), id: \.element.id) { index, ingredient in
+                ingredientCard(for: ingredient, index: index)
+            }
+
             addIngredientButton
         }
     }
 
-    private var ingredientsCard: some View {
-        VStack(spacing: .zero) {
-            ForEach(Array(ingredients.enumerated()), id: \.element.id) { index, ingredient in
-                if index > 0 {
-                    Divider()
-                        .overlay(AppColor.manualSeparator)
-                        .padding(.horizontal, AppSpacing.regular)
-                }
-
-                ingredientGroup(for: ingredient)
+    private func ingredientCard(for ingredient: ManualIngredientInput, index: Int) -> some View {
+        VStack(alignment: .leading, spacing: .zero) {
+            if ingredients.count > 1 {
+                cardHeader(for: ingredient, index: index)
             }
+
+            ingredientGroup(for: ingredient)
         }
         .background(AppColor.manualFieldBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
+    }
+
+    private func cardHeader(for ingredient: ManualIngredientInput, index: Int) -> some View {
+        HStack {
+            Text("Ingredient \(index + 1)")
+                .font(AppTypography.caption.weight(.semibold))
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
+
+            Spacer()
+
+            Button(role: .destructive) {
+                onRemoveIngredient?(ingredient.id)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(uiColor: .systemRed))
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Remove Ingredient \(index + 1)")
+        }
+        .padding(.horizontal, AppSpacing.regular)
+        .padding(.top, AppSpacing.small)
     }
 
     private func ingredientGroup(for ingredient: ManualIngredientInput) -> some View {
@@ -62,5 +85,6 @@ struct ManualIngredientListView: View {
         .buttonBorderShape(.circle)
         .accessibilityLabel("Add Ingredient")
         .frame(maxWidth: .infinity)
+        .padding(.top, AppSpacing.extraSmall)
     }
 }

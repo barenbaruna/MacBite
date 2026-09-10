@@ -41,6 +41,11 @@ final class ManualLoggingViewModel: ObservableObject {
         ingredients.append(ManualIngredientInput())
     }
 
+    func removeIngredient(id: UUID) {
+        guard ingredients.count > 1 else { return }
+        ingredients.removeAll(where: { $0.id == id })
+    }
+
     private func updateIngredientGroup(
         id: UUID,
         update: (inout ManualIngredientInput) -> Void

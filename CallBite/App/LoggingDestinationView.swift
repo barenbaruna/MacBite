@@ -6,10 +6,13 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct LoggingDestinationView: View {
     let route: AppRoute
     let onDismiss: () -> Void
+    var onUsePhoto: ((UIImage) -> Void)?
+    var onCalculate: ((String, [ManualIngredientInput]) -> Void)?
 
     @ViewBuilder
     var body: some View {
@@ -17,9 +20,19 @@ struct LoggingDestinationView: View {
         case .dashboard:
             DashboardFactory.makeView()
         case .foodCapture:
-            FoodCaptureFactory.makeView(onDismiss: onDismiss)
+            FoodCaptureFactory.makeView(
+                onDismiss: onDismiss,
+                onUsePhoto: { image in
+                    onUsePhoto?(image)
+                }
+            )
         case .manualLogging:
-            ManualLoggingFactory.makeView(onDismiss: onDismiss)
+            ManualLoggingFactory.makeView(
+                onDismiss: onDismiss,
+                onCalculate: { foodName, ingredients in
+                    onCalculate?(foodName, ingredients)
+                }
+            )
         }
     }
 }

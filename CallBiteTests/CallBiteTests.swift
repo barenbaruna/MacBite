@@ -294,7 +294,10 @@ struct CallBiteTests {
         #expect(savedProfile?.age == 23)
         #expect(savedProfile?.weightKg == 58.0)
     }
+}
 
+@Suite("FoodLoggingTests")
+struct FoodLoggingTests {
     @Test func testNutritionEditFieldProperties() {
         #expect(NutritionEditField.calories.unit == "kcal")
         #expect(NutritionEditField.protein.unit == "g")
@@ -324,5 +327,28 @@ struct CallBiteTests {
         #expect(food.protein == 20)
         #expect(food.carbs == 70)
         #expect(food.fat == 15)
+    }
+
+    @Test @MainActor func testDashboardResetAndOpenAddFood() {
+        let vm = DashboardViewModel()
+        #expect(!vm.isShowingAddFood)
+
+        let customFood = FoodItem(
+            name: "Nasi Padang",
+            mealType: "Lunch",
+            dateString: "10 September 2026",
+            calories: 650,
+            protein: 35,
+            carbs: 70,
+            fat: 25,
+            fiber: 3
+        )
+        vm.resetAndOpenAddFood(with: customFood)
+
+        #expect(vm.isShowingAddFood)
+        #expect(vm.currentFood.name == "Nasi Padang")
+        #expect(vm.currentFood.calories == 650)
+        #expect(vm.flipAngle == 0.0)
+        #expect(!vm.isCardCompressed)
     }
 }

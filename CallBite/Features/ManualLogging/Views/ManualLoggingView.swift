@@ -91,7 +91,16 @@ struct ManualLoggingView: View {
                 onCookingMethodChanged: { id, value in
                     viewModel.updateCookingMethod(value, id: id)
                 },
-                onAddIngredient: viewModel.addIngredient
+                onAddIngredient: {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        viewModel.addIngredient()
+                    }
+                },
+                onRemoveIngredient: { id in
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        viewModel.removeIngredient(id: id)
+                    }
+                }
             )
         }
     }

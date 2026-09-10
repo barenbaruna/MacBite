@@ -51,4 +51,22 @@ struct ManualLoggingViewModelTests {
         #expect(viewModel.ingredients[0].portionGrams == "100")
         #expect(viewModel.ingredients[0].cookingMethod == "Boiled")
     }
+
+    @Test("Remove ingredient removes matching group when more than one exists")
+    @MainActor
+    func removesIngredientGroup() {
+        let viewModel = ManualLoggingViewModel()
+        viewModel.addIngredient()
+        #expect(viewModel.ingredients.count == 2)
+
+        let secondID = viewModel.ingredients[1].id
+        viewModel.removeIngredient(id: secondID)
+
+        #expect(viewModel.ingredients.count == 1)
+
+        // Cannot remove last remaining ingredient
+        let firstID = viewModel.ingredients[0].id
+        viewModel.removeIngredient(id: firstID)
+        #expect(viewModel.ingredients.count == 1)
+    }
 }
