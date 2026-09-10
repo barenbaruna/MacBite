@@ -18,6 +18,7 @@ struct LoggingOptionCard: View {
                 Image(systemName: systemImage)
                     .font(AppTypography.largeTitle)
                     .symbolRenderingMode(.hierarchical)
+                    .accessibilityHidden(true)
 
                 Text(title)
                     .font(AppTypography.headline)
@@ -27,8 +28,7 @@ struct LoggingOptionCard: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, AppSpacing.medium)
             .padding(.vertical, AppSpacing.extraExtraLarge)
-            .background(AppColor.loggingOptionBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.small, style: .continuous))
+            .dynamicGlassSurface(cornerRadius: AppCornerRadius.large)
         }
         .buttonStyle(.plain)
     }

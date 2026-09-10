@@ -5,8 +5,8 @@
 //  Created by Codex on 09/09/26.
 //
 
-import Testing
 @testable import CallBite
+import Testing
 
 @Suite("ManualLoggingViewModel Tests")
 struct ManualLoggingViewModelTests {

@@ -6,8 +6,8 @@
 //
 
 import AVFoundation
-import UIKit
 @testable import CallBite
+import UIKit
 
 final class MockCameraService: CameraServiceProtocol {
     let captureSession = AVCaptureSession()

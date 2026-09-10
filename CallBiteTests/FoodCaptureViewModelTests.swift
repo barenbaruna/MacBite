@@ -5,8 +5,8 @@
 //  Created by Joshua Valentine Manik on 09/09/26.
 //
 
-import Testing
 @testable import CallBite
+import Testing
 
 @Suite("FoodCaptureViewModel Tests")
 struct FoodCaptureViewModelTests {

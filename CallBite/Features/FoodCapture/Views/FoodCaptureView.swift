@@ -136,16 +136,7 @@ struct FoodCaptureView: View {
 
     private var liveCameraControls: some View {
         VStack {
-            HStack {
-                cameraControlButton(
-                    systemImage: "xmark",
-                    accessibilityLabel: "Close Camera",
-                    action: onDismiss
-                )
-                Spacer()
-            }
-            .padding(.top, AppSpacing.cameraTopControl)
-            .padding(.horizontal, AppSpacing.extraExtraLarge)
+            cameraTopBar
 
             Spacer()
 
@@ -153,40 +144,57 @@ struct FoodCaptureView: View {
                 CameraTipView()
             }
 
-            HStack {
-                PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    CameraControlLabel(
-                        systemImage: "photo",
-                        accessibilityLabel: "Choose from Gallery"
-                    )
-                }
-
-                Spacer()
-
-                CaptureButton {
-                    AppHaptics.primaryAction()
-                    Task {
-                        await viewModel.capturePhoto()
-                    }
-                }
-                .disabled(viewModel.state != .live)
-
-                Spacer()
-
-                cameraControlButton(
-                    systemImage: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill",
-                    accessibilityLabel: viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On"
-                ) {
-                    AppHaptics.selectionChanged()
-                    Task {
-                        await viewModel.toggleFlash()
-                    }
-                }
-                .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
-            }
-            .padding(.horizontal, AppSpacing.extraExtraLarge)
-            .padding(.bottom, AppSpacing.extraLarge)
+            cameraBottomControls
         }
+    }
+
+    private var cameraTopBar: some View {
+        HStack {
+            cameraControlButton(
+                systemImage: "xmark",
+                accessibilityLabel: "Close Camera",
+                action: onDismiss
+            )
+            Spacer()
+        }
+        .padding(.top, AppSpacing.cameraTopControl)
+        .padding(.horizontal, AppSpacing.extraExtraLarge)
+    }
+
+    private var cameraBottomControls: some View {
+        HStack {
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                CameraControlLabel(
+                    systemImage: "photo",
+                    accessibilityLabel: "Choose from Gallery"
+                )
+            }
+
+            Spacer()
+
+            CaptureButton {
+                AppHaptics.primaryAction()
+                Task {
+                    await viewModel.capturePhoto()
+                }
+            }
+            .disabled(viewModel.state != .live)
+
+            Spacer()
+
+            cameraControlButton(
+                systemImage: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill",
+                accessibilityLabel: viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On"
+            ) {
+                AppHaptics.selectionChanged()
+                Task {
+                    await viewModel.toggleFlash()
+                }
+            }
+            .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
+        }
+        .padding(.horizontal, AppSpacing.extraExtraLarge)
+        .padding(.bottom, AppSpacing.extraLarge)
     }
 
     private func cameraControlButton(
