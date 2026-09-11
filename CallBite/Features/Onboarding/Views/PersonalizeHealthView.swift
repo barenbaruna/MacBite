@@ -62,29 +62,14 @@ struct PersonalizeHealthView: View {
         .background(Color(uiColor: .systemBackground))
         .preferredColorScheme(.dark)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .navigationBarBackButtonHidden(activeField != nil)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                if activeField != nil {
+            if activeField != nil {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(action: cancelEditing) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(AppColor.white)
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.12))
-                            .clipShape(Circle())
                     }
                     .accessibilityLabel("Cancel editing")
-                } else {
-                    Button(action: handleBackButton) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(AppColor.white)
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.12))
-                            .clipShape(Circle())
-                    }
-                    .accessibilityLabel("Kembali")
                 }
             }
         }
@@ -172,10 +157,6 @@ private extension PersonalizeHealthView {
         snapshotCurrentValues()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) { activeField = nil }
-    }
-
-    func handleBackButton() {
-        viewModel.cancelPersonalize()
     }
 
     func cancelEditing() {

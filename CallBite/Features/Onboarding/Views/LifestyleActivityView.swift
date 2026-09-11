@@ -50,7 +50,7 @@ struct LifestyleActivityView: View {
     }
 
     private var activityOptionsList: some View {
-        VStack(spacing: AppSpacing.small) {
+        VStack(spacing: AppSpacing.xs) {
             ForEach(ActivityLevel.allCases) { level in
                 activityCard(for: level)
             }
@@ -70,27 +70,27 @@ struct LifestyleActivityView: View {
     }
 
     private func activityCardContent(for level: ActivityLevel, isSelected: Bool) -> some View {
-        HStack(spacing: AppSpacing.medium) {
+        HStack(spacing: AppSpacing.sm) {
             Image(systemName: level.iconName)
-                .font(AppTypography.title2)
+                .font(AppTypography.title1)
                 .foregroundStyle(isSelected ? AppColor.orange400 : Color(uiColor: .secondaryLabel))
                 .frame(width: 32, alignment: .center)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
                 Text(level.rawValue)
-                    .font(AppTypography.headline)
+                    .font(AppTypography.body)
                     .foregroundStyle(.primary)
 
                 Text(level.subtitle)
-                    .font(AppTypography.subheadline)
+                    .font(AppTypography.footnote)
                     .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, AppSpacing.medium)
+        .padding(.horizontal, AppSpacing.regular)
         .padding(.vertical, AppSpacing.medium)
         .background(isSelected ? AppColor.activityCardSelected : AppColor.activityCardNormal)
         .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))

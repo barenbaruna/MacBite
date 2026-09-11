@@ -27,7 +27,7 @@ struct PersonalizeFormCard: View {
             dataRow(title: "Height", value: "\(selectedHeightCm)cm", field: .height)
         }
         .padding(.horizontal, AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppColor.activityCardNormal)
         .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
     }
 
