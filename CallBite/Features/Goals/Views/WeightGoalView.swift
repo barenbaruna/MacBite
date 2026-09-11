@@ -38,22 +38,34 @@ struct WeightGoalView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             headerSection
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.md)
+                .padding(.top, AppSpacing.medium)
+                .padding(.bottom, AppSpacing.extraLarge)
 
-            Spacer(minLength: AppSpacing.md)
+            Spacer(minLength: AppSpacing.medium)
 
             centerContentSection
 
-            Spacer(minLength: AppSpacing.md)
+            Spacer(minLength: AppSpacing.medium)
 
             doneButton
-                .padding(.bottom, AppSpacing.xl)
+                .padding(.bottom, AppSpacing.extraLarge)
         }
-        .padding(.horizontal, AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.large)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if showsDismissButton {
+            if let onBack {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(AppColor.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                    .accessibilityLabel("Kembali")
+                }
+            } else if showsDismissButton {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(role: .close) {
                         dismiss()
@@ -66,9 +78,10 @@ struct WeightGoalView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
             Text("Let’s Set Your Target")
-                .font(AppTypography.largeTitle)
+                .font(AppTypography.title2)
+                .fontWeight(.bold)
                 .foregroundStyle(.primary)
 
             Text("This is a safe and realistic weight goal that can bring meaningful health benefits.")
@@ -79,14 +92,14 @@ struct WeightGoalView: View {
     }
 
     private var centerContentSection: some View {
-        VStack(spacing: AppSpacing.xl) {
+        VStack(spacing: AppSpacing.large) {
             // 1. Goal display and category badge
-            VStack(spacing: AppSpacing.xs) {
+            VStack(spacing: AppSpacing.extraSmall) {
                 Text("Weight Goal")
-                    .font(AppTypography.subheadline.weight(.medium))
+                    .font(AppTypography.headline.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xxs) {
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.extraExtraSmall) {
                     Text("\(Int(viewModel.targetWeightKg.rounded()))")
                         .font(.system(size: 52, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
@@ -99,55 +112,41 @@ struct WeightGoalView: View {
                 .animation(.smooth(duration: 0.2), value: viewModel.targetWeightKg)
 
                 dynamicGoalBadge
-                    .padding(.top, AppSpacing.xs)
+                    .padding(.top, AppSpacing.extraSmall)
             }
 
-            // 2. Slider Track
+            // 2. Zone Status Label
+            Text(viewModel.currentZone.title)
+                .font(AppTypography.subheadline.weight(.bold))
+                .foregroundStyle(Color.white)
+                .tracking(0.6)
+                .padding(.top, AppSpacing.large)
+
+            // 3. Proportional 3-Zone Ruler Slider
             ScientificWeightSlider(
                 value: $viewModel.targetWeightKg,
                 range: viewModel.minSliderWeight...viewModel.maxSliderWeight,
                 healthyRange: viewModel.healthyWeightRange
             )
-            .padding(.vertical, AppSpacing.xs)
-
-            // 3. Recommended weight information
-            recommendationSection
+            .padding(.top, AppSpacing.extraSmall)
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var dynamicGoalBadge: some View {
-        HStack(spacing: AppSpacing.xs) {
+        HStack(spacing: AppSpacing.extraSmall) {
             Image(systemName: viewModel.activeCategory.sfSymbol)
                 .accessibilityHidden(true)
             Text(viewModel.activeCategory.displayName)
                 .font(AppTypography.footnote.weight(.bold))
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.xs)
+        .padding(.horizontal, AppSpacing.medium)
+        .padding(.vertical, AppSpacing.extraSmall)
         .background(viewModel.activeButtonColor.opacity(0.18))
         .foregroundStyle(viewModel.activeButtonColor)
         .clipShape(Capsule())
         .contentTransition(.symbolEffect(.replace))
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.activeCategory)
-    }
-
-    private var recommendationSection: some View {
-        VStack(spacing: AppSpacing.xxs) {
-            Text("RECOMMENDED WEIGHT FOR ADULTS")
-                .font(AppTypography.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text("\(Int(viewModel.healthyWeightRange.lowerBound)) – \(Int(viewModel.healthyWeightRange.upperBound)) KG")
-                .font(AppTypography.headline.weight(.bold))
-                .foregroundStyle(AppColor.mainWeight)
-
-            Text("A healthy and realistic range based on your profile.")
-                .font(AppTypography.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var doneButton: some View {
@@ -157,6 +156,7 @@ struct WeightGoalView: View {
         } label: {
             Text("Done")
                 .font(AppTypography.button)
+                .foregroundStyle(Color.black)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.glassProminent)

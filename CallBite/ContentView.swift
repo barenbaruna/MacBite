@@ -23,6 +23,8 @@ struct ContentView: View {
             return .testLoggingOverlay
         } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
             return .testManualLogging
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoal") {
+            return .testWeightGoal
         } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
             return .testPersonalize
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
@@ -129,6 +131,17 @@ struct ContentView: View {
                 PersonalizeHealthView(viewModel: OnboardingViewModel())
             }
             .preferredColorScheme(.dark)
+
+        case .testWeightGoal:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 78.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -216,6 +229,7 @@ private enum AppScreenState {
     case testLoggingOverlay
     case testManualLogging
     case testPersonalize
+    case testWeightGoal
 }
 
 #Preview {

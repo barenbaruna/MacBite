@@ -18,6 +18,7 @@ enum AppSpacing {
 
     // MARK: - Semantic Scale Aliases
 
+    static let extraExtraSmall: CGFloat = xxs
     static let extraSmall: CGFloat = xxs
     static let small: CGFloat = xs
     static let regular: CGFloat = sm

@@ -21,7 +21,7 @@ enum BiologicalSex: String, CaseIterable, Identifiable, Codable {
         case .notSet: return "Not Set"
         case .female: return "Female"
         case .male: return "Male"
-        case .other: return "Other"
+        case .other: return "Prefer not to say"
         }
     }
 

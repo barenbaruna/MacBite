@@ -17,6 +17,22 @@ enum AppHaptics {
         generator.selectionChanged()
     }
 
+    /// Triggered on continuous slider step increments for crisp, smooth mechanical feel.
+    @MainActor
+    static func sliderTick() {
+        let generator = UIImpactFeedbackGenerator(style: .rigid)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.85)
+    }
+
+    /// Triggered firmly when the user's slider crosses between scientific recommendation zones.
+    @MainActor
+    static func boundaryCrossed() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred(intensity: 1.0)
+    }
+
     /// Triggered on primary CTA actions and capture button taps.
     @MainActor
     static func primaryAction() {

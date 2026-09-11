@@ -44,8 +44,8 @@ struct PersonalizeHealthView: View {
     var body: some View {
         VStack(spacing: .zero) {
             titleSection
-                .padding(.top, AppSpacing.small)
-                .padding(.bottom, AppSpacing.large)
+                .padding(.top, AppSpacing.medium)
+                .padding(.bottom, AppSpacing.extraLarge)
 
             PersonalizeFormCard(
                 formattedDate: formattedDateString,
@@ -87,14 +87,15 @@ struct PersonalizeHealthView: View {
     private var titleSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
             Text("Personalize Fitness and Health")
-                .font(AppTypography.title1.weight(.bold))
+                .font(AppTypography.title2)
+                .fontWeight(.bold)
                 .foregroundStyle(Color(uiColor: .label))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(
                 "We use the information you share to personalize your daily calorie and macronutrients needs."
             )
-            .font(AppTypography.subheadline)
+            .font(AppTypography.body)
             .foregroundStyle(Color(uiColor: .secondaryLabel))
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)

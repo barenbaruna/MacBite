@@ -69,7 +69,6 @@ struct HealthPermissionPromptView: View {
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.large)
-        .tint(AppColor.orange500)
         .disabled(viewModel.isLoading)
     }
 

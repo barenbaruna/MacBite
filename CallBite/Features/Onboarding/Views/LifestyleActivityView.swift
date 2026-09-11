@@ -20,26 +20,27 @@ struct LifestyleActivityView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             headerSection
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.lg)
+                .padding(.top, AppSpacing.medium)
+                .padding(.bottom, AppSpacing.extraLarge)
 
             activityOptionsList
 
             Spacer()
 
             continueButton
-                .padding(.bottom, AppSpacing.xl)
+                .padding(.bottom, AppSpacing.extraLarge)
         }
-        .padding(.horizontal, AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.large)
         .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Subviews
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
             Text("Lifestyle Activity")
-                .font(AppTypography.largeTitle)
+                .font(AppTypography.title2)
+                .fontWeight(.bold)
                 .foregroundStyle(.primary)
 
             Text("Your activity data helps us adjust your daily calorie needs based on how active you are.")
@@ -49,7 +50,7 @@ struct LifestyleActivityView: View {
     }
 
     private var activityOptionsList: some View {
-        VStack(spacing: AppSpacing.sm) {
+        VStack(spacing: AppSpacing.small) {
             ForEach(ActivityLevel.allCases) { level in
                 activityCard(for: level)
             }
@@ -62,33 +63,41 @@ struct LifestyleActivityView: View {
         return Button {
             viewModel.selectActivity(level)
         } label: {
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: level.iconName)
-                    .font(AppTypography.title2)
-                    .foregroundStyle(isSelected ? AppColor.orange400 : Color(uiColor: .secondaryLabel))
-                    .frame(width: 32, alignment: .center)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(level.rawValue)
-                        .font(AppTypography.headline)
-                        .foregroundStyle(.primary)
-
-                    Text(level.subtitle)
-                        .font(AppTypography.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.md)
-            .background(isSelected ? AppColor.activityCardSelected : AppColor.activityCardNormal)
-            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
+            activityCardContent(for: level, isSelected: isSelected)
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSelected)
+    }
+
+    private func activityCardContent(for level: ActivityLevel, isSelected: Bool) -> some View {
+        HStack(spacing: AppSpacing.medium) {
+            Image(systemName: level.iconName)
+                .font(AppTypography.title2)
+                .foregroundStyle(isSelected ? AppColor.orange400 : Color(uiColor: .secondaryLabel))
+                .frame(width: 32, alignment: .center)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
+                Text(level.rawValue)
+                    .font(AppTypography.headline)
+                    .foregroundStyle(.primary)
+
+                Text(level.subtitle)
+                    .font(AppTypography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, AppSpacing.medium)
+        .padding(.vertical, AppSpacing.medium)
+        .background(isSelected ? AppColor.activityCardSelected : AppColor.activityCardNormal)
+        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous)
+                .stroke(isSelected ? AppColor.activityCardSelectedBorder : Color.clear, lineWidth: 1)
+        )
     }
 
     private var continueButton: some View {

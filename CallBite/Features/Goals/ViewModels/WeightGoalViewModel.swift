@@ -25,6 +25,7 @@ final class WeightGoalViewModel {
     var triggerCategoryHaptic: Bool = false
 
     private var previousCategory: GoalCategory = .cutting
+    private var previousZone: WeightRangeZone?
 
     var insight: ScientificGoalInsight {
         ScientificWeightEngine.evaluate(
@@ -38,6 +39,28 @@ final class WeightGoalViewModel {
         insight.category
     }
 
+    var healthyWeightRange: ClosedRange<Double> {
+        ScientificWeightEngine.healthyWeightRange(heightCm: heightCm)
+    }
+
+    var currentZone: WeightRangeZone {
+        if targetWeightKg < healthyWeightRange.lowerBound {
+            return .belowRecommended
+        } else if targetWeightKg > healthyWeightRange.upperBound {
+            return .aboveRecommended
+        } else {
+            return .recommended
+        }
+    }
+
+    var currentZoneColor: Color {
+        switch currentZone {
+        case .belowRecommended: return AppColor.goalCyan
+        case .recommended: return AppColor.goalGreen
+        case .aboveRecommended: return AppColor.goalCoral
+        }
+    }
+
     init(currentWeightKg: Double = 60.0, targetWeightKg: Double = 56.0, heightCm: Double = 168.0) {
         self.currentWeightKg = currentWeightKg
         self.targetWeightKg = targetWeightKg
@@ -47,6 +70,14 @@ final class WeightGoalViewModel {
             targetWeightKg: targetWeightKg,
             heightCm: heightCm
         ).category
+        let range = ScientificWeightEngine.healthyWeightRange(heightCm: heightCm)
+        if targetWeightKg < range.lowerBound {
+            self.previousZone = .belowRecommended
+        } else if targetWeightKg > range.upperBound {
+            self.previousZone = .aboveRecommended
+        } else {
+            self.previousZone = .recommended
+        }
     }
 
     private func handleWeightChange() {
@@ -55,6 +86,12 @@ final class WeightGoalViewModel {
             previousCategory = newCategory
             triggerCategoryHaptic.toggle()
         }
+
+        let newZone = currentZone
+        if let prev = previousZone, newZone != prev {
+            AppHaptics.boundaryCrossed()
+        }
+        previousZone = newZone
     }
 
     var activeButtonColor: Color {
@@ -63,9 +100,5 @@ final class WeightGoalViewModel {
         case .maintaining: return AppColor.goalGreen
         case .bulking: return AppColor.goalCoral
         }
-    }
-
-    var healthyWeightRange: ClosedRange<Double> {
-        ScientificWeightEngine.healthyWeightRange(heightCm: heightCm)
     }
 }
