@@ -31,6 +31,8 @@ struct ContentView: View {
             return .testWeightGoalBulking
         } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoal") {
             return .testWeightGoal
+        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalizeEditing") {
+            return .testPersonalizeEditing
         } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
             return .testPersonalize
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
@@ -76,7 +78,7 @@ struct ContentView: View {
                     let vm = ProfileViewModel(
                         initialProfile: UserHealthProfile(
                             age: 22,
-                            biologicalSex: .male,
+                            biologicalSex: .preferNotToSay,
                             weightKg: 56.0,
                             heightCm: 162.0
                         )
@@ -152,6 +154,15 @@ struct ContentView: View {
         case .testPersonalize:
             NavigationStack {
                 PersonalizeHealthView(viewModel: OnboardingViewModel())
+            }
+            .preferredColorScheme(.dark)
+
+        case .testPersonalizeEditing:
+            NavigationStack {
+                PersonalizeHealthView(
+                    viewModel: OnboardingViewModel(),
+                    initialActiveField: .age
+                )
             }
             .preferredColorScheme(.dark)
 
@@ -275,6 +286,7 @@ private enum AppScreenState {
     case testLoggingOverlay
     case testManualLogging
     case testPersonalize
+    case testPersonalizeEditing
     case testWeightGoal
     case testWeightGoalCutting
     case testWeightGoalBulking

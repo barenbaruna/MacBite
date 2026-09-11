@@ -7,33 +7,33 @@
 
 import SwiftUI
 
-/// Glass form card displaying health metrics summary rows.
+/// Form card displaying health metrics summary rows (Age, Sex, Weight, Height).
 struct PersonalizeFormCard: View {
-    let formattedDate: String
+    let selectedAge: Int
     let selectedSex: BiologicalSex
-    let selectedHeightCm: Int
     let selectedWeightKg: Int
+    let selectedHeightCm: Int
     let activeField: PersonalizeField?
     let onSelectField: (PersonalizeField) -> Void
 
     var body: some View {
         VStack(spacing: .zero) {
-            dataRow(title: "Date of Birth", value: formattedDate, field: .dateOfBirth)
+            dataRow(title: "Age", value: "\(selectedAge) years", field: .age)
             divider
             dataRow(title: "Sex", value: selectedSex.displayName, field: .sex)
             divider
-            dataRow(title: "Height", value: "\(selectedHeightCm) cm", field: .height)
+            dataRow(title: "Weight", value: "\(selectedWeightKg)kg", field: .weight)
             divider
-            dataRow(title: "Weight", value: "\(selectedWeightKg) kg", field: .weight)
+            dataRow(title: "Height", value: "\(selectedHeightCm)cm", field: .height)
         }
-        .padding(.horizontal, AppSpacing.medium)
-        .background(.regularMaterial)
+        .padding(.horizontal, AppSpacing.large)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.large, style: .continuous))
     }
 
     private var divider: some View {
         Divider()
-            .background(Color(uiColor: .separator).opacity(0.3))
+            .background(Color(uiColor: .separator).opacity(0.35))
     }
 
     private func dataRow(title: String, value: String, field: PersonalizeField) -> some View {
@@ -63,11 +63,11 @@ struct PersonalizeFormCard: View {
 
 #Preview {
     PersonalizeFormCard(
-        formattedDate: "14 Apr 1996",
-        selectedSex: .female,
+        selectedAge: 22,
+        selectedSex: .preferNotToSay,
+        selectedWeightKg: 56,
         selectedHeightCm: 162,
-        selectedWeightKg: 72,
-        activeField: .dateOfBirth,
+        activeField: .age,
         onSelectField: { _ in }
     )
     .padding()

@@ -45,14 +45,14 @@ final class ProfileViewModel: ObservableObject {
     init(
         initialProfile: UserHealthProfile = UserHealthProfile(
             age: 22,
-            biologicalSex: .male,
+            biologicalSex: .preferNotToSay,
             weightKg: 56.0,
             heightCm: 162.0
         ),
         onSave: ((UserHealthProfile) -> Void)? = nil
     ) {
         self.age = initialProfile.age > 0 ? initialProfile.age : 22
-        self.biologicalSex = initialProfile.biologicalSex != .notSet ? initialProfile.biologicalSex : .male
+        self.biologicalSex = initialProfile.biologicalSex != .notSet ? initialProfile.biologicalSex : .preferNotToSay
         self.weightKg = initialProfile.weightKg > 0 ? initialProfile.weightKg : 56.0
         self.heightCm = initialProfile.heightCm > 0 ? initialProfile.heightCm : 162.0
         self.targetWeightKg = initialProfile.targetWeightKg

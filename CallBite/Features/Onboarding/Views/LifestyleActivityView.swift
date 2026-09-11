@@ -18,7 +18,7 @@ struct LifestyleActivityView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: .zero) {
             headerSection
                 .padding(.top, AppSpacing.medium)
                 .padding(.bottom, AppSpacing.extraLarge)

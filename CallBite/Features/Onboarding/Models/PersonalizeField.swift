@@ -9,8 +9,8 @@ import Foundation
 
 /// Active field being edited in the health personalization form.
 enum PersonalizeField: Hashable {
-    case dateOfBirth
+    case age
     case sex
-    case height
     case weight
+    case height
 }

@@ -50,7 +50,8 @@ struct OnboardingContainerView: View {
             currentWeightKg: currentWeight,
             targetWeightKg: nil,
             heightCm: height,
-            onDone: { _, _ in
+            onDone: { targetWeight, goalCategory in
+                viewModel.saveGoal(targetWeight: targetWeight, category: goalCategory)
                 onFinish()
             }
         )

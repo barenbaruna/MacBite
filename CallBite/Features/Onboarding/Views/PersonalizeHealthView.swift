@@ -11,34 +11,25 @@ import SwiftUI
 struct PersonalizeHealthView: View {
     @ObservedObject private var viewModel: OnboardingViewModel
 
-    @State private var selectedDay: Int = 14
-    @State private var selectedMonth: Int = 4
-    @State private var selectedYear: Int = 1996
-    @State private var selectedSex: BiologicalSex = .female
+    @State private var selectedAge: Int = 22
+    @State private var selectedSex: BiologicalSex = .preferNotToSay
+    @State private var selectedWeightKg: Int = 56
     @State private var selectedHeightCm: Int = 162
-    @State private var selectedWeightKg: Int = 72
 
     @State private var activeField: PersonalizeField?
 
     // Snapshot state for rollback on cancellation
-    @State private var snapshotDay: Int = 14
-    @State private var snapshotMonth: Int = 4
-    @State private var snapshotYear: Int = 1996
-    @State private var snapshotSex: BiologicalSex = .female
+    @State private var snapshotAge: Int = 22
+    @State private var snapshotSex: BiologicalSex = .preferNotToSay
+    @State private var snapshotWeightKg: Int = 56
     @State private var snapshotHeightCm: Int = 162
-    @State private var snapshotWeightKg: Int = 72
 
-    init(viewModel: OnboardingViewModel) {
+    init(
+        viewModel: OnboardingViewModel,
+        initialActiveField: PersonalizeField? = nil
+    ) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
-    }
-
-    private var formattedDateString: String {
-        let monthSymbols = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ]
-        let monthName = monthSymbols[max(0, min(11, selectedMonth - 1))]
-        return "\(selectedDay) \(monthName) \(selectedYear)"
+        self._activeField = State(initialValue: initialActiveField)
     }
 
     var body: some View {
@@ -48,10 +39,10 @@ struct PersonalizeHealthView: View {
                 .padding(.bottom, AppSpacing.extraLarge)
 
             PersonalizeFormCard(
-                formattedDate: formattedDateString,
+                selectedAge: selectedAge,
                 selectedSex: selectedSex,
-                selectedHeightCm: selectedHeightCm,
                 selectedWeightKg: selectedWeightKg,
+                selectedHeightCm: selectedHeightCm,
                 activeField: activeField,
                 onSelectField: startEditing
             )
@@ -71,10 +62,30 @@ struct PersonalizeHealthView: View {
         .background(Color(uiColor: .systemBackground))
         .preferredColorScheme(.dark)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(activeField != nil)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
-            if activeField != nil {
-                editingToolbar
+            ToolbarItem(placement: .topBarLeading) {
+                if activeField != nil {
+                    Button(action: cancelEditing) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(AppColor.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                    .accessibilityLabel("Cancel editing")
+                } else {
+                    Button(action: handleBackButton) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(AppColor.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                    .accessibilityLabel("Kembali")
+                }
             }
         }
         .onAppear {
@@ -133,13 +144,10 @@ struct PersonalizeHealthView: View {
         if activeField != nil {
             PersonalizeWheelPickers(
                 activeField: activeField,
-                selectedDay: $selectedDay,
-                selectedMonth: $selectedMonth,
-                selectedYear: $selectedYear,
+                selectedAge: $selectedAge,
                 selectedSex: $selectedSex,
-                selectedHeightCm: $selectedHeightCm,
                 selectedWeightKg: $selectedWeightKg,
-                onDateChanged: { clampDayForMonth(selectedMonth, year: selectedYear) }
+                selectedHeightCm: $selectedHeightCm
             )
             .frame(height: 216)
             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -147,24 +155,6 @@ struct PersonalizeHealthView: View {
             continueButton
                 .padding(.bottom, AppSpacing.extraLarge)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-
-    @ToolbarContentBuilder
-    private var editingToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button("Cancel") {
-                cancelEditing()
-            }
-            .tint(AppColor.orange500)
-        }
-
-        ToolbarItem(placement: .topBarTrailing) {
-            Button("Done") {
-                doneEditing()
-            }
-            .buttonStyle(.glassProminent)
-            .tint(AppColor.orange500)
         }
     }
 }
@@ -179,8 +169,13 @@ private extension PersonalizeHealthView {
     }
 
     func doneEditing() {
+        snapshotCurrentValues()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) { activeField = nil }
+    }
+
+    func handleBackButton() {
+        viewModel.cancelPersonalize()
     }
 
     func cancelEditing() {
@@ -190,61 +185,42 @@ private extension PersonalizeHealthView {
     }
 
     func snapshotCurrentValues() {
-        snapshotDay = selectedDay
-        snapshotMonth = selectedMonth
-        snapshotYear = selectedYear
+        snapshotAge = selectedAge
         snapshotSex = selectedSex
-        snapshotHeightCm = selectedHeightCm
         snapshotWeightKg = selectedWeightKg
+        snapshotHeightCm = selectedHeightCm
     }
 
     func restoreSnapshotValues() {
-        selectedDay = snapshotDay
-        selectedMonth = snapshotMonth
-        selectedYear = snapshotYear
+        selectedAge = snapshotAge
         selectedSex = snapshotSex
-        selectedHeightCm = snapshotHeightCm
         selectedWeightKg = snapshotWeightKg
-    }
-
-    func clampDayForMonth(_ month: Int, year: Int) {
-        var components = DateComponents()
-        components.year = year
-        components.month = month
-        let calendar = Calendar.current
-        if let date = calendar.date(from: components),
-           let range = calendar.range(of: .day, in: .month, for: date) {
-            if selectedDay > range.count {
-                selectedDay = range.count
-            }
-        }
+        selectedHeightCm = snapshotHeightCm
     }
 
     func initializeDefaultsFromProfile() {
         let profile = viewModel.healthProfile
         if profile.age > 0 {
-            let currentYear = Calendar.current.component(.year, from: Date())
-            selectedYear = max(1920, currentYear - profile.age)
+            selectedAge = profile.age
         }
-        if profile.biologicalSex != .notSet { selectedSex = profile.biologicalSex }
-        if profile.heightCm > 0 { selectedHeightCm = Int(profile.heightCm.rounded()) }
-        if profile.weightKg > 0 { selectedWeightKg = Int(profile.weightKg.rounded()) }
+        if profile.biologicalSex != .notSet {
+            selectedSex = profile.biologicalSex
+        } else {
+            selectedSex = .preferNotToSay
+        }
+        if profile.weightKg > 0 {
+            selectedWeightKg = Int(profile.weightKg.rounded())
+        }
+        if profile.heightCm > 0 {
+            selectedHeightCm = Int(profile.heightCm.rounded())
+        }
         snapshotCurrentValues()
     }
 
     func saveAndContinue() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        var components = DateComponents()
-        components.year = selectedYear
-        components.month = selectedMonth
-        components.day = selectedDay
-        let birthDate = Calendar.current.date(from: components) ?? Date()
-
-        let ageComponents = Calendar.current.dateComponents([.year], from: birthDate, to: Date())
-        let calculatedAge = max(1, ageComponents.year ?? 25)
-
         viewModel.saveManualProfile(
-            age: calculatedAge,
+            age: selectedAge,
             sex: selectedSex,
             heightCm: Double(selectedHeightCm),
             weightKg: Double(selectedWeightKg)

@@ -16,7 +16,7 @@ struct ProfileView: View {
         viewModel: ProfileViewModel? = nil,
         initialProfile: UserHealthProfile = UserHealthProfile(
             age: 22,
-            biologicalSex: .male,
+            biologicalSex: .preferNotToSay,
             weightKg: 56.0,
             heightCm: 162.0
         ),

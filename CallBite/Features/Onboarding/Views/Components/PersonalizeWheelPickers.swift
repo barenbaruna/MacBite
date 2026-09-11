@@ -10,83 +10,37 @@ import SwiftUI
 /// Container presenting the active wheel picker for health personalization.
 struct PersonalizeWheelPickers: View {
     let activeField: PersonalizeField?
-    @Binding var selectedDay: Int
-    @Binding var selectedMonth: Int
-    @Binding var selectedYear: Int
+    @Binding var selectedAge: Int
     @Binding var selectedSex: BiologicalSex
-    @Binding var selectedHeightCm: Int
     @Binding var selectedWeightKg: Int
-    let onDateChanged: () -> Void
+    @Binding var selectedHeightCm: Int
 
     @ViewBuilder
     var body: some View {
         switch activeField {
-        case .dateOfBirth:
-            DateOfBirthWheelPicker(
-                selectedDay: $selectedDay,
-                selectedMonth: $selectedMonth,
-                selectedYear: $selectedYear,
-                onDateChanged: onDateChanged
-            )
+        case .age:
+            AgeWheelPicker(selectedAge: $selectedAge)
         case .sex:
             SexWheelPicker(selectedSex: $selectedSex)
-        case .height:
-            HeightWheelPicker(selectedHeightCm: $selectedHeightCm)
         case .weight:
             WeightWheelPicker(selectedWeightKg: $selectedWeightKg)
+        case .height:
+            HeightWheelPicker(selectedHeightCm: $selectedHeightCm)
         case .none:
             EmptyView()
         }
     }
 }
 
-// MARK: - Date of Birth Wheel Picker
+// MARK: - Age Wheel Picker
 
-struct DateOfBirthWheelPicker: View {
-    @Binding var selectedDay: Int
-    @Binding var selectedMonth: Int
-    @Binding var selectedYear: Int
-    let onDateChanged: () -> Void
-
-    private let fullMonthSymbols: [String] = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ]
+struct AgeWheelPicker: View {
+    @Binding var selectedAge: Int
 
     var body: some View {
-        HStack(spacing: .zero) {
-            dayPicker
-            monthPicker
-            yearPicker
-        }
-        .onChange(of: selectedMonth) { _, _ in onDateChanged() }
-        .onChange(of: selectedYear) { _, _ in onDateChanged() }
-    }
-
-    private var dayPicker: some View {
-        Picker("Day", selection: $selectedDay) {
-            ForEach(1...31, id: \.self) { day in
-                Text("\(day)").tag(day)
-            }
-        }
-        .pickerStyle(.wheel)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var monthPicker: some View {
-        Picker("Month", selection: $selectedMonth) {
-            ForEach(1...12, id: \.self) { month in
-                Text(fullMonthSymbols[month - 1]).tag(month)
-            }
-        }
-        .pickerStyle(.wheel)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var yearPicker: some View {
-        Picker("Year", selection: $selectedYear) {
-            ForEach(1920...2026, id: \.self) { year in
-                Text(verbatim: "\(year)").tag(year)
+        Picker("Age", selection: $selectedAge) {
+            ForEach(10...100, id: \.self) { age in
+                Text("\(age) years").tag(age)
             }
         }
         .pickerStyle(.wheel)
@@ -110,22 +64,6 @@ struct SexWheelPicker: View {
     }
 }
 
-// MARK: - Height Wheel Picker
-
-struct HeightWheelPicker: View {
-    @Binding var selectedHeightCm: Int
-
-    var body: some View {
-        Picker("Height", selection: $selectedHeightCm) {
-            ForEach(100...250, id: \.self) { height in
-                Text("\(height) cm").tag(height)
-            }
-        }
-        .pickerStyle(.wheel)
-        .frame(maxWidth: .infinity)
-    }
-}
-
 // MARK: - Weight Wheel Picker
 
 struct WeightWheelPicker: View {
@@ -142,16 +80,29 @@ struct WeightWheelPicker: View {
     }
 }
 
+// MARK: - Height Wheel Picker
+
+struct HeightWheelPicker: View {
+    @Binding var selectedHeightCm: Int
+
+    var body: some View {
+        Picker("Height", selection: $selectedHeightCm) {
+            ForEach(100...250, id: \.self) { height in
+                Text("\(height) cm").tag(height)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(maxWidth: .infinity)
+    }
+}
+
 #Preview {
     PersonalizeWheelPickers(
-        activeField: .dateOfBirth,
-        selectedDay: .constant(14),
-        selectedMonth: .constant(4),
-        selectedYear: .constant(1996),
-        selectedSex: .constant(.female),
-        selectedHeightCm: .constant(162),
-        selectedWeightKg: .constant(72),
-        onDateChanged: {}
+        activeField: .age,
+        selectedAge: .constant(22),
+        selectedSex: .constant(.preferNotToSay),
+        selectedWeightKg: .constant(56),
+        selectedHeightCm: .constant(162)
     )
     .frame(height: 216)
     .preferredColorScheme(.dark)

@@ -29,7 +29,7 @@ enum BiologicalSex: String, CaseIterable, Identifiable, Codable {
     static let other: BiologicalSex = .preferNotToSay
 
     /// Selectable cases for user input forms (excluding .notSet).
-    static let selectableCases: [BiologicalSex] = [.female, .male, .preferNotToSay]
+    static let selectableCases: [BiologicalSex] = [.preferNotToSay, .male, .female]
 
     /// Mifflin-St Jeor equation constant for Basal Metabolic Rate (BMR).
     /// - Male: +5

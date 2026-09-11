@@ -34,6 +34,24 @@ final class OnboardingViewModel: ObservableObject {
         selectedActivity != nil
     }
 
+    var calculatedBMR: Double {
+        GoalCalculator.calculateBMR(profile: healthProfile)
+    }
+
+    var calculatedTDEE: Double {
+        guard let activity = selectedActivity else { return 0.0 }
+        return GoalCalculator.calculateTDEE(bmr: calculatedBMR, activityLevel: activity)
+    }
+
+    func calculatedDailyCalories(for category: GoalCategory) -> Int {
+        GoalCalculator.calculateDailyCalorieTarget(tdee: calculatedTDEE, category: category)
+    }
+
+    func calculatedNutritionGoal(for category: GoalCategory) -> NutritionGoal {
+        let calories = calculatedDailyCalories(for: category)
+        return GoalCalculator.calculateMacronutrients(dailyCalories: calories)
+    }
+
     // MARK: - Dependencies
 
     private let healthKitService: HealthServiceProtocol
@@ -163,5 +181,10 @@ final class OnboardingViewModel: ObservableObject {
         generator.notificationOccurred(.success)
         currentStep = .targetGoal
         navigationPath = isHealthAccessGranted ? [.lifestyle, .targetGoal] : [.personalize, .lifestyle, .targetGoal]
+    }
+
+    func saveGoal(targetWeight: Double, category: GoalCategory) {
+        healthProfile.targetWeightKg = targetWeight
+        healthProfile.goalCategory = category
     }
 }
