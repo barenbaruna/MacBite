@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Continuous 3-zone proportional ruler slider with an open-center recommended layout and delta illumination.
+/// Continuous 3-zone proportional ruler slider with equal 1/3 division and borderless dynamic ticks.
 struct ScientificWeightSlider: View {
     @Binding var value: Double
     var currentWeight: Double = 60.0
@@ -31,8 +31,8 @@ struct ScientificWeightSlider: View {
             let thumbX = calculateX(for: value, layout: layout)
 
             ZStack(alignment: .leading) {
-                // 1. Proportional 3-zone ruler tracks (open middle zone)
-                rulerSegments(layout: layout)
+                // 1. Equal 1/3 borderless ruler tracks (middle zone open)
+                rulerSegments(layout: layout, thumbX: thumbX)
 
                 // 2. Horizontal continuous track line with delta illumination
                 horizontalCenterTrack(layout: layout, thumbX: thumbX)
@@ -72,39 +72,48 @@ struct ScientificWeightSlider: View {
 
     // MARK: - Subviews
 
-    private func rulerSegments(layout: SliderLayout) -> some View {
-        HStack(spacing: segmentGap) {
-            // Below Recommended Zone (Left: |||||| ticks box)
-            RulerZoneSegment(
-                width: layout.belowWidth,
+    private func rulerSegments(layout: SliderLayout, thumbX: CGFloat) -> some View {
+        let leftActiveRange = calculateLeftActiveRange(layout: layout, thumbX: thumbX)
+        let rightActiveRange = calculateRightActiveRange(layout: layout, thumbX: thumbX)
+
+        return HStack(spacing: segmentGap) {
+            // Below Recommended Zone (Left: borderless ticks)
+            RulerTicksSegment(
+                width: layout.segmentWidth,
                 height: sliderHeight,
-                isActive: activeZone == .belowRecommended,
+                activeRange: leftActiveRange,
                 accentColor: AppColor.goalCyan
             )
 
-            // Middle Recommended Range (Open / Empty with bottom label)
-            VStack(spacing: 0) {
-                Spacer()
-                Text("RECOMMENDED")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(
-                        activeZone == .recommended
-                            ? AppColor.goalGreen.opacity(0.9)
-                            : Color.white.opacity(0.35)
-                    )
-                    .tracking(1.2)
-                    .padding(.bottom, 4)
-            }
-            .frame(width: layout.recommendedWidth, height: sliderHeight)
+            // Middle Recommended Range (Open / Empty space)
+            Color.clear
+                .frame(width: layout.segmentWidth, height: sliderHeight)
 
-            // Above Recommended Zone (Right: |||||| ticks box)
-            RulerZoneSegment(
-                width: layout.aboveWidth,
+            // Above Recommended Zone (Right: borderless ticks)
+            RulerTicksSegment(
+                width: layout.segmentWidth,
                 height: sliderHeight,
-                isActive: activeZone == .aboveRecommended,
+                activeRange: rightActiveRange,
                 accentColor: AppColor.goalCoral
             )
         }
+    }
+
+    private func calculateLeftActiveRange(layout: SliderLayout, thumbX: CGFloat) -> ClosedRange<CGFloat>? {
+        if value < healthyRange.lowerBound {
+            let localX = min(layout.segmentWidth, thumbX)
+            return localX...layout.segmentWidth
+        }
+        return nil
+    }
+
+    private func calculateRightActiveRange(layout: SliderLayout, thumbX: CGFloat) -> ClosedRange<CGFloat>? {
+        let rightStart = (2 * layout.segmentWidth) + (2 * segmentGap)
+        if value > healthyRange.upperBound {
+            let localX = max(0, thumbX - rightStart)
+            return 0...localX
+        }
+        return nil
     }
 
     private func horizontalCenterTrack(layout: SliderLayout, thumbX: CGFloat) -> some View {
@@ -182,21 +191,16 @@ struct ScientificWeightSlider: View {
     }
 
     private func calculateLayout(availableWidth: CGFloat) -> SliderLayout {
-        let totalSpan = max(1.0, range.upperBound - range.lowerBound)
+        let usableWidth = max(0, availableWidth - (segmentGap * 2))
+        let equalWidth = usableWidth / 3.0
+
         let belowSpan = max(0.0, healthyRange.lowerBound - range.lowerBound)
         let recommendedSpan = max(0.0, healthyRange.upperBound - healthyRange.lowerBound)
         let aboveSpan = max(0.0, range.upperBound - healthyRange.upperBound)
 
-        let usableWidth = max(0, availableWidth - (segmentGap * 2))
-        let belowW = max(10, (belowSpan / totalSpan) * usableWidth)
-        let recW = max(10, (recommendedSpan / totalSpan) * usableWidth)
-        let aboveW = max(10, usableWidth - belowW - recW)
-
         return SliderLayout(
             availableWidth: availableWidth,
-            belowWidth: belowW,
-            recommendedWidth: recW,
-            aboveWidth: aboveW,
+            segmentWidth: equalWidth,
             belowSpan: belowSpan,
             recommendedSpan: recommendedSpan,
             aboveSpan: aboveSpan
@@ -211,14 +215,14 @@ struct ScientificWeightSlider: View {
         let rawX: CGFloat
         if weight <= healthyRange.lowerBound {
             let fraction = layout.belowSpan > 0 ? (weight - range.lowerBound) / layout.belowSpan : 0
-            rawX = CGFloat(fraction) * layout.belowWidth
+            rawX = CGFloat(fraction) * layout.segmentWidth
         } else if weight <= healthyRange.upperBound {
             let fraction = layout.recommendedSpan > 0 ? (weight - healthyRange.lowerBound) / layout.recommendedSpan : 0
-            rawX = layout.belowWidth + segmentGap + (CGFloat(fraction) * layout.recommendedWidth)
+            rawX = layout.segmentWidth + segmentGap + (CGFloat(fraction) * layout.segmentWidth)
         } else {
             let fraction = layout.aboveSpan > 0 ? (weight - healthyRange.upperBound) / layout.aboveSpan : 0
-            let startOffset = layout.belowWidth + segmentGap + layout.recommendedWidth + segmentGap
-            rawX = startOffset + (CGFloat(fraction) * layout.aboveWidth)
+            let startOffset = (2 * layout.segmentWidth) + (2 * segmentGap)
+            rawX = startOffset + (CGFloat(fraction) * layout.segmentWidth)
         }
 
         return min(max(rawX, minX), maxX)
@@ -226,9 +230,9 @@ struct ScientificWeightSlider: View {
 
     private func updateValue(dragX: CGFloat, layout: SliderLayout) {
         let clampedX = min(max(dragX, 0), layout.availableWidth)
-        let seg1End = layout.belowWidth
+        let seg1End = layout.segmentWidth
         let seg2Start = seg1End + segmentGap
-        let seg2End = seg2Start + layout.recommendedWidth
+        let seg2End = seg2Start + layout.segmentWidth
         let seg3Start = seg2End + segmentGap
 
         let calculatedValue: Double
@@ -238,12 +242,12 @@ struct ScientificWeightSlider: View {
         } else if clampedX < seg2Start {
             calculatedValue = healthyRange.lowerBound
         } else if clampedX <= seg2End {
-            let fraction = Double((clampedX - seg2Start) / max(1, layout.recommendedWidth))
+            let fraction = Double((clampedX - seg2Start) / max(1, layout.segmentWidth))
             calculatedValue = healthyRange.lowerBound + fraction * layout.recommendedSpan
         } else if clampedX < seg3Start {
             calculatedValue = healthyRange.upperBound
         } else {
-            let fraction = Double((clampedX - seg3Start) / max(1, layout.aboveWidth))
+            let fraction = Double((clampedX - seg3Start) / max(1, layout.segmentWidth))
             calculatedValue = healthyRange.upperBound + min(1.0, fraction) * layout.aboveSpan
         }
 
@@ -281,60 +285,37 @@ struct ScientificWeightSlider: View {
 
 private struct SliderLayout {
     let availableWidth: CGFloat
-    let belowWidth: CGFloat
-    let recommendedWidth: CGFloat
-    let aboveWidth: CGFloat
+    let segmentWidth: CGFloat
     let belowSpan: Double
     let recommendedSpan: Double
     let aboveSpan: Double
 }
 
-// MARK: - Ruler Zone Segment Subview
+// MARK: - Borderless Ruler Ticks Subview
 
-private struct RulerZoneSegment: View {
+private struct RulerTicksSegment: View {
     let width: CGFloat
     let height: CGFloat
-    let isActive: Bool
+    let activeRange: ClosedRange<CGFloat>?
     let accentColor: Color
 
     private let tickSpacing: CGFloat = 5.0
     private let tickWidth: CGFloat = 1.5
 
     var body: some View {
-        ZStack {
-            // Background glow when active
-            if isActive {
-                RoundedRectangle(cornerRadius: AppCornerRadius.small, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [accentColor.opacity(0.32), accentColor.opacity(0.08)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-            } else {
-                RoundedRectangle(cornerRadius: AppCornerRadius.small, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
-            }
+        Canvas { context, size in
+            var currentX: CGFloat = tickSpacing
 
-            // Vertical ruler ticks
-            Canvas { context, size in
-                let tickColor = isActive ? accentColor.opacity(0.9) : Color.white.opacity(0.12)
-                var currentX: CGFloat = tickSpacing
+            while currentX < size.width {
+                let isTickActive = activeRange?.contains(currentX) ?? false
+                let tickColor = isTickActive ? accentColor : Color.white.opacity(0.12)
+                let rect = CGRect(x: currentX, y: 8, width: tickWidth, height: size.height - 16)
 
-                while currentX < size.width {
-                    let rect = CGRect(x: currentX, y: 6, width: tickWidth, height: size.height - 12)
-                    context.fill(Path(rect), with: .color(tickColor))
-                    currentX += tickSpacing
-                }
+                context.fill(Path(rect), with: .color(tickColor))
+                currentX += tickSpacing
             }
         }
         .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.small, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppCornerRadius.small, style: .continuous)
-                .stroke(isActive ? accentColor.opacity(0.45) : Color.white.opacity(0.06), lineWidth: 1)
-        )
-        .animation(.spring(response: 0.28, dampingFraction: 0.8), value: isActive)
+        .animation(.smooth(duration: 0.15), value: activeRange)
     }
 }
