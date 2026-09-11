@@ -40,8 +40,7 @@ struct WeightGoalView: View {
             headerSection
                 .padding(.top, AppSpacing.medium)
                 .padding(.bottom, AppSpacing.extraLarge)
-
-            Spacer(minLength: AppSpacing.medium)
+                .padding(.bottom, 69)
 
             centerContentSection
 
@@ -96,23 +95,22 @@ struct WeightGoalView: View {
             // 1. Goal display and category badge
             VStack(spacing: AppSpacing.extraSmall) {
                 Text("Weight Goal")
-                    .font(AppTypography.headline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .font(AppTypography.headline)
+                    .fontWeight(.semibold)
 
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.extraExtraSmall) {
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.extraSmall) {
                     Text("\(Int(viewModel.targetWeightKg.rounded()))")
                         .font(.system(size: 52, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                         .contentTransition(.numericText())
 
                     Text("kg")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
                 }
                 .animation(.smooth(duration: 0.2), value: viewModel.targetWeightKg)
 
                 dynamicGoalBadge
-                    .padding(.top, AppSpacing.extraSmall)
+                    .padding(.top, AppSpacing.md)
             }
 
             // 2. Zone Status Label
