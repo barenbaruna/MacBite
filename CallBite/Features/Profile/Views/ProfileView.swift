@@ -87,6 +87,12 @@ struct ProfileView: View {
 
                 Spacer()
 
+                if let summary = viewModel.goalSummaryText {
+                    Text(summary)
+                        .font(AppTypography.body)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                }
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color(uiColor: .tertiaryLabel))
@@ -203,17 +209,20 @@ struct ProfileView: View {
         .controlSize(.large)
         .tint(AppColor.orange500)
     }
+}
 
-    // MARK: - Sheet Modals
+// MARK: - ProfileView Sheets & Editors
 
+extension ProfileView {
     private var changeGoalSheet: some View {
         NavigationStack {
             WeightGoalView(
                 currentWeightKg: viewModel.weightKg,
-                targetWeightKg: max(40.0, viewModel.weightKg - 4.0),
+                targetWeightKg: viewModel.targetWeightKg,
                 heightCm: viewModel.heightCm,
                 showsDismissButton: true,
-                onDone: { _, _ in
+                onDone: { targetWeight, category in
+                    viewModel.updateGoal(targetWeight: targetWeight, category: category)
                     viewModel.isShowingChangeGoal = false
                 }
             )

@@ -23,8 +23,7 @@ struct RulerTicksSegment: View {
 
     private let desiredSpacing: CGFloat = 11.5
     private let tickWidth: CGFloat = 2.5
-    private let majorTickHeight: CGFloat = 40.0
-    private let minorTickHeight: CGFloat = 24.0
+    private let tickHeight: CGFloat = 36.0
 
     var body: some View {
         Canvas { context, size in
@@ -45,9 +44,9 @@ struct RulerTicksSegment: View {
         let endX = boundaryEdge == .trailing ? active.lowerBound : active.upperBound
         let rect = CGRect(
             x: min(startX, endX),
-            y: (size.height - majorTickHeight) / 2,
+            y: (size.height - tickHeight) / 2,
             width: max(0, abs(endX - startX)),
-            height: majorTickHeight
+            height: tickHeight
         )
         let gradient = Gradient(colors: [
             accentColor.opacity(0.22),
@@ -69,9 +68,7 @@ struct RulerTicksSegment: View {
 
         for tickIndex in 0..<count {
             let currentX = (CGFloat(tickIndex) + 0.5) * actualSpacing
-            let isMajor = tickIndex % 2 == 0
-            let currentTickHeight = isMajor ? majorTickHeight : minorTickHeight
-            let tickY = (size.height - currentTickHeight) / 2
+            let tickY = (size.height - tickHeight) / 2
 
             let isTickActive = activeRange?.contains(currentX) ?? false
             let tickColor = isTickActive ? accentColor : Color.white.opacity(0.18)
@@ -79,7 +76,7 @@ struct RulerTicksSegment: View {
                 x: currentX - (tickWidth / 2),
                 y: tickY,
                 width: tickWidth,
-                height: currentTickHeight
+                height: tickHeight
             )
             let path = Path(roundedRect: rect, cornerRadius: tickWidth / 2)
 
@@ -99,9 +96,9 @@ struct RulerTicksSegment: View {
         let boundaryColor = isBoundaryActive ? accentColor : Color.white.opacity(0.28)
         let boundaryRect = CGRect(
             x: boundaryX - (tickWidth / 2),
-            y: (size.height - majorTickHeight) / 2,
+            y: (size.height - tickHeight) / 2,
             width: tickWidth,
-            height: majorTickHeight
+            height: tickHeight
         )
         let boundaryPath = Path(roundedRect: boundaryRect, cornerRadius: tickWidth / 2)
         context.fill(boundaryPath, with: .color(boundaryColor))

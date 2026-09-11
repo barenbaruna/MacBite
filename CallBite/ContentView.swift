@@ -9,7 +9,9 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var screenState: AppScreenState = {
-        if ProcessInfo.processInfo.arguments.contains("-testProfile") {
+        if ProcessInfo.processInfo.arguments.contains("-testProfileChangeGoal") {
+            return .testProfileChangeGoal
+        } else if ProcessInfo.processInfo.arguments.contains("-testProfile") {
             return .testProfile
         } else if ProcessInfo.processInfo.arguments.contains("-testEditSheet") {
             return .testEditSheet
@@ -67,6 +69,23 @@ struct ContentView: View {
         case .testProfile:
             ProfileView()
                 .preferredColorScheme(.dark)
+
+        case .testProfileChangeGoal:
+            ProfileView(
+                viewModel: {
+                    let vm = ProfileViewModel(
+                        initialProfile: UserHealthProfile(
+                            age: 22,
+                            biologicalSex: .male,
+                            weightKg: 56.0,
+                            heightCm: 162.0
+                        )
+                    )
+                    vm.isShowingChangeGoal = true
+                    return vm
+                }()
+            )
+            .preferredColorScheme(.dark)
 
         case .testFoodCard:
             ZStack {
@@ -248,6 +267,7 @@ private enum AppScreenState {
     case onboarding
     case dashboard
     case testProfile
+    case testProfileChangeGoal
     case testFoodCard
     case testFoodCardFront
     case testEditSheet

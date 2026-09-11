@@ -305,13 +305,21 @@ struct CallBiteTests {
         #expect(vm.heightCm == 162.0)
         #expect(!vm.isShowingChangeGoal)
         #expect(vm.activeFieldForEdit == nil)
+        #expect(vm.targetWeightKg == nil)
 
         vm.age = 23
         vm.weightKg = 58.0
+        vm.updateGoal(targetWeight: 54.0, category: .cutting)
+        #expect(vm.targetWeightKg == 54.0)
+        #expect(vm.goalCategory == .cutting)
+        #expect(vm.goalSummaryText == "Lose Weight (54kg)")
+
         vm.saveProfile()
 
         #expect(savedProfile?.age == 23)
         #expect(savedProfile?.weightKg == 58.0)
+        #expect(savedProfile?.targetWeightKg == 54.0)
+        #expect(savedProfile?.goalCategory == .cutting)
     }
 }
 
