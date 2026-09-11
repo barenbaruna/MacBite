@@ -11,6 +11,8 @@ struct ContentView: View {
     @State private var screenState: AppScreenState = {
         if ProcessInfo.processInfo.arguments.contains("-testProfile") {
             return .testProfile
+        } else if ProcessInfo.processInfo.arguments.contains("-testDashboardReview") {
+            return .testDashboardReview
         } else if ProcessInfo.processInfo.arguments.contains("-testEditSheet") {
             return .testEditSheet
         } else if ProcessInfo.processInfo.arguments.contains("-testFoodCardFront") {
@@ -59,6 +61,16 @@ struct ContentView: View {
         case .testProfile:
             ProfileView()
                 .preferredColorScheme(.dark)
+
+        case .testDashboardReview:
+            DashboardView(
+                viewModel: {
+                    let viewModel = DashboardViewModel()
+                    viewModel.isShowingAddFood = true
+                    return viewModel
+                }()
+            )
+            .preferredColorScheme(.dark)
 
         case .testFoodCard:
             ZStack {
@@ -201,6 +213,7 @@ private enum AppScreenState {
     case onboarding
     case dashboard
     case testProfile
+    case testDashboardReview
     case testFoodCard
     case testFoodCardFront
     case testEditSheet

@@ -52,10 +52,18 @@ extension DashboardView {
             consumedCalories: viewModel.dailySummary.consumedCalories,
             targetCalories: viewModel.dailySummary.targetCalories,
             carbsGrams: viewModel.dailySummary.totalCarbs,
+            targetCarbsGrams: viewModel.dailySummary.targetCarbs,
             proteinGrams: viewModel.dailySummary.totalProtein,
+            targetProteinGrams: viewModel.dailySummary.targetProtein,
             fatGrams: viewModel.dailySummary.totalFat,
-            fiberGrams: viewModel.dailySummary.totalFiber
+            targetFatGrams: viewModel.dailySummary.targetFat,
+            fiberGrams: viewModel.dailySummary.totalFiber,
+            targetFiberGrams: viewModel.dailySummary.targetFiber
         )
+    }
+
+    var foodHistorySection: some View {
+        DashboardFoodHistorySection(foods: viewModel.foodsForSelectedDate)
     }
 
     var floatingActionBar: some View {
@@ -96,6 +104,28 @@ extension DashboardView {
         presentedSheetRoute = .manualLogging
     }
 
+    func showCalendar() {
+        AppHaptics.selectionChanged()
+        viewModel.hideLoggingOptions()
+        isShowingCalendar = true
+    }
+
+    func showProfile() {
+        AppHaptics.selectionChanged()
+        viewModel.hideLoggingOptions()
+        viewModel.isShowingProfile = true
+    }
+
+    func handleCalendarSelection(_ date: Date) {
+        guard viewModel.selectDate(date) else { return }
+        isShowingCalendar = false
+    }
+
+    func returnToToday() {
+        AppHaptics.selectionChanged()
+        viewModel.returnToToday()
+    }
+
     func prepareForLoggingPresentation() {
         AppHaptics.selectionChanged()
         viewModel.hideLoggingOptions()
@@ -119,41 +149,54 @@ extension DashboardView {
 
     func handlePhotoCaptured(_ image: UIImage) {
         presentedFullScreenRoute = nil
-        let food = FoodItem(
-            name: "Scanned Food",
-            mealType: "1st Meal",
-            dateString: viewModel.dailySummary.dateString,
-            calories: 475,
-            protein: 24,
-            carbs: 45,
-            fat: 14,
-            fiber: 4,
-            photoSystemName: "camera.fill"
-        )
-        navigateToSaveFood(food)
+        Task { @MainActor in
+            
+            let imageData = image.jpegData(compressionQuality: 0.82) ?? Data()
+            let currentMealType = FoodItem.currentMealType()
+            var food = FoodItem(
+                name: "Scanned Food",
+                mealType: currentMealType,
+                dateString: viewModel.dailySummary.dateString,
+                calories: 475,
+                protein: 24,
+                carbs: 45,
+                fat: 14,
+                fiber: 4,
+                photoSystemName: "camera.fill",
+                photoData: imageData
+            )
+            food.mealType = currentMealType
+            food.dateString = viewModel.dailySummary.dateString
+            navigateToSaveFood(food)
+        }
     }
 
     func handleManualCalculation(name: String, ingredients: [ManualIngredientInput]) {
         presentedSheetRoute = nil
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = trimmed.isEmpty ? "Dimsum Mentai" : trimmed
-
-        let totalGrams = ingredients.compactMap { Int($0.portionGrams) }.reduce(0, +)
-        let baseGrams = totalGrams > 0 ? totalGrams : 100
-        let ratio = Double(baseGrams) / 100.0
-
-        let food = FoodItem(
-            name: displayName,
-            mealType: "1st Meal",
-            dateString: viewModel.dailySummary.dateString,
-            calories: max(50, Int(220.0 * ratio)),
-            protein: max(5, Int(15.0 * ratio)),
-            carbs: max(5, Int(25.0 * ratio)),
-            fat: max(2, Int(8.0 * ratio)),
-            fiber: max(1, Int(2.0 * ratio)),
-            photoSystemName: "fork.knife"
-        )
-        navigateToSaveFood(food)
+        Task { @MainActor in
+            let descriptors = ingredients.map {
+                IngredientDescriptor(
+                    name: $0.ingredient,
+                    portionGrams: Double($0.portionGrams) ?? 0.0,
+                    cookingMethod: $0.cookingMethod.isEmpty ? nil : $0.cookingMethod
+                )
+            }
+            let currentMealType = FoodItem.currentMealType()
+            var food = FoodItem(
+                name: name.isEmpty ? "Healthy Meal" : name,
+                mealType: currentMealType,
+                dateString: viewModel.dailySummary.dateString,
+                calories: 450,
+                protein: 25,
+                carbs: 40,
+                fat: 12,
+                fiber: 4,
+                photoSystemName: "fork.knife"
+            )
+            food.mealType = currentMealType
+            food.dateString = viewModel.dailySummary.dateString
+            navigateToSaveFood(food)
+        }
     }
 
     private func navigateToSaveFood(_ foodItem: FoodItem) {

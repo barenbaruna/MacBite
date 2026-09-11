@@ -18,6 +18,7 @@ public struct DashboardView: View {
     @State var containerCenterY: CGFloat = 426
     @State var presentedFullScreenRoute: AppRoute?
     @State var presentedSheetRoute: AppRoute?
+    @State var isShowingCalendar = false
 
     public init(viewModel: DashboardViewModel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -33,6 +34,18 @@ public struct DashboardView: View {
         .sheet(isPresented: $viewModel.isShowingProfile) {
             profileSheet
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingCalendar) {
+            CalorieCalendarFactory.makeView(
+                summaries: viewModel.calendarSummaries,
+                selectedDate: viewModel.selectedDate,
+                today: viewModel.todayDate,
+                onDismiss: { isShowingCalendar = false },
+                onSelect: handleCalendarSelection
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(AppColor.activityCardNormal)
         }
         .fullScreenCover(item: $presentedFullScreenRoute) { route in
             LoggingDestinationView(
@@ -84,7 +97,7 @@ public struct DashboardView: View {
         }
         .frame(width: fullWidth, height: fullHeight)
         .coordinateSpace(name: "saveFlowCoordinateSpace")
-        .ignoresSafeArea()
+        .ignoresSafeArea(.container)
         .onAppear {
             screenWidth = fullWidth
             containerCenterY = fullHeight / 2.0
@@ -100,7 +113,14 @@ public struct DashboardView: View {
             dashboardCanvas(safeArea: safeArea)
                 .navigationTitle(viewModel.dailySummary.dateString)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar { dashboardToolbar }
+                .toolbar {
+                    DashboardToolbarContent(
+                        isShowingToday: viewModel.isShowingToday,
+                        onReturnToToday: returnToToday,
+                        onCalendarSelected: showCalendar,
+                        onProfileSelected: showProfile
+                    )
+                }
         }
     }
 
@@ -212,31 +232,16 @@ public struct DashboardView: View {
     // MARK: - Dashboard Canvas
 
     private func dashboardCanvas(safeArea: EdgeInsets) -> some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
             Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer(minLength: AppSpacing.sm)
+            ScrollView { dashboardScrollContent }
+            .scrollIndicators(.hidden)
 
-                calorieRingSection
-
-                Spacer().frame(height: AppSpacing.md)
-
-                coachInsightSection
-
-                Spacer(minLength: AppSpacing.sm)
-
-                macroGridSection
-
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .overlay(alignment: .bottomTrailing) {
-                floatingActionBar
-                    .padding(.trailing, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.md)
-            }
+            floatingActionBar
+                .padding(.trailing, AppSpacing.large)
+                .padding(.bottom, max(AppSpacing.medium, safeArea.bottom))
 
             if viewModel.isShowingLoggingOptions {
                 LoggingOptionsOverlay(
@@ -249,28 +254,28 @@ public struct DashboardView: View {
         }
     }
 
-    // MARK: - Toolbar
+    private var dashboardScrollContent: some View {
+        LazyVStack(spacing: 0) {
+            calorieRingSection
 
-    @ToolbarContentBuilder
-    private var dashboardToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                // Calendar action
-            } label: {
-                Image(systemName: "calendar")
-            }
-            .accessibilityLabel("Calendar History")
-        }
+            Spacer().frame(height: AppSpacing.medium)
 
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                viewModel.isShowingProfile = true
-            } label: {
-                Image(systemName: "person.crop.circle")
+            coachInsightSection
+
+            Spacer().frame(height: AppSpacing.regular)
+
+            macroGridSection
+
+            if !viewModel.foodsForSelectedDate.isEmpty {
+                foodHistorySection
+                    .padding(.top, AppSpacing.dashboardFoodSectionTopSpacing)
             }
-            .accessibilityLabel("Profile and Target Weight")
         }
+        .padding(.horizontal, AppSpacing.large)
+        .padding(.top, AppSpacing.regular)
+        .padding(.bottom, AppSpacing.loggingOptionsBottomClearance)
     }
+
 }
 
 #Preview {

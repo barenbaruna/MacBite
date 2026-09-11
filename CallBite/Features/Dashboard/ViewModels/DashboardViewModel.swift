@@ -49,6 +49,8 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var isShowingWeightGoal: Bool = false
     @Published public var isShowingProfile: Bool = false
     @Published public var isShowingLoggingOptions: Bool = false
+    @Published public private(set) var selectedDate: Date
+    @Published public private(set) var foodsForSelectedDate: [FoodItem]
 
     // Card & Flow Motion Properties
     @Published public var flipAngle: Double = 0.0
@@ -72,24 +74,51 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var triggerTapHaptic: Bool = false
     @Published public var triggerSuccessHaptic: Bool = false
 
+    private let dateCalendar: Calendar
+    private let normalizedToday: Date
+    private var dailySummariesByDate: [Date: DailySummary]
+    private var dailyFoodsByDate: [Date: [FoodItem]]
+
     // MARK: - Initialization
 
-    public init() {
-        let defaultSummary = DailySummary.sampleDashboard
-        self.dailySummary = defaultSummary
-        self.currentFood = FoodItem.dimsumMentai
-        let currentRatio = CGFloat(defaultSummary.progressRatio)
-        self.ringProgress = currentRatio
-        self.orbProgress = Double(currentRatio)
+    public convenience init() {
+        self.init(dailySummary: .sampleDashboard)
     }
 
     public init(
         dailySummary: DailySummary,
-        initialFood: FoodItem? = nil
+        initialFood: FoodItem? = nil,
+        selectedDate: Date = .now,
+        today: Date = .now,
+        dailySummaries: [Date: DailySummary] = [:],
+        dailyFoods: [Date: [FoodItem]] = [:],
+        calendar: Calendar = .current
     ) {
-        self.dailySummary = dailySummary
+        let normalizedToday = calendar.startOfDay(for: today)
+        let requestedDate = calendar.startOfDay(for: selectedDate)
+        let normalizedSelectedDate = min(requestedDate, normalizedToday)
+        var normalizedSummaries = dailySummaries.reduce(into: [:]) { result, entry in
+            result[calendar.startOfDay(for: entry.key)] = entry.value
+        }
+        let normalizedFoods = dailyFoods.reduce(into: [:]) { result, entry in
+            result[calendar.startOfDay(for: entry.key)] = entry.value
+        }
+
+        if normalizedSummaries[normalizedSelectedDate] == nil {
+            normalizedSummaries[normalizedSelectedDate] = dailySummary
+        }
+
+        let initialSummary = normalizedSummaries[normalizedSelectedDate] ?? dailySummary
+
+        self.dateCalendar = calendar
+        self.normalizedToday = normalizedToday
+        self.selectedDate = normalizedSelectedDate
+        self.dailySummariesByDate = normalizedSummaries
+        self.dailyFoodsByDate = normalizedFoods
+        self.dailySummary = initialSummary
+        self.foodsForSelectedDate = normalizedFoods[normalizedSelectedDate] ?? []
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
-        let currentRatio = CGFloat(dailySummary.progressRatio)
+        let currentRatio = Self.rawProgress(for: initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
     }
@@ -122,7 +151,9 @@ public final class DashboardViewModel: ObservableObject {
     }
 
     public func resetAndOpenAddFood() {
-        resetAndOpenAddFood(with: FoodItem.dimsumMentai)
+        var food = FoodItem.dimsumMentai
+        food.mealType = FoodItem.currentMealType()
+        resetAndOpenAddFood(with: food)
     }
 
     public func resetAndOpenAddFood(with food: FoodItem) {
@@ -196,6 +227,11 @@ public final class DashboardViewModel: ObservableObject {
 
         let newConsumed = dailySummary.consumedCalories + currentFood.calories
         dailySummary.consumedCalories = newConsumed
+        dailySummary.totalProtein += currentFood.protein
+        dailySummary.totalCarbs += currentFood.carbs
+        dailySummary.totalFat += currentFood.fat
+        dailySummary.totalFiber += currentFood.fiber
+        appendCurrentFoodAndStoreDay()
         let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
 
         withAnimation(MotionConfig.progressSpring) {
@@ -242,6 +278,11 @@ public final class DashboardViewModel: ObservableObject {
     private func executeReduceMotionFallback() {
         let newConsumed = dailySummary.consumedCalories + currentFood.calories
         dailySummary.consumedCalories = newConsumed
+        dailySummary.totalProtein += currentFood.protein
+        dailySummary.totalCarbs += currentFood.carbs
+        dailySummary.totalFat += currentFood.fat
+        dailySummary.totalFiber += currentFood.fiber
+        appendCurrentFoodAndStoreDay()
         let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
 
         withAnimation(.easeInOut(duration: 0.25)) {
@@ -250,5 +291,85 @@ public final class DashboardViewModel: ObservableObject {
             triggerSuccessHaptic.toggle()
             phase = .completed
         }
+    }
+
+    private func emptySummary(for date: Date) -> DailySummary {
+        DailySummary(
+            dateString: DashboardSampleData.displayDate(
+                for: date,
+                today: normalizedToday,
+                calendar: dateCalendar
+            ),
+            targetCalories: dailySummary.targetCalories,
+            consumedCalories: 0,
+            targetCarbs: dailySummary.targetCarbs,
+            targetProtein: dailySummary.targetProtein,
+            targetFat: dailySummary.targetFat,
+            targetFiber: dailySummary.targetFiber,
+            totalCarbs: 0,
+            totalProtein: 0,
+            totalFat: 0,
+            totalFiber: 0,
+            streakDays: 0
+        )
+    }
+
+    private func storeCurrentDay() {
+        dailySummariesByDate[selectedDate] = dailySummary
+        dailyFoodsByDate[selectedDate] = foodsForSelectedDate
+    }
+
+    private func appendCurrentFoodAndStoreDay() {
+        foodsForSelectedDate.append(currentFood)
+        storeCurrentDay()
+    }
+
+    private func syncProgressWithDailySummary() {
+        let progress = Self.rawProgress(for: dailySummary)
+        ringProgress = progress
+        orbProgress = Double(progress)
+        ringScale = 1
+        rippleScale = 0.5
+        rippleOpacity = 0
+    }
+
+    private static func rawProgress(for summary: DailySummary) -> CGFloat {
+        CGFloat(summary.consumedCalories) / CGFloat(max(1, summary.targetCalories))
+    }
+}
+
+// MARK: - Date Navigation
+
+public extension DashboardViewModel {
+    var isShowingToday: Bool {
+        dateCalendar.isDate(selectedDate, inSameDayAs: normalizedToday)
+    }
+
+    var todayDate: Date {
+        normalizedToday
+    }
+
+    var calendarSummaries: [Date: DailySummary] {
+        var summaries = dailySummariesByDate
+        summaries[selectedDate] = dailySummary
+        return summaries
+    }
+
+    @discardableResult
+    func selectDate(_ date: Date) -> Bool {
+        let normalizedDate = dateCalendar.startOfDay(for: date)
+        guard normalizedDate <= normalizedToday else { return false }
+
+        storeCurrentDay()
+        selectedDate = normalizedDate
+        dailySummary = dailySummariesByDate[normalizedDate] ?? emptySummary(for: normalizedDate)
+        foodsForSelectedDate = dailyFoodsByDate[normalizedDate] ?? []
+        syncProgressWithDailySummary()
+        hideLoggingOptions()
+        return true
+    }
+
+    func returnToToday() {
+        selectDate(normalizedToday)
     }
 }

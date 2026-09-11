@@ -19,4 +19,7 @@ enum AppTypography {
     static let caption = Font.caption.weight(.regular)
     static let caption2 = Font.caption2.weight(.regular)
     static let button = Font.body.weight(.semibold)
+    static let calorieRingValue = Font.largeTitle.scaled(by: 1.4).bold()
+    static let nutritionValue = Font.title.bold()
+    static let nutritionTarget = Font.title3.bold()
 }

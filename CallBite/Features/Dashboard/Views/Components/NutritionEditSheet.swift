@@ -13,32 +13,19 @@ public enum NutritionEditField: String, Identifiable, CaseIterable {
     case protein = "Protein"
     case carbs = "Carbs"
     case fat = "Fat"
+    case fiber = "Fiber"
 
     public var id: String { rawValue }
 
     public var unit: String {
         switch self {
         case .calories: return "kcal"
-        case .protein, .carbs, .fat: return "g"
-        }
-    }
-
-    public var step: Int {
-        switch self {
-        case .calories: return 10
-        case .protein, .carbs, .fat: return 1
-        }
-    }
-
-    public var quickAddAmounts: [Int] {
-        switch self {
-        case .calories: return [10, 50, 100]
-        case .protein, .carbs, .fat: return [1, 5, 10]
+        case .protein, .carbs, .fat, .fiber: return "g"
         }
     }
 }
 
-/// Modal sheet for manually adjusting macronutrient values using keypad, steppers, and quick pills.
+/// Modal sheet for manually adjusting macronutrient values using a direct free text keypad.
 public struct NutritionEditSheet: View {
     public let field: NutritionEditField
     public let initialValue: Int
@@ -46,6 +33,7 @@ public struct NutritionEditSheet: View {
     public let onCancel: () -> Void
 
     @State private var tempEditString: String
+    @FocusState private var isFieldFocused: Bool
 
     public init(
         field: NutritionEditField,
@@ -65,9 +53,7 @@ public struct NutritionEditSheet: View {
             VStack(spacing: AppSpacing.lg) {
                 Spacer()
 
-                stepperAndValueRow
-
-                quickAddPillsRow
+                freeTextInputRow
 
                 Spacer()
             }
@@ -81,90 +67,43 @@ public struct NutritionEditSheet: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        let digitsOnly = tempEditString.filter { $0.isNumber }
-                        let value = max(0, Int(digitsOnly) ?? 0)
-                        onSave(value)
+                        commitValue()
                     }
                     .font(AppTypography.headline)
                     .foregroundStyle(AppColor.orange500)
                 }
             }
+            .onAppear {
+                isFieldFocused = true
+            }
         }
-        .presentationDetents([.height(280)])
+        .presentationDetents([.height(220)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(AppCornerRadius.sheet)
         .presentationBackground(AppColor.cardBackground)
     }
 
-    private var stepperAndValueRow: some View {
-        HStack(spacing: AppSpacing.md) {
-            minusStepperButton
-            valueDisplayField
-            plusStepperButton
-        }
-    }
-
-    private var minusStepperButton: some View {
-        Button {
-            adjustTempValue(by: -field.step)
-        } label: {
-            Image(systemName: "minus")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(uiColor: .label))
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
-        .accessibilityLabel("Decrease \(field.rawValue)")
-    }
-
-    private var plusStepperButton: some View {
-        Button {
-            adjustTempValue(by: field.step)
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(uiColor: .label))
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
-        .accessibilityLabel("Increase \(field.rawValue)")
-    }
-
-    private var valueDisplayField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+    private var freeTextInputRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
             TextField("0", text: $tempEditString)
-                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .font(.system(size: 48, weight: .bold, design: .rounded))
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
-                .frame(minWidth: 90, maxWidth: 150)
+                .frame(minWidth: 100, maxWidth: 200)
                 .monospacedDigit()
                 .foregroundStyle(Color(uiColor: .label))
+                .focused($isFieldFocused)
+                .accessibilityLabel("\(field.rawValue) input")
 
             Text(field.unit)
-                .font(AppTypography.title3.weight(.semibold))
+                .font(AppTypography.title2.weight(.semibold))
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
         }
     }
 
-    private var quickAddPillsRow: some View {
-        HStack(spacing: AppSpacing.sm) {
-            ForEach(field.quickAddAmounts, id: \.self) { amount in
-                Button("+\(amount)\(field.unit)") {
-                    adjustTempValue(by: amount)
-                }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.capsule)
-                .controlSize(.regular)
-            }
-        }
-    }
-
-    private func adjustTempValue(by delta: Int) {
+    private func commitValue() {
         let digitsOnly = tempEditString.filter { $0.isNumber }
-        let current = Int(digitsOnly) ?? 0
-        let updated = max(0, current + delta)
-        tempEditString = "\(updated)"
+        let value = max(0, Int(digitsOnly) ?? 0)
+        onSave(value)
     }
 }

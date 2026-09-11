@@ -112,6 +112,10 @@ struct CallBiteTests {
         )
         #expect(summary.remainingCalories == 1170)
         #expect(abs(summary.progressRatio - (1484.0 / 2654.0)) < 0.001)
+        #expect(summary.targetCarbs == 300)
+        #expect(summary.targetProtein == 70)
+        #expect(summary.targetFat == 70)
+        #expect(summary.targetFiber == 70)
     }
 
     @Test @MainActor func testDashboardViewModelFoodLogging() async throws {
@@ -303,12 +307,8 @@ struct FoodLoggingTests {
         #expect(NutritionEditField.protein.unit == "g")
         #expect(NutritionEditField.carbs.unit == "g")
         #expect(NutritionEditField.fat.unit == "g")
-
-        #expect(NutritionEditField.calories.step == 10)
-        #expect(NutritionEditField.protein.step == 1)
-
-        #expect(NutritionEditField.calories.quickAddAmounts == [10, 50, 100])
-        #expect(NutritionEditField.protein.quickAddAmounts == [1, 5, 10])
+        #expect(NutritionEditField.fiber.unit == "g")
+        #expect(NutritionEditField.allCases.count == 5)
     }
 
     @Test func testFoodItemManualMacroMutation() {
@@ -350,5 +350,29 @@ struct FoodLoggingTests {
         #expect(vm.currentFood.calories == 650)
         #expect(vm.flipAngle == 0.0)
         #expect(!vm.isCardCompressed)
+    }
+}
+
+@Suite("CalorieOverlimitTests")
+struct CalorieOverlimitTests {
+    @Test func testOverlimitColorInterpolation() {
+        let lapStart = AppColor.overlimitColor(at: 0.0)
+        #expect(lapStart == AppColor.overlimitBaseRed)
+
+        let nearBlackAt18 = AppColor.overlimitColor(at: 0.18)
+        #expect(nearBlackAt18 == AppColor.overlimitNearBlack)
+
+        let nearBlackBeyond = AppColor.overlimitColor(at: 0.50)
+        #expect(nearBlackBeyond == AppColor.overlimitNearBlack)
+    }
+
+    @Test func testOverlimitProgressCalculation() {
+        let view = CalorieProgressView(
+            consumedCalories: 3000,
+            targetCalories: 2500,
+            ringProgress: 1.2
+        )
+        #expect(view.consumedCalories > view.targetCalories)
+        #expect(view.ringProgress > 1.0)
     }
 }

@@ -53,44 +53,19 @@ public struct CalorieProgressView: View {
         max(0, consumedCalories - targetCalories)
     }
 
-    private var angularGradient: AngularGradient {
-        AngularGradient(
-            stops: [
-                .init(color: AppColor.ringYellow, location: 0.0),
-                .init(color: AppColor.ringYellow, location: 0.06),
-                .init(color: AppColor.ringOrange, location: 0.50),
-                .init(color: AppColor.ringCoral, location: 0.94),
-                .init(color: AppColor.ringCoral, location: 1.0)
-            ],
-            center: .center,
-            startAngle: .degrees(0),
-            endAngle: .degrees(360)
-        )
-    }
-
-    private var overflowGradient: AngularGradient {
-        AngularGradient(
-            stops: [
-                .init(color: AppColor.fitnessOverflowStart, location: 0.0),
-                .init(color: AppColor.fitnessOverflowMid, location: 0.45),
-                .init(color: AppColor.fitnessOverflowEnd, location: 0.95),
-                .init(color: AppColor.fitnessOverflowEnd, location: 1.0)
-            ],
-            center: .center,
-            startAngle: .degrees(0),
-            endAngle: .degrees(360)
-        )
-    }
-
     public var body: some View {
         ZStack {
             rippleAuraEffect
             trackBackgroundCircle
             activeProgressRing
 
+            if ringProgress > 0.0 && ringProgress < 1.0 {
+                partialProgressStartCap
+            }
+
             if ringProgress > 1.0 {
-                overlapSeamShadow
                 overflowProgressRing
+                overflowTipCap
             }
 
             if isDropletActive {
@@ -98,9 +73,8 @@ public struct CalorieProgressView: View {
             }
 
             centerIndicatorContent
-            apexArrowBadge
         }
-        .frame(width: 238, height: 238)
+        .frame(width: AppSize.calorieRingCanvas, height: AppSize.calorieRingCanvas)
         .scaleEffect(ringScale)
         .background(geometryReporter)
     }
@@ -110,16 +84,16 @@ public struct CalorieProgressView: View {
         let progress = ringProgress > 1.0 ? (ringProgress - 1.0) : ringProgress
         let angleInDegrees = -90.0 + Double(progress) * 360.0
         let angleInRadians = angleInDegrees * .pi / 180.0
-        let radius: CGFloat = 105.0
-        let centerX: CGFloat = 119.0
-        let centerY: CGFloat = 119.0
+        let radius = AppSize.calorieRingRadius
+        let centerX = AppSize.calorieRingCanvas / 2
+        let centerY = AppSize.calorieRingCanvas / 2
         let posX = centerX + radius * CGFloat(cos(angleInRadians))
         let posY = centerY + radius * CGFloat(sin(angleInRadians))
 
         return ZStack {
             Circle()
-                .fill(isOverTarget ? AppColor.fitnessOverflowStart.opacity(0.40) : AppColor.ringYellow.opacity(0.40))
-                .frame(width: 36, height: 36)
+                .fill(isOverTarget ? AppColor.overlimitCrimson.opacity(0.40) : AppColor.ringYellow.opacity(0.40))
+                .frame(width: AppSize.calorieRingGlowDiameter, height: AppSize.calorieRingGlowDiameter)
                 .blur(radius: 5)
 
             Circle()
@@ -127,17 +101,17 @@ public struct CalorieProgressView: View {
                     RadialGradient(
                         colors: [
                             Color.white,
-                            isOverTarget ? AppColor.fitnessOverflowMid : AppColor.ringYellow,
-                            isOverTarget ? AppColor.fitnessOverflowStart : AppColor.ringOrange
+                            isOverTarget ? AppColor.overlimitMaroon : AppColor.ringYellow,
+                            isOverTarget ? AppColor.overlimitCrimson : AppColor.ringOrange
                         ],
                         center: .center,
                         startRadius: 2,
                         endRadius: 14
                     )
                 )
-                .frame(width: 28, height: 28)
+                .frame(width: AppMetrics.energyDropletSize, height: AppMetrics.energyDropletSize)
                 .shadow(
-                    color: (isOverTarget ? AppColor.fitnessOverflowStart : AppColor.ringOrange).opacity(0.75),
+                    color: (isOverTarget ? AppColor.overlimitCrimson : AppColor.ringOrange).opacity(0.75),
                     radius: 4,
                     x: 0,
                     y: 0
@@ -145,7 +119,7 @@ public struct CalorieProgressView: View {
 
             Circle()
                 .fill(Color.white)
-                .frame(width: 8, height: 8)
+                .frame(width: AppSize.calorieRingHighlightDiameter, height: AppSize.calorieRingHighlightDiameter)
         }
         .scaleEffect(dropletScale)
         .opacity(dropletOpacity)
@@ -154,73 +128,130 @@ public struct CalorieProgressView: View {
 
     private var rippleAuraEffect: some View {
         Circle()
-            .stroke(isOverTarget ? AppColor.fitnessOverflowStart : AppColor.ringYellow, lineWidth: 3)
-            .frame(width: 140, height: 140)
+            .stroke(
+                isOverTarget ? AppColor.overlimitCrimson : AppColor.ringYellow,
+                lineWidth: AppMetrics.calorieRingRippleWidth
+            )
+            .frame(width: AppSize.calorieRingRippleDiameter, height: AppSize.calorieRingRippleDiameter)
             .scaleEffect(rippleScale)
             .opacity(rippleOpacity)
     }
 
     private var trackBackgroundCircle: some View {
         Circle()
-            .stroke(AppColor.ringTrack, lineWidth: 28)
-            .frame(width: 210, height: 210)
+            .stroke(AppColor.ringTrack, lineWidth: AppMetrics.calorieRingStrokeWidth)
+            .frame(width: AppSize.calorieRingDiameter, height: AppSize.calorieRingDiameter)
     }
 
     private var activeProgressRing: some View {
-        Circle()
-            .trim(from: 0, to: min(1.0, max(0.01, ringProgress)))
-            .stroke(angularGradient, style: StrokeStyle(lineWidth: 28, lineCap: .round))
-            .rotationEffect(.degrees(-90))
-            .frame(width: 210, height: 210)
+        let gradient: AngularGradient
+        if ringProgress > 1.0 {
+            gradient = AppGradient.calorieOverlimitBase
+        } else if ringProgress >= 1.0 {
+            gradient = AppGradient.completedCalorieRing
+        } else {
+            gradient = AppGradient.calorieRing
+        }
+
+        return Circle()
+            .trim(from: 0, to: min(1.0, max(0, ringProgress)))
+            .stroke(
+                gradient,
+                style: StrokeStyle(
+                    lineWidth: AppMetrics.calorieRingStrokeWidth,
+                    lineCap: ringProgress < 1.0 ? .round : .butt
+                )
+            )
+            .rotationEffect(.degrees(AppMetrics.calorieRingStartAngle))
+            .frame(width: AppSize.calorieRingDiameter, height: AppSize.calorieRingDiameter)
     }
 
-    /// Apple Fitness-style overlap shadow at 12 o'clock for multi-lap completion
-    private var overlapSeamShadow: some View {
+    /// Solid start cap prevents the angular gradient's red endpoint from wrapping behind yellow.
+    private var partialProgressStartCap: some View {
         Circle()
-            .trim(from: 0.99, to: 1.0)
-            .stroke(Color.black.opacity(0.65), style: StrokeStyle(lineWidth: 30, lineCap: .round))
-            .rotationEffect(.degrees(-90))
-            .frame(width: 210, height: 210)
-            .blur(radius: 4)
-            .offset(y: 2)
+            .fill(AppColor.ringYellow)
+            .frame(width: AppMetrics.calorieRingStrokeWidth, height: AppMetrics.calorieRingStrokeWidth)
+            .position(
+                x: AppSize.calorieRingCanvas / 2,
+                y: AppSize.calorieRingCanvas / 2 - AppSize.calorieRingRadius
+            )
     }
 
     /// Second lap ring rendered when calorie intake exceeds 100% of target
     private var overflowProgressRing: some View {
-        let overflow = min(1.0, max(0.01, ringProgress - 1.0))
+        let overflow = min(1.0, max(0.005, ringProgress - 1.0))
+        let overlapDegrees = AppMetrics.calorieRingSeamOverlapDegrees
+        let overlapFraction = overlapDegrees / 360.0
         return Circle()
-            .trim(from: 0, to: overflow)
-            .stroke(overflowGradient, style: StrokeStyle(lineWidth: 28, lineCap: .round))
-            .rotationEffect(.degrees(-90))
-            .frame(width: 210, height: 210)
-            .shadow(color: AppColor.fitnessOverflowStart.opacity(0.45), radius: 8, x: 0, y: 0)
+            .trim(from: 0, to: min(1.0, overlapFraction + overflow))
+            .stroke(
+                AppGradient.calorieOverflow,
+                style: StrokeStyle(lineWidth: AppMetrics.calorieRingStrokeWidth, lineCap: .butt)
+            )
+            .rotationEffect(.degrees(AppMetrics.calorieRingStartAngle - overlapDegrees))
+            .frame(width: AppSize.calorieRingDiameter, height: AppSize.calorieRingDiameter)
     }
 
+    /// Leading rounded tip of the overflow lap casting a drop shadow onto the base ring beneath it
+    private var overflowTipCap: some View {
+        let overflow = min(1.0, max(0.005, ringProgress - 1.0))
+        let overlapFraction = AppMetrics.calorieRingSeamOverlapDegrees / 360.0
+        let angleInDegrees = AppMetrics.calorieRingStartAngle + Double(overflow) * 360.0
+        let angleInRadians = angleInDegrees * .pi / 180.0
+        let radius = AppSize.calorieRingRadius
+        let centerX = AppSize.calorieRingCanvas / 2
+        let centerY = AppSize.calorieRingCanvas / 2
+        let posX = centerX + radius * CGFloat(cos(angleInRadians))
+        let posY = centerY + radius * CGFloat(sin(angleInRadians))
+
+        // Clockwise motion tangent vector for directional drop shadow
+        let tangentX = CGFloat(-sin(angleInRadians))
+        let tangentY = CGFloat(cos(angleInRadians))
+
+        return Circle()
+            .fill(AppColor.overlimitColor(at: overlapFraction + overflow))
+            .frame(width: AppMetrics.calorieRingStrokeWidth, height: AppMetrics.calorieRingStrokeWidth)
+            .shadow(
+                color: Color.black.opacity(0.55),
+                radius: 3,
+                x: tangentX * 2.5,
+                y: tangentY * 2.5
+            )
+            .position(x: posX, y: posY)
+    }
+
+    @ViewBuilder
     private var centerIndicatorContent: some View {
-        VStack(spacing: 2) {
-            Text(verbatim: isOverTarget ? "+\(overCalories)" : "\(remainingCalories)")
-                .font(.system(size: 52, weight: .bold, design: .rounded))
-                .foregroundStyle(isOverTarget ? AppColor.fitnessOverflowStart : Color(uiColor: .label))
-                .monospacedDigit()
-                .contentTransition(.numericText())
+        if isOverTarget {
+            VStack(spacing: AppSpacing.extraSmall) {
+                Text(verbatim: "+\(overCalories)")
+                    .font(AppTypography.calorieRingValue)
+                    .foregroundStyle(AppColor.overlimitText)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
 
-            Text(isOverTarget ? "calories over target" : "calories remaining")
-                .font(AppTypography.subheadline)
-                .foregroundStyle(Color(uiColor: .label))
-        }
-    }
+                Text("calories over target")
+                    .font(AppTypography.subheadline)
+                    .foregroundStyle(Color(uiColor: .label))
+            }
+        } else {
+            VStack(spacing: AppSpacing.small) {
+                Text("Remaining")
+                    .font(AppTypography.body)
+                    .foregroundStyle(Color(uiColor: .label))
 
-    private var apexArrowBadge: some View {
-        ZStack {
-            Circle()
-                .fill(AppColor.dark950.opacity(0.85))
-                .frame(width: 22, height: 22)
-            Image(systemName: "arrow.right")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(isOverTarget ? AppColor.fitnessOverflowStart : AppColor.gray200)
-                .accessibilityHidden(true)
+                Text(verbatim: "\(remainingCalories)")
+                    .font(AppTypography.calorieRingValue)
+                    .foregroundStyle(AppColor.ringValue)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+
+                Text(verbatim: "of \(targetCalories) KCAL")
+                    .font(AppTypography.body)
+                    .foregroundStyle(Color(uiColor: .label))
+                    .monospacedDigit()
+            }
         }
-        .offset(y: -105)
     }
 
     private var geometryReporter: some View {
@@ -230,17 +261,33 @@ public struct CalorieProgressView: View {
                 key: RingGeometryPreferenceKey.self,
                 value: RingGeometry(
                     center: CGPoint(x: frame.midX, y: frame.midY),
-                    radius: 105.0
+                    radius: AppSize.calorieRingRadius
                 )
             )
         }
     }
 }
 
-#Preview {
+#Preview("Normal Progress") {
     ZStack {
         AppColor.dark950.ignoresSafeArea()
-        CalorieProgressView()
+        CalorieProgressView(
+            consumedCalories: 1484,
+            targetCalories: 2654,
+            ringProgress: 0.56
+        )
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Overlimit Progress") {
+    ZStack {
+        AppColor.dark950.ignoresSafeArea()
+        CalorieProgressView(
+            consumedCalories: 3008,
+            targetCalories: 2654,
+            ringProgress: 1.133
+        )
     }
     .preferredColorScheme(.dark)
 }

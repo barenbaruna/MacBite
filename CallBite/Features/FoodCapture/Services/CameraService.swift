@@ -6,17 +6,36 @@
 //
 
 @preconcurrency import AVFoundation
+import Combine
 import UIKit
 
-final class CameraService: CameraServiceProtocol, @unchecked Sendable {
+final class CameraService: NSObject, CameraServiceProtocol,
+    AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
     let captureSession = AVCaptureSession()
 
+    var frameAnalysisPublisher: AnyPublisher<CameraFrameAnalysis, Never> {
+        frameAnalysisSubject.eraseToAnyPublisher()
+    }
+
     private let photoOutput = AVCapturePhotoOutput()
+    private let videoOutput = AVCaptureVideoDataOutput()
     private let sessionQueue = DispatchQueue(label: "com.callbite.camera.session")
+    private let frameAnalysisQueue = DispatchQueue(
+        label: "com.callbite.camera.analysis",
+        qos: .userInitiated
+    )
+    private let frameAnalyzer: CameraFrameAnalyzing
+    private let frameAnalysisSubject = PassthroughSubject<CameraFrameAnalysis, Never>()
     private var isConfigured = false
     private var supportsFlash = false
     private var cameraDevice: AVCaptureDevice?
     private var photoCaptureProcessor: PhotoCaptureProcessor?
+    private var lastAnalyzedFrameTime = CMTime.invalid
+
+    init(frameAnalyzer: CameraFrameAnalyzing = CameraFrameAnalyzer()) {
+        self.frameAnalyzer = frameAnalyzer
+        super.init()
+    }
 
     func authorizationStatus() -> AVAuthorizationStatus {
         AVCaptureDevice.authorizationStatus(for: .video)
@@ -32,7 +51,8 @@ final class CameraService: CameraServiceProtocol, @unchecked Sendable {
         }
 
         let session = captureSession
-        let output = photoOutput
+        let photoOutput = photoOutput
+        let videoOutput = videoOutput
 
         let configuredCamera = try await withCheckedThrowingContinuation { continuation in
             sessionQueue.async {
@@ -45,17 +65,12 @@ final class CameraService: CameraServiceProtocol, @unchecked Sendable {
                         throw CameraServiceError.cameraUnavailable
                     }
 
-                    let input = try AVCaptureDeviceInput(device: camera)
-                    session.beginConfiguration()
-                    defer { session.commitConfiguration() }
-                    session.sessionPreset = .photo
-
-                    guard session.canAddInput(input), session.canAddOutput(output) else {
-                        throw CameraServiceError.configurationFailed
-                    }
-
-                    session.addInput(input)
-                    session.addOutput(output)
+                    try self.configureCaptureSession(
+                        session,
+                        camera: camera,
+                        photoOutput: photoOutput,
+                        videoOutput: videoOutput
+                    )
                     continuation.resume(returning: camera)
                 } catch {
                     continuation.resume(throwing: error)
@@ -67,6 +82,34 @@ final class CameraService: CameraServiceProtocol, @unchecked Sendable {
         supportsFlash = configuredCamera.hasTorch
         isConfigured = true
         return supportsFlash
+    }
+
+    private func configureCaptureSession(
+        _ session: AVCaptureSession,
+        camera: AVCaptureDevice,
+        photoOutput: AVCapturePhotoOutput,
+        videoOutput: AVCaptureVideoDataOutput
+    ) throws {
+        let input = try AVCaptureDeviceInput(device: camera)
+        session.beginConfiguration()
+        defer { session.commitConfiguration() }
+        session.sessionPreset = .photo
+
+        guard session.canAddInput(input),
+              session.canAddOutput(photoOutput),
+              session.canAddOutput(videoOutput) else {
+            throw CameraServiceError.configurationFailed
+        }
+
+        session.addInput(input)
+        session.addOutput(photoOutput)
+        videoOutput.alwaysDiscardsLateVideoFrames = true
+        videoOutput.videoSettings = [
+            kCVPixelBufferPixelFormatTypeKey as String:
+                kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+        ]
+        videoOutput.setSampleBufferDelegate(self, queue: frameAnalysisQueue)
+        session.addOutput(videoOutput)
     }
 
     func startSession() async {
@@ -134,5 +177,22 @@ final class CameraService: CameraServiceProtocol, @unchecked Sendable {
                 output.capturePhoto(with: settings, delegate: processor)
             }
         }
+    }
+
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        let frameTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        if lastAnalyzedFrameTime.isValid {
+            let elapsed = CMTimeGetSeconds(frameTime - lastAnalyzedFrameTime)
+            guard elapsed >= CameraGuidanceThresholds.frameAnalysisInterval else { return }
+        }
+        lastAnalyzedFrameTime = frameTime
+
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        let analysis = frameAnalyzer.analyze(pixelBuffer: pixelBuffer)
+        frameAnalysisSubject.send(analysis)
     }
 }
