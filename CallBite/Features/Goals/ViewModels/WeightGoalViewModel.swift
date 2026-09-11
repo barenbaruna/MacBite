@@ -61,19 +61,23 @@ final class WeightGoalViewModel {
         }
     }
 
-    init(currentWeightKg: Double = 60.0, targetWeightKg: Double = 56.0, heightCm: Double = 168.0) {
+    init(currentWeightKg: Double = 60.0, targetWeightKg: Double? = nil, heightCm: Double = 168.0) {
         self.currentWeightKg = currentWeightKg
-        self.targetWeightKg = targetWeightKg
         self.heightCm = heightCm
+        let initialTarget = targetWeightKg ?? ScientificWeightEngine.recommendedInitialTarget(
+            currentWeightKg: currentWeightKg,
+            heightCm: heightCm
+        )
+        self.targetWeightKg = initialTarget
         self.previousCategory = ScientificWeightEngine.evaluate(
             currentWeightKg: currentWeightKg,
-            targetWeightKg: targetWeightKg,
+            targetWeightKg: initialTarget,
             heightCm: heightCm
         ).category
         let range = ScientificWeightEngine.healthyWeightRange(heightCm: heightCm)
-        if targetWeightKg < range.lowerBound {
+        if initialTarget < range.lowerBound {
             self.previousZone = .belowRecommended
-        } else if targetWeightKg > range.upperBound {
+        } else if initialTarget > range.upperBound {
             self.previousZone = .aboveRecommended
         } else {
             self.previousZone = .recommended

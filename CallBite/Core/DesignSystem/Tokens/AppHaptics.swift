@@ -17,6 +17,22 @@ enum AppHaptics {
         generator.selectionChanged()
     }
 
+    /// Triggered smoothly when the user adjusts continuous slider within the recommended healthy range.
+    @MainActor
+    static func sliderRecommendedTick() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.65)
+    }
+
+    /// Triggered with mechanical firmness when the user adjusts slider outside the recommended healthy range.
+    @MainActor
+    static func sliderWarningTick() {
+        let generator = UIImpactFeedbackGenerator(style: .rigid)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.90)
+    }
+
     /// Triggered on continuous slider step increments for crisp, smooth mechanical feel.
     @MainActor
     static func sliderTick() {

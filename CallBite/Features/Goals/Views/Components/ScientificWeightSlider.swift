@@ -7,9 +7,10 @@
 
 import SwiftUI
 
-/// Continuous 3-zone proportional ruler slider for scientific weight goal selection.
+/// Continuous 3-zone proportional ruler slider with an open-center recommended layout and delta illumination.
 struct ScientificWeightSlider: View {
     @Binding var value: Double
+    var currentWeight: Double = 60.0
     let range: ClosedRange<Double>
     let healthyRange: ClosedRange<Double>
     var step: Double = 0.5
@@ -27,14 +28,14 @@ struct ScientificWeightSlider: View {
         GeometryReader { proxy in
             let availableWidth = proxy.size.width
             let layout = calculateLayout(availableWidth: availableWidth)
-            let thumbX = calculateThumbX(layout: layout)
+            let thumbX = calculateX(for: value, layout: layout)
 
             ZStack(alignment: .leading) {
-                // 1. Proportional 3-zone ruler tracks
+                // 1. Proportional 3-zone ruler tracks (open middle zone)
                 rulerSegments(layout: layout)
 
-                // 2. Horizontal continuous track line
-                horizontalCenterTrack(availableWidth: availableWidth, thumbX: thumbX)
+                // 2. Horizontal continuous track line with delta illumination
+                horizontalCenterTrack(layout: layout, thumbX: thumbX)
 
                 // 3. Sleek white capsule thumb
                 thumbCapsule
@@ -73,7 +74,7 @@ struct ScientificWeightSlider: View {
 
     private func rulerSegments(layout: SliderLayout) -> some View {
         HStack(spacing: segmentGap) {
-            // Below Recommended Zone
+            // Below Recommended Zone (Left: |||||| ticks box)
             RulerZoneSegment(
                 width: layout.belowWidth,
                 height: sliderHeight,
@@ -81,15 +82,22 @@ struct ScientificWeightSlider: View {
                 accentColor: AppColor.goalCyan
             )
 
-            // Recommended Range Zone
-            RulerZoneSegment(
-                width: layout.recommendedWidth,
-                height: sliderHeight,
-                isActive: activeZone == .recommended,
-                accentColor: AppColor.goalGreen
-            )
+            // Middle Recommended Range (Open / Empty with bottom label)
+            VStack(spacing: 0) {
+                Spacer()
+                Text("RECOMMENDED")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        activeZone == .recommended
+                            ? AppColor.goalGreen.opacity(0.9)
+                            : Color.white.opacity(0.35)
+                    )
+                    .tracking(1.2)
+                    .padding(.bottom, 4)
+            }
+            .frame(width: layout.recommendedWidth, height: sliderHeight)
 
-            // Above Recommended Zone
+            // Above Recommended Zone (Right: |||||| ticks box)
             RulerZoneSegment(
                 width: layout.aboveWidth,
                 height: sliderHeight,
@@ -99,25 +107,63 @@ struct ScientificWeightSlider: View {
         }
     }
 
-    private func horizontalCenterTrack(availableWidth: CGFloat, thumbX: CGFloat) -> some View {
-        ZStack(alignment: .leading) {
-            // Inactive base track
-            Capsule()
-                .fill(Color.white.opacity(0.16))
-                .frame(width: availableWidth, height: 2.5)
+    private func horizontalCenterTrack(layout: SliderLayout, thumbX: CGFloat) -> some View {
+        let currentX = calculateX(for: currentWeight, layout: layout)
+        let minX = min(thumbX, currentX)
+        let deltaWidth = max(0, abs(thumbX - currentX))
 
-            // Active progress line
+        return ZStack(alignment: .leading) {
+            // 1. Inactive baseline track
             Capsule()
-                .fill(activeColor)
-                .frame(width: max(0, thumbX), height: 2.5)
+                .fill(Color.white.opacity(0.14))
+                .frame(width: layout.availableWidth, height: 2.5)
+
+            // 2. Dynamic illuminated delta segment between current weight and target
+            if deltaWidth > 1.0 {
+                let isCutting = value < currentWeight
+                let deltaColor = isCutting ? AppColor.goalCyan : AppColor.goalCoral
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: isCutting
+                                ? [AppColor.goalCyan, AppColor.goalCyan.opacity(0.7)]
+                                : [AppColor.goalCoral.opacity(0.7), AppColor.goalCoral],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: deltaWidth, height: 2.5)
+                    .shadow(color: deltaColor.opacity(0.45), radius: 4, x: 0, y: 0)
+                    .offset(x: minX)
+            }
+
+            // 3. Anchor dot at current weight position
+            Circle()
+                .fill(
+                    abs(value - currentWeight) <= 0.1
+                        ? AppColor.goalGreen
+                        : Color.white.opacity(0.6)
+                )
+                .frame(width: 5, height: 5)
+                .position(x: currentX, y: sliderHeight / 2)
         }
-        .frame(height: sliderHeight)
+        .frame(width: layout.availableWidth, height: sliderHeight, alignment: .leading)
     }
 
     private var thumbCapsule: some View {
-        Capsule(style: .continuous)
+        let isMaintain = abs(value - currentWeight) <= 0.1
+        let indicatorColor = isMaintain
+            ? AppColor.goalGreen.opacity(0.85)
+            : (value < currentWeight ? AppColor.goalCyan.opacity(0.85) : AppColor.goalCoral.opacity(0.85))
+
+        return Capsule(style: .continuous)
             .fill(Color.white)
             .frame(width: thumbWidth, height: thumbHeight)
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(indicatorColor, lineWidth: 1.5)
+            )
             .shadow(color: Color.black.opacity(0.4), radius: 4, x: 0, y: 2)
             .scaleEffect(isDragging ? 1.06 : 1.0)
             .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isDragging)
@@ -132,14 +178,6 @@ struct ScientificWeightSlider: View {
             return .aboveRecommended
         } else {
             return .recommended
-        }
-    }
-
-    private var activeColor: Color {
-        switch activeZone {
-        case .belowRecommended: return AppColor.goalCyan
-        case .recommended: return AppColor.goalGreen
-        case .aboveRecommended: return AppColor.goalCoral
         }
     }
 
@@ -165,20 +203,20 @@ struct ScientificWeightSlider: View {
         )
     }
 
-    private func calculateThumbX(layout: SliderLayout) -> CGFloat {
+    private func calculateX(for weight: Double, layout: SliderLayout) -> CGFloat {
         let halfThumb = thumbWidth / 2
         let minX = halfThumb
         let maxX = layout.availableWidth - halfThumb
 
         let rawX: CGFloat
-        if value <= healthyRange.lowerBound {
-            let fraction = layout.belowSpan > 0 ? (value - range.lowerBound) / layout.belowSpan : 0
+        if weight <= healthyRange.lowerBound {
+            let fraction = layout.belowSpan > 0 ? (weight - range.lowerBound) / layout.belowSpan : 0
             rawX = CGFloat(fraction) * layout.belowWidth
-        } else if value <= healthyRange.upperBound {
-            let fraction = layout.recommendedSpan > 0 ? (value - healthyRange.lowerBound) / layout.recommendedSpan : 0
+        } else if weight <= healthyRange.upperBound {
+            let fraction = layout.recommendedSpan > 0 ? (weight - healthyRange.lowerBound) / layout.recommendedSpan : 0
             rawX = layout.belowWidth + segmentGap + (CGFloat(fraction) * layout.recommendedWidth)
         } else {
-            let fraction = layout.aboveSpan > 0 ? (value - healthyRange.upperBound) / layout.aboveSpan : 0
+            let fraction = layout.aboveSpan > 0 ? (weight - healthyRange.upperBound) / layout.aboveSpan : 0
             let startOffset = layout.belowWidth + segmentGap + layout.recommendedWidth + segmentGap
             rawX = startOffset + (CGFloat(fraction) * layout.aboveWidth)
         }
@@ -218,11 +256,15 @@ struct ScientificWeightSlider: View {
         if newValue != value {
             value = newValue
 
-            // Step tick haptic (crisp, smooth mechanical feedback per 0.5 kg)
+            // Step tick haptic (smooth glide inside recommended, rigid warning outside)
             let stepInt = Int((newValue / step).rounded())
             if stepInt != lastReportedStep {
                 lastReportedStep = stepInt
-                AppHaptics.sliderTick()
+                if healthyRange.contains(newValue) {
+                    AppHaptics.sliderRecommendedTick()
+                } else {
+                    AppHaptics.sliderWarningTick()
+                }
             }
 
             // Boundary crossed haptic (firm physical impact entering/exiting zones)

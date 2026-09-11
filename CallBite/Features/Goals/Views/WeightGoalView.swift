@@ -17,7 +17,7 @@ struct WeightGoalView: View {
 
     init(
         currentWeightKg: Double = 60.0,
-        targetWeightKg: Double = 56.0,
+        targetWeightKg: Double? = nil,
         heightCm: Double = 168.0,
         showsDismissButton: Bool = false,
         onBack: (() -> Void)? = nil,
@@ -122,9 +122,10 @@ struct WeightGoalView: View {
                 .tracking(0.6)
                 .padding(.top, AppSpacing.large)
 
-            // 3. Proportional 3-Zone Ruler Slider
+            // 3. Proportional 3-Zone Ruler Slider (open middle zone)
             ScientificWeightSlider(
                 value: $viewModel.targetWeightKg,
+                currentWeight: viewModel.currentWeightKg,
                 range: viewModel.minSliderWeight...viewModel.maxSliderWeight,
                 healthyRange: viewModel.healthyWeightRange
             )

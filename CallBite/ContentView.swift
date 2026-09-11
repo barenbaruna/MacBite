@@ -136,7 +136,7 @@ struct ContentView: View {
             NavigationStack {
                 WeightGoalView(
                     currentWeightKg: 60.0,
-                    targetWeightKg: 78.0,
+                    targetWeightKg: nil,
                     heightCm: 168.0,
                     onBack: {}
                 )

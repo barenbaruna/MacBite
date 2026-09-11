@@ -44,12 +44,11 @@ struct OnboardingContainerView: View {
     private var targetGoalStepView: some View {
         let profile = viewModel.healthProfile
         let currentWeight = profile.weightKg > 0 ? profile.weightKg : 60.0
-        let targetWeight = profile.weightKg > 0 ? profile.weightKg - 4.0 : 56.0
         let height = profile.heightCm > 0 ? profile.heightCm : 162.0
 
         return WeightGoalView(
             currentWeightKg: currentWeight,
-            targetWeightKg: targetWeight,
+            targetWeightKg: nil,
             heightCm: height,
             onDone: { _, _ in
                 onFinish()
