@@ -19,6 +19,10 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
     public var fat: Int
     public var fiber: Int
     public var photoSystemName: String
+    /// Actual captured/picked photo, encoded as JPEG. `nil` for entries without
+    /// a real photo (e.g. manual logging) — the SF Symbol fallback
+    /// (`photoSystemName`) is used for display in that case.
+    public var photoData: Data?
 
     public init(
         id: UUID = UUID(),
@@ -30,7 +34,8 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
         carbs: Int,
         fat: Int,
         fiber: Int = 0,
-        photoSystemName: String = "fork.knife"
+        photoSystemName: String = "fork.knife",
+        photoData: Data? = nil
     ) {
         self.id = id
         self.name = name
@@ -42,6 +47,7 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
         self.fat = fat
         self.fiber = fiber
         self.photoSystemName = photoSystemName
+        self.photoData = photoData
     }
 }
 

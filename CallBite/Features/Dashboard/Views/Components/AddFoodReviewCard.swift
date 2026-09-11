@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// Full-page native food details review card with interactive macro editing and 3D flip confirmation.
 public struct AddFoodReviewCard: View {
@@ -18,6 +19,7 @@ public struct AddFoodReviewCard: View {
     public let onSave: () -> Void
 
     @State private var activeFieldForEdit: NutritionEditField?
+    @State private var isEditingName = false
 
     public init(
         foodItem: Binding<FoodItem>,
@@ -60,6 +62,9 @@ public struct AddFoodReviewCard: View {
                 .toolbar { detailsToolbar }
                 .sheet(item: $activeFieldForEdit) { field in
                     nutritionFieldEditModal(for: field)
+                }
+                .sheet(isPresented: $isEditingName) {
+                    nameEditModal
                 }
         }
     }
@@ -117,16 +122,28 @@ public struct AddFoodReviewCard: View {
         }
     }
 
+    @ViewBuilder
     private var photoPlaceholderView: some View {
-        RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
-            .fill(Color(uiColor: .systemGray5))
-            .frame(height: isCompressed ? 160 : 210)
-            .overlay(
-                Image(systemName: "photo")
-                    .font(.system(size: isCompressed ? 48 : 64, weight: .regular))
-                    .foregroundStyle(Color(uiColor: .systemGray3))
-                    .accessibilityHidden(true)
-            )
+        if let photoData = foodItem.photoData, let capturedPhoto = UIImage(data: photoData) {
+            Image(uiImage: capturedPhoto)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: isCompressed ? 160 : 210)
+                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
+                .clipped()
+                .accessibilityLabel("Captured food photo")
+        } else {
+            RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
+                .fill(Color(uiColor: .systemGray5))
+                .frame(height: isCompressed ? 160 : 210)
+                .overlay(
+                    Image(systemName: "photo")
+                        .font(.system(size: isCompressed ? 48 : 64, weight: .regular))
+                        .foregroundStyle(Color(uiColor: .systemGray3))
+                        .accessibilityHidden(true)
+                )
+        }
     }
 
     private var badgeAndDateRow: some View {
@@ -149,9 +166,7 @@ public struct AddFoodReviewCard: View {
 
     private var nutritionSummaryCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(foodItem.name)
-                .font(AppTypography.title2.weight(.bold))
-                .foregroundStyle(Color(uiColor: .label))
+            editableNameRow
                 .padding(.bottom, AppSpacing.md)
 
             nutritionRowButton(title: "Calories", value: "\(foodItem.calories)kcal") {
@@ -179,6 +194,42 @@ public struct AddFoodReviewCard: View {
         .padding(AppSpacing.md)
         .background(AppColor.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
+    }
+
+    private var editableNameRow: some View {
+        Button {
+            isEditingName = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Text(foodItem.name)
+                    .font(AppTypography.title2.weight(.bold))
+                    .foregroundStyle(Color(uiColor: .label))
+                    .multilineTextAlignment(.leading)
+
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                    .accessibilityHidden(true)
+
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Edit food name, currently \(foodItem.name)")
+    }
+
+    private var nameEditModal: some View {
+        FoodNameEditSheet(
+            initialValue: foodItem.name,
+            onSave: { updated in
+                foodItem.name = updated
+                isEditingName = false
+            },
+            onCancel: {
+                isEditingName = false
+            }
+        )
     }
 
     private var rowDivider: some View {

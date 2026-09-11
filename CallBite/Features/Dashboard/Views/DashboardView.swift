@@ -53,6 +53,21 @@ public struct DashboardView: View {
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.triggerTapHaptic)
         .sensoryFeedback(.success, trigger: viewModel.triggerSuccessHaptic)
+        .alert(
+            "Not Food Detected",
+            isPresented: Binding(
+                get: { viewModel.nonFoodWarningMessage != nil },
+                set: { isPresented in
+                    if !isPresented { viewModel.dismissNonFoodWarning() }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                viewModel.dismissNonFoodWarning()
+            }
+        } message: {
+            Text(viewModel.nonFoodWarningMessage ?? "Please try again with a clear photo of your food.")
+        }
         .preferredColorScheme(.dark)
     }
 

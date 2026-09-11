@@ -119,48 +119,15 @@ extension DashboardView {
 
     func handlePhotoCaptured(_ image: UIImage) {
         presentedFullScreenRoute = nil
-        let food = FoodItem(
-            name: "Scanned Food",
-            mealType: "1st Meal",
-            dateString: viewModel.dailySummary.dateString,
-            calories: 475,
-            protein: 24,
-            carbs: 45,
-            fat: 14,
-            fiber: 4,
-            photoSystemName: "camera.fill"
-        )
-        navigateToSaveFood(food)
+        Task {
+            await viewModel.analyzeCapturedPhoto(image)
+        }
     }
 
     func handleManualCalculation(name: String, ingredients: [ManualIngredientInput]) {
         presentedSheetRoute = nil
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = trimmed.isEmpty ? "Dimsum Mentai" : trimmed
-
-        let totalGrams = ingredients.compactMap { Int($0.portionGrams) }.reduce(0, +)
-        let baseGrams = totalGrams > 0 ? totalGrams : 100
-        let ratio = Double(baseGrams) / 100.0
-
-        let food = FoodItem(
-            name: displayName,
-            mealType: "1st Meal",
-            dateString: viewModel.dailySummary.dateString,
-            calories: max(50, Int(220.0 * ratio)),
-            protein: max(5, Int(15.0 * ratio)),
-            carbs: max(5, Int(25.0 * ratio)),
-            fat: max(2, Int(8.0 * ratio)),
-            fiber: max(1, Int(2.0 * ratio)),
-            photoSystemName: "fork.knife"
-        )
-        navigateToSaveFood(food)
-    }
-
-    private func navigateToSaveFood(_ foodItem: FoodItem) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
-                viewModel.resetAndOpenAddFood(with: foodItem)
-            }
+        Task {
+            await viewModel.calculateManualNutrition(name: name, ingredients: ingredients)
         }
     }
 }

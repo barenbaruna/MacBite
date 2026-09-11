@@ -7,6 +7,7 @@
 
 import Combine
 import SwiftUI
+import UIKit
 
 /// State machine for the fluid food saving animation phases.
 public enum SaveAnimationPhase: Equatable, Sendable {
@@ -72,26 +73,57 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var triggerTapHaptic: Bool = false
     @Published public var triggerSuccessHaptic: Bool = false
 
+    // AI Analysis Feedback
+    /// Set when `analyzeCapturedPhoto` detects the photo isn't food. The review
+    /// card is NOT opened in that case — the View should present this as an
+    /// alert instead, so a non-food result never looks like a real logged meal.
+    @Published public var nonFoodWarningMessage: String?
+
+    // MARK: - Dependencies
+
+    // Default-valued (rather than a required constructor param) so every
+    // existing `DashboardViewModel()` / `DashboardViewModel(dailySummary:...)`
+    // call site (ContentView's test harnesses, DashboardFactory) keeps
+    // compiling unchanged, while still being overridable for tests/previews
+    // (e.g. `DashboardViewModel(foodAnalyzer: MockFoodAnalyzer())`).
+    private let foodAnalyzer: FoodAnalyzing
+    private let nutritionEstimator: NutritionEstimating
+
     // MARK: - Initialization
 
-    public init() {
+    public init(
+        foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+    ) {
         let defaultSummary = DailySummary.sampleDashboard
         self.dailySummary = defaultSummary
         self.currentFood = FoodItem.dimsumMentai
+        self.foodAnalyzer = foodAnalyzer
+        self.nutritionEstimator = nutritionEstimator
         let currentRatio = CGFloat(defaultSummary.progressRatio)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
+        #if DEBUG
+        print("[DashboardViewModel] init (default) -> \(ObjectIdentifier(self))")
+        #endif
     }
 
     public init(
         dailySummary: DailySummary,
-        initialFood: FoodItem? = nil
+        initialFood: FoodItem? = nil,
+        foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
     ) {
         self.dailySummary = dailySummary
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
+        self.foodAnalyzer = foodAnalyzer
+        self.nutritionEstimator = nutritionEstimator
         let currentRatio = CGFloat(dailySummary.progressRatio)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
+        #if DEBUG
+        print("[DashboardViewModel] init (dailySummary:) -> \(ObjectIdentifier(self))")
+        #endif
     }
 
     // MARK: - Public Animation Methods
@@ -155,6 +187,104 @@ public final class DashboardViewModel: ObservableObject {
 
     public func hideLoggingOptions() {
         isShowingLoggingOptions = false
+    }
+
+    // MARK: - AI Nutrition Analysis
+
+    /// Analyzes a captured/picked food photo via `foodAnalyzer` and opens the
+    /// review card with the result. A non-food photo shows `nonFoodWarningMessage`
+    /// instead (see the alert in `DashboardView`) and never opens the review
+    /// card. Other failures (model unavailable, inference error) still fall
+    /// back to a placeholder food so the flow doesn't dead-end.
+    public func analyzeCapturedPhoto(_ image: UIImage) async {
+        do {
+            let candidate = try await foodAnalyzer.analyze(image)
+            openAddFoodCard(with: mapToFoodItem(candidate, photo: image))
+        } catch AppError.nonFoodDetected(let probability) {
+            // Do NOT open the review card here — a non-food photo must never
+            // look like a successfully logged meal (that was the previous bug:
+            // it silently fell back to a "Dimsum Mentai" placeholder that was
+            // indistinguishable from a real result).
+            let percent = Int((probability * 100).rounded())
+            nonFoodWarningMessage = "This photo wasn't detected as food (\(percent)% confidence). " +
+                "Please retake the photo with the food clearly visible."
+        } catch {
+            // Other failures (model unavailable, inference error) still fall
+            // back to a placeholder food so the flow doesn't dead-end — but at
+            // least the real photo is attached instead of a stock icon.
+            var fallback = FoodItem.dimsumMentai
+            fallback.photoData = image.jpegData(compressionQuality: 0.8)
+            openAddFoodCard(with: fallback)
+        }
+    }
+
+    public func dismissNonFoodWarning() {
+        nonFoodWarningMessage = nil
+    }
+
+    /// Estimates nutrition for a manually-typed meal via `nutritionEstimator`
+    /// and opens the review card. Falls back to `legacyRatioEstimate` (the
+    /// simple gram-ratio math this app used before AI estimation existed) if
+    /// the estimator is unavailable or fails — manual entries always have a
+    /// name and portions the user typed, so unlike photos there's no "not
+    /// food" case to warn about; any failure just degrades to that fallback.
+    ///
+    /// Not `public` (unlike this file's other methods) because its parameter,
+    /// `ManualIngredientInput`, is an internal-access type owned by
+    /// `Features/ManualLogging/Models/` — deliberately not touched here (see
+    /// implementation plan). `internal` is sufficient since the only caller,
+    /// `DashboardView+Subviews.swift`, is in the same module.
+    func calculateManualNutrition(name: String, ingredients: [ManualIngredientInput]) async {
+        let meal = mapToMealDescription(name: name, ingredients: ingredients)
+
+        #if DEBUG
+        print("[ManualNutrition] called on \(ObjectIdentifier(self)) with name=\"\(name)\" rawIngredientCount=\(ingredients.count)")
+        print("[ManualNutrition] mapped meal: foodName=\"\(meal.foodName)\" ingredients=\(meal.ingredients.map { "\($0.name)/\($0.portionGrams ?? -1)g/\($0.cookingMethod ?? "-")" })")
+        #endif
+
+        do {
+            let nutrition = try await nutritionEstimator.estimate(meal)
+            #if DEBUG
+            print("[ManualNutrition] Foundation Model SUCCESS -> \(nutrition)")
+            #endif
+            openAddFoodCard(with: mapToFoodItem(name: meal.foodName, nutrition: nutrition))
+        } catch {
+            #if DEBUG
+            print("[ManualNutrition] Foundation Model FAILED: \(error). Falling back to legacy ratio math.")
+            #endif
+            openAddFoodCard(with: legacyRatioEstimate(name: name, ingredients: ingredients))
+        }
+    }
+
+    /// Opens the review card after a short delay, dispatched as a fresh main-
+    /// queue turn (NOT `Task.sleep` inside the same async context — that was
+    /// tried first and did not reliably show the card). `presentedSheetRoute`/
+    /// `presentedFullScreenRoute` in `DashboardView+Subviews.swift` are cleared
+    /// synchronously right before this is called; `morphingCardOverlay` is a
+    /// hand-rolled `if`-conditioned ZStack overlay (not a real `.sheet`), and
+    /// mutating its driving `@Published` state too soon — or from a resumed
+    /// `Task` — can get coalesced into the sheet/fullScreenCover's own dismiss
+    /// transaction and silently never render. `DispatchQueue.main.asyncAfter`
+    /// guarantees a genuinely separate run-loop turn, which is the same fix
+    /// this codebase already used for manual logging before AI estimation
+    /// existed (see git history of `handleManualCalculation`) — restored here
+    /// instead of reinventing a new (and, in practice, unreliable) approach.
+    private func openAddFoodCard(with food: FoodItem) {
+        #if DEBUG
+        print("[ManualNutrition] openAddFoodCard scheduled on \(ObjectIdentifier(self))")
+        #endif
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            guard let self else {
+                #if DEBUG
+                print("[ManualNutrition] openAddFoodCard fired but self was DEALLOCATED — card cannot open.")
+                #endif
+                return
+            }
+            #if DEBUG
+            print("[ManualNutrition] openAddFoodCard firing on \(ObjectIdentifier(self)), setting isShowingAddFood=true")
+            #endif
+            self.resetAndOpenAddFood(with: food)
+        }
     }
 
     // MARK: - Internal Animation Sequence
@@ -237,6 +367,85 @@ public final class DashboardViewModel: ObservableObject {
             isShowingAddFood = false
             phase = .completed
         }
+    }
+
+    private func mapToFoodItem(_ candidate: FoodCandidate, photo: UIImage) -> FoodItem {
+        FoodItem(
+            name: candidate.name,
+            mealType: "1st Meal",
+            dateString: dailySummary.dateString,
+            calories: candidate.nutrition.calories,
+            protein: candidate.nutrition.protein,
+            carbs: candidate.nutrition.carbs,
+            fat: candidate.nutrition.fat,
+            fiber: candidate.nutrition.fiber,
+            photoSystemName: "camera.fill",
+            photoData: photo.jpegData(compressionQuality: 0.8)
+        )
+    }
+
+    /// Converts the Feature-local, string-based `ManualIngredientInput` (from
+    /// `ManualLoggingViewModel`) into the typed `ManualMealDescription` that
+    /// `NutritionEstimating` expects — keeps that Core/Domain protocol from
+    /// depending on a Feature-specific model (see NutritionEstimating.swift).
+    /// Blank ingredient rows (the empty one `ManualLoggingViewModel` always
+    /// keeps as a starting row) are skipped.
+    private func mapToMealDescription(name: String, ingredients: [ManualIngredientInput]) -> ManualMealDescription {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let mealName = trimmedName.isEmpty ? "Meal" : trimmedName
+
+        let mapped = ingredients.compactMap { input -> ManualMealDescription.Ingredient? in
+            let trimmedIngredient = input.ingredient.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedIngredient.isEmpty else { return nil }
+
+            let trimmedMethod = input.cookingMethod.trimmingCharacters(in: .whitespacesAndNewlines)
+            return ManualMealDescription.Ingredient(
+                name: trimmedIngredient,
+                portionGrams: Double(input.portionGrams.trimmingCharacters(in: .whitespacesAndNewlines)),
+                cookingMethod: trimmedMethod.isEmpty ? nil : trimmedMethod
+            )
+        }
+
+        return ManualMealDescription(foodName: mealName, ingredients: mapped)
+    }
+
+    private func mapToFoodItem(name: String, nutrition: NutritionFacts) -> FoodItem {
+        FoodItem(
+            name: name,
+            mealType: "1st Meal",
+            dateString: dailySummary.dateString,
+            calories: nutrition.calories,
+            protein: nutrition.protein,
+            carbs: nutrition.carbs,
+            fat: nutrition.fat,
+            fiber: nutrition.fiber,
+            photoSystemName: "fork.knife"
+        )
+    }
+
+    /// Non-AI fallback used when `nutritionEstimator` is unavailable or fails.
+    /// This is the exact gram-ratio math `handleManualCalculation` used before
+    /// AI estimation existed (moved here, not deleted) — kept as a safety net
+    /// so manual logging never dead-ends.
+    private func legacyRatioEstimate(name: String, ingredients: [ManualIngredientInput]) -> FoodItem {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = trimmed.isEmpty ? "Dimsum Mentai" : trimmed
+
+        let totalGrams = ingredients.compactMap { Int($0.portionGrams) }.reduce(0, +)
+        let baseGrams = totalGrams > 0 ? totalGrams : 100
+        let ratio = Double(baseGrams) / 100.0
+
+        return FoodItem(
+            name: displayName,
+            mealType: "1st Meal",
+            dateString: dailySummary.dateString,
+            calories: max(50, Int(220.0 * ratio)),
+            protein: max(5, Int(15.0 * ratio)),
+            carbs: max(5, Int(25.0 * ratio)),
+            fat: max(2, Int(8.0 * ratio)),
+            fiber: max(1, Int(2.0 * ratio)),
+            photoSystemName: "fork.knife"
+        )
     }
 
     private func executeReduceMotionFallback() {
