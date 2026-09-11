@@ -23,6 +23,10 @@ struct ContentView: View {
             return .testLoggingOverlay
         } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
             return .testManualLogging
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalCutting") {
+            return .testWeightGoalCutting
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalBulking") {
+            return .testWeightGoalBulking
         } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoal") {
             return .testWeightGoal
         } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
@@ -142,6 +146,28 @@ struct ContentView: View {
                 )
             }
             .preferredColorScheme(.dark)
+
+        case .testWeightGoalCutting:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 48.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoalBulking:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 78.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -230,6 +256,8 @@ private enum AppScreenState {
     case testManualLogging
     case testPersonalize
     case testWeightGoal
+    case testWeightGoalCutting
+    case testWeightGoalBulking
 }
 
 #Preview {
