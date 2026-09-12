@@ -15,6 +15,10 @@ final class ManualLoggingViewModel: ObservableObject {
         ManualIngredientInput()
     ]
 
+    var canCalculate: Bool {
+        !foodName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func updateFoodName(_ foodName: String) {
         self.foodName = foodName
     }
@@ -28,12 +32,6 @@ final class ManualLoggingViewModel: ObservableObject {
     func updatePortionGrams(_ portionGrams: String, id: UUID) {
         updateIngredientGroup(id: id) { group in
             group.portionGrams = portionGrams
-        }
-    }
-
-    func updateCookingMethod(_ cookingMethod: String, id: UUID) {
-        updateIngredientGroup(id: id) { group in
-            group.cookingMethod = cookingMethod
         }
     }
 

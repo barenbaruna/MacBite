@@ -49,8 +49,8 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var isShowingWeightGoal: Bool = false
     @Published public var isShowingProfile: Bool = false
     @Published public var isShowingLoggingOptions: Bool = false
-    @Published public private(set) var selectedDate: Date
-    @Published public private(set) var foodsForSelectedDate: [FoodItem]
+    @Published public internal(set) var selectedDate: Date
+    @Published public internal(set) var foodsForSelectedDate: [FoodItem]
 
     // Card & Flow Motion Properties
     @Published public var flipAngle: Double = 0.0
@@ -76,26 +76,55 @@ public final class DashboardViewModel: ObservableObject {
 
     // AI Analysis Feedback
     @Published public var nonFoodWarningMessage: String?
+    @Published public var isAnalyzing: Bool = false
+    @Published public var analysisMessage: String = ""
+
+    // AI Coach Insight
+    @Published public var coachInsight: String = ""
 
     // MARK: - Dependencies
 
-    private let dateCalendar: Calendar
-    private let normalizedToday: Date
-    private var dailySummariesByDate: [Date: DailySummary]
-    private var dailyFoodsByDate: [Date: [FoodItem]]
+    let dateCalendar: Calendar
+    let normalizedToday: Date
+    var dailySummariesByDate: [Date: DailySummary]
+    var dailyFoodsByDate: [Date: [FoodItem]]
     let foodAnalyzer: FoodAnalyzing
     let nutritionEstimator: NutritionEstimating
+    let insightGenerator: InsightGenerating
+    let mealStore: MealStoreProtocol
 
     // MARK: - Initialization
 
     public convenience init(
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
-        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        insightGenerator: InsightGenerating = FoundationModelInsightGenerator(),
+        mealStore: MealStoreProtocol? = nil
     ) {
+        let goal = UserProfileStore.shared.nutritionGoal
+        let summary = DailySummary(
+            dateString: DashboardSampleData.displayDate(for: .now, today: .now, calendar: .current),
+            targetCalories: goal?.targetCalories ?? 2000,
+            consumedCalories: 0,
+            targetCarbs: goal?.targetCarbsGrams ?? 250,
+            targetProtein: goal?.targetProteinGrams ?? 100,
+            targetFat: goal?.targetFatGrams ?? 65,
+            targetFiber: goal?.targetFiberGrams ?? 30,
+            totalCarbs: 0,
+            totalProtein: 0,
+            totalFat: 0,
+            totalFiber: 0,
+            streakDays: 0
+        )
+
         self.init(
-            dailySummary: .sampleDashboard,
+            dailySummary: summary,
+            dailySummaries: [:],
+            dailyFoods: [:],
             foodAnalyzer: foodAnalyzer,
-            nutritionEstimator: nutritionEstimator
+            nutritionEstimator: nutritionEstimator,
+            insightGenerator: insightGenerator,
+            mealStore: mealStore
         )
     }
 
@@ -108,251 +137,131 @@ public final class DashboardViewModel: ObservableObject {
         dailyFoods: [Date: [FoodItem]] = [:],
         calendar: Calendar = .current,
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
-        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        insightGenerator: InsightGenerating = FoundationModelInsightGenerator(),
+        mealStore: MealStoreProtocol? = nil
     ) {
+        let resolvedStore = mealStore ?? SwiftDataMealStore.defaultStore()
         let normalizedToday = calendar.startOfDay(for: today)
         let requestedDate = calendar.startOfDay(for: selectedDate)
         let normalizedSelectedDate = min(requestedDate, normalizedToday)
-        var normalizedSummaries = dailySummaries.reduce(into: [:]) { result, entry in
-            result[calendar.startOfDay(for: entry.key)] = entry.value
-        }
-        let normalizedFoods = dailyFoods.reduce(into: [:]) { result, entry in
-            result[calendar.startOfDay(for: entry.key)] = entry.value
-        }
 
-        if normalizedSummaries[normalizedSelectedDate] == nil {
-            normalizedSummaries[normalizedSelectedDate] = dailySummary
-        }
-
-        let initialSummary = normalizedSummaries[normalizedSelectedDate] ?? dailySummary
+        let context = DashboardInitContext(
+            dailySummary: dailySummary,
+            dailySummaries: dailySummaries,
+            dailyFoods: dailyFoods,
+            normalizedSelectedDate: normalizedSelectedDate,
+            normalizedToday: normalizedToday,
+            calendar: calendar,
+            resolvedStore: resolvedStore
+        )
+        let initialData = Self.prepareInitialData(context: context)
 
         self.dateCalendar = calendar
         self.normalizedToday = normalizedToday
         self.selectedDate = normalizedSelectedDate
-        self.dailySummariesByDate = normalizedSummaries
-        self.dailyFoodsByDate = normalizedFoods
-        self.dailySummary = initialSummary
-        self.foodsForSelectedDate = normalizedFoods[normalizedSelectedDate] ?? []
+        self.dailySummariesByDate = initialData.summaries
+        self.dailyFoodsByDate = initialData.foods
+        self.dailySummary = initialData.initialSummary
+        self.foodsForSelectedDate = initialData.foods[normalizedSelectedDate] ?? []
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
         self.foodAnalyzer = foodAnalyzer
         self.nutritionEstimator = nutritionEstimator
-        let currentRatio = Self.rawProgress(for: initialSummary)
+        self.insightGenerator = insightGenerator
+        self.mealStore = resolvedStore
+
+        let currentRatio = Self.rawProgress(for: initialData.initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
-        #if DEBUG
-        print("[DashboardViewModel] init (dailySummary:) -> \(ObjectIdentifier(self))")
-        #endif
+        refreshCoachInsight()
     }
 
-    // MARK: - Public Animation Methods
-
-    public func startSaveAnimation(
-        reduceMotion: Bool = false,
-        screenWidth: CGFloat = 393,
-        containerCenterY: CGFloat = 426
-    ) {
-        guard phase == .idle else { return }
-        triggerTapHaptic.toggle()
-
-        if reduceMotion {
-            executeReduceMotionFallback()
-            return
+    private static func prepareInitialData(context: DashboardInitContext) -> InitialDashboardData {
+        let calendar = context.calendar
+        var normalizedSummaries = context.dailySummaries.reduce(into: [:]) { res, entry in
+            res[calendar.startOfDay(for: entry.key)] = entry.value
+        }
+        var normalizedFoods = context.dailyFoods.reduce(into: [:]) { res, entry in
+            res[calendar.startOfDay(for: entry.key)] = entry.value
         }
 
-        phase = .compressingAndFlipping
-        withAnimation(MotionConfig.compressFlipSpring) {
-            isCardCompressed = true
-            flipAngle = 180.0
+        if context.dailyFoods.isEmpty {
+            let storedMealsByDate = (try? context.resolvedStore.fetchAllMeals()) ?? [:]
+            for (date, meals) in storedMealsByDate {
+                let normalizedDay = calendar.startOfDay(for: date)
+                if normalizedFoods[normalizedDay] == nil {
+                    normalizedFoods[normalizedDay] = meals
+                }
+            }
         }
 
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(MotionConfig.compressDuration * 1_000_000_000))
-            await phaseHoldConfirmation(screenWidth: screenWidth, containerCenterY: containerCenterY)
-        }
-    }
+        populateSummaries(
+            summaries: &normalizedSummaries,
+            foods: normalizedFoods,
+            dailySummary: context.dailySummary,
+            normalizedToday: context.normalizedToday,
+            calendar: calendar
+        )
 
-    // MARK: - Internal Animation Sequence
-
-    private func phaseHoldConfirmation(screenWidth: CGFloat, containerCenterY: CGFloat) async {
-        phase = .readingConfirmed
-        try? await Task.sleep(nanoseconds: MotionConfig.readingPause)
-        await phaseMorphToLightAndFlow(screenWidth: screenWidth, containerCenterY: containerCenterY)
-    }
-
-    private func phaseMorphToLightAndFlow(screenWidth: CGFloat, containerCenterY: CGFloat) async {
-        phase = .morphingAndFlowing
-
-        withAnimation(.easeInOut(duration: 0.20)) {
-            cardContentOpacity = 0.0
-            orbGlowOpacity = 1.0
-            orbScale = 1.0
-            orbBlur = 0.0
-        }
-
-        // Target entry point on progress ring matching current fill percentage
-        let entryPoint = ringGeometry.point(forProgress: Double(ringProgress))
-        let targetOffsetY = entryPoint.y - containerCenterY
-        let targetOffsetX = entryPoint.x - (screenWidth / 2.0)
-
-        withAnimation(MotionConfig.morphTravelSpring) {
-            morphProgress = 1.0
-            cardOffsetY = targetOffsetY
-            cardOffsetX = targetOffsetX
-        }
-
-        try? await Task.sleep(nanoseconds: UInt64(MotionConfig.morphDuration * 1_000_000_000))
-        await phaseStartOrbitAndFillProgress()
-    }
-
-    private func phaseStartOrbitAndFillProgress() async {
-        phase = .orbitingAndLoading
-        orbProgress = Double(ringProgress)
-
-        let newConsumed = dailySummary.consumedCalories + currentFood.calories
-        dailySummary.consumedCalories = newConsumed
-        dailySummary.totalProtein += currentFood.protein
-        dailySummary.totalCarbs += currentFood.carbs
-        dailySummary.totalFat += currentFood.fat
-        dailySummary.totalFiber += currentFood.fiber
-        appendCurrentFoodAndStoreDay()
-        let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
-
-        withAnimation(MotionConfig.progressSpring) {
-            ringProgress = targetRatio
-            orbProgress = Double(targetRatio)
-        }
-
-        try? await Task.sleep(nanoseconds: UInt64(MotionConfig.progressDuration * 1_000_000_000))
-        await phaseDissolveOrb()
-    }
-
-    private func phaseDissolveOrb() async {
-        phase = .dissolvingOrb
-        triggerSuccessHaptic.toggle()
-
-        rippleScale = 0.5
-        rippleOpacity = 0.85
-        withAnimation(.easeOut(duration: 0.45)) {
-            rippleScale = 1.5
-            rippleOpacity = 0.0
-        }
-
-        withAnimation(MotionConfig.ringBounceSpring) {
-            ringScale = 1.08
-        }
-
-        withAnimation(MotionConfig.dissolveEase) {
-            orbScale = 0.0
-            orbBlur = 10.0
-            orbGlowOpacity = 0.0
-        }
-
-        try? await Task.sleep(nanoseconds: 220_000_000)
-        withAnimation(.smooth(duration: 0.25)) {
-            ringScale = 1.0
-        }
-        try? await Task.sleep(nanoseconds: 150_000_000)
-        withAnimation(.easeInOut(duration: 0.25)) {
-            isShowingAddFood = false
-            phase = .completed
-        }
-    }
-
-    private func executeReduceMotionFallback() {
-        let newConsumed = dailySummary.consumedCalories + currentFood.calories
-        dailySummary.consumedCalories = newConsumed
-        dailySummary.totalProtein += currentFood.protein
-        dailySummary.totalCarbs += currentFood.carbs
-        dailySummary.totalFat += currentFood.fat
-        dailySummary.totalFiber += currentFood.fiber
-        appendCurrentFoodAndStoreDay()
-        let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
-
-        withAnimation(.easeInOut(duration: 0.25)) {
-            isShowingAddFood = false
-            ringProgress = targetRatio
-            triggerSuccessHaptic.toggle()
-            phase = .completed
-        }
-    }
-
-    private func emptySummary(for date: Date) -> DailySummary {
-        DailySummary(
-            dateString: DashboardSampleData.displayDate(
-                for: date,
-                today: normalizedToday,
-                calendar: dateCalendar
-            ),
-            targetCalories: dailySummary.targetCalories,
-            consumedCalories: 0,
-            targetCarbs: dailySummary.targetCarbs,
-            targetProtein: dailySummary.targetProtein,
-            targetFat: dailySummary.targetFat,
-            targetFiber: dailySummary.targetFiber,
-            totalCarbs: 0,
-            totalProtein: 0,
-            totalFat: 0,
-            totalFiber: 0,
-            streakDays: 0
+        let initialSummary = normalizedSummaries[context.normalizedSelectedDate] ?? context.dailySummary
+        return InitialDashboardData(
+            summaries: normalizedSummaries,
+            foods: normalizedFoods,
+            initialSummary: initialSummary
         )
     }
 
-    private func storeCurrentDay() {
-        dailySummariesByDate[selectedDate] = dailySummary
-        dailyFoodsByDate[selectedDate] = foodsForSelectedDate
-    }
-
-    private func appendCurrentFoodAndStoreDay() {
-        foodsForSelectedDate.append(currentFood)
-        storeCurrentDay()
-    }
-
-    private func syncProgressWithDailySummary() {
-        let progress = Self.rawProgress(for: dailySummary)
-        ringProgress = progress
-        orbProgress = Double(progress)
-        ringScale = 1
-        rippleScale = 0.5
-        rippleOpacity = 0
-    }
-
-    private static func rawProgress(for summary: DailySummary) -> CGFloat {
-        CGFloat(summary.consumedCalories) / CGFloat(max(1, summary.targetCalories))
+    private static func populateSummaries(
+        summaries: inout [Date: DailySummary],
+        foods: [Date: [FoodItem]],
+        dailySummary: DailySummary,
+        normalizedToday: Date,
+        calendar: Calendar
+    ) {
+        for (date, foodList) in foods {
+            if let existing = summaries[date] {
+                var updated = existing
+                if updated.consumedCalories == 0 && !foodList.isEmpty {
+                    updated.consumedCalories = foodList.reduce(0) { $0 + $1.calories }
+                    updated.totalProtein = foodList.reduce(0) { $0 + $1.protein }
+                    updated.totalCarbs = foodList.reduce(0) { $0 + $1.carbs }
+                    updated.totalFat = foodList.reduce(0) { $0 + $1.fat }
+                    updated.totalFiber = foodList.reduce(0) { $0 + $1.fiber }
+                }
+                summaries[date] = updated
+            } else {
+                let dateStr = DashboardSampleData.displayDate(for: date, today: normalizedToday, calendar: calendar)
+                summaries[date] = DailySummary(
+                    dateString: dateStr,
+                    targetCalories: dailySummary.targetCalories,
+                    consumedCalories: foodList.reduce(0) { $0 + $1.calories },
+                    targetCarbs: dailySummary.targetCarbs,
+                    targetProtein: dailySummary.targetProtein,
+                    targetFat: dailySummary.targetFat,
+                    targetFiber: dailySummary.targetFiber,
+                    totalCarbs: foodList.reduce(0) { $0 + $1.carbs },
+                    totalProtein: foodList.reduce(0) { $0 + $1.protein },
+                    totalFat: foodList.reduce(0) { $0 + $1.fat },
+                    totalFiber: foodList.reduce(0) { $0 + $1.fiber },
+                    streakDays: dailySummary.streakDays
+                )
+            }
+        }
     }
 }
 
-// MARK: - Date Navigation
+private struct DashboardInitContext {
+    let dailySummary: DailySummary
+    let dailySummaries: [Date: DailySummary]
+    let dailyFoods: [Date: [FoodItem]]
+    let normalizedSelectedDate: Date
+    let normalizedToday: Date
+    let calendar: Calendar
+    let resolvedStore: MealStoreProtocol
+}
 
-public extension DashboardViewModel {
-    var isShowingToday: Bool {
-        dateCalendar.isDate(selectedDate, inSameDayAs: normalizedToday)
-    }
-
-    var todayDate: Date {
-        normalizedToday
-    }
-
-    var calendarSummaries: [Date: DailySummary] {
-        var summaries = dailySummariesByDate
-        summaries[selectedDate] = dailySummary
-        return summaries
-    }
-
-    @discardableResult
-    func selectDate(_ date: Date) -> Bool {
-        let normalizedDate = dateCalendar.startOfDay(for: date)
-        guard normalizedDate <= normalizedToday else { return false }
-
-        storeCurrentDay()
-        selectedDate = normalizedDate
-        dailySummary = dailySummariesByDate[normalizedDate] ?? emptySummary(for: normalizedDate)
-        foodsForSelectedDate = dailyFoodsByDate[normalizedDate] ?? []
-        syncProgressWithDailySummary()
-        hideLoggingOptions()
-        return true
-    }
-
-    func returnToToday() {
-        selectDate(normalizedToday)
-    }
+private struct InitialDashboardData {
+    let summaries: [Date: DailySummary]
+    let foods: [Date: [FoodItem]]
+    let initialSummary: DailySummary
 }

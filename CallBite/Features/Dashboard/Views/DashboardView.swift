@@ -19,6 +19,7 @@ public struct DashboardView: View {
     @State var presentedFullScreenRoute: AppRoute?
     @State var presentedSheetRoute: AppRoute?
     @State var isShowingCalendar = false
+    @State var selectedHistoryFood: FoodItem?
 
     public init(viewModel: DashboardViewModel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -115,7 +116,14 @@ public struct DashboardView: View {
                 activeOrbOrbitingLayer
                     .zIndex(20)
             }
+
+            if viewModel.isAnalyzing {
+                AnalysisLoadingView(message: viewModel.analysisMessage)
+                    .transition(.opacity)
+                    .zIndex(30)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isAnalyzing)
         .frame(width: fullWidth, height: fullHeight)
         .coordinateSpace(name: "saveFlowCoordinateSpace")
         .ignoresSafeArea(.container)
@@ -140,6 +148,14 @@ public struct DashboardView: View {
                         onReturnToToday: returnToToday,
                         onCalendarSelected: showCalendar,
                         onProfileSelected: showProfile
+                    )
+                }
+                .navigationDestination(item: $selectedHistoryFood) { food in
+                    FoodDetailView(
+                        foodItem: food,
+                        onSave: { updated in
+                            viewModel.updateFood(updated)
+                        }
                     )
                 }
         }
@@ -171,83 +187,6 @@ public struct DashboardView: View {
                 radius: viewModel.ringGeometry.radius
             )
         )
-    }
-
-    // MARK: - Morphing Card Overlay (Full Page -> Floating Card -> 28pt Orb)
-
-    private func morphingCardOverlay(fullSize: CGSize, safeArea: EdgeInsets) -> some View {
-        let isCardCompressed = viewModel.isCardCompressed
-        let maxCardW = min(AppMetrics.modalCardMaxWidth, fullSize.width - AppSpacing.lg)
-        let initialW = isCardCompressed ? maxCardW : fullSize.width
-        let maxCardH = min(
-            AppMetrics.modalCardMaxHeight,
-            fullSize.height * AppMetrics.modalCardHeightRatio
-        )
-        let initialH = isCardCompressed ? maxCardH : fullSize.height
-        let initialRadius: CGFloat = isCardCompressed ? AppCornerRadius.modalCard : 0
-        let targetDropletSize: CGFloat = AppMetrics.energyDropletSize
-        let progress = viewModel.morphProgress
-
-        let currentWidth = initialW - (initialW - targetDropletSize) * progress
-        let currentHeight = initialH - (initialH - targetDropletSize) * progress
-        let currentCornerRadius = initialRadius - (initialRadius - (targetDropletSize / 2)) * progress
-        let shadowRadius: CGFloat = isCardCompressed ? AppMetrics.modalCardShadowRadius * (1.0 - progress) : 0
-
-        return ZStack {
-            morphingCardInnerStack(
-                width: currentWidth,
-                height: currentHeight,
-                cornerRadius: currentCornerRadius,
-                shadowRadius: shadowRadius,
-                safeArea: safeArea
-            )
-            .offset(x: viewModel.cardOffsetX, y: viewModel.cardOffsetY)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        }
-    }
-
-    private func morphingCardInnerStack(
-        width: CGFloat,
-        height: CGFloat,
-        cornerRadius: CGFloat,
-        shadowRadius: CGFloat,
-        safeArea: EdgeInsets
-    ) -> some View {
-        let isCardCompressed = viewModel.isCardCompressed
-        let progress = viewModel.morphProgress
-        let orangeShadowOpacity = isCardCompressed ? (0.24 * (1.0 - progress)) : 0.0
-
-        return ZStack {
-            AddFoodReviewCard(
-                foodItem: $viewModel.currentFood,
-                isCompressed: isCardCompressed,
-                flipAngle: viewModel.flipAngle,
-                isSaveDisabled: viewModel.phase != .idle,
-                safeArea: safeArea,
-                onDismiss: dismissReviewCard,
-                onSave: triggerSaveAnimation
-            )
-            .opacity(viewModel.cardContentOpacity)
-            .frame(width: width, height: height)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .shadow(
-                color: AppColor.orange500.opacity(orangeShadowOpacity),
-                radius: shadowRadius,
-                y: isCardCompressed ? 12 : 0
-            )
-            .shadow(
-                color: Color.black.opacity(0.32 * (1.0 - progress)),
-                radius: shadowRadius * 0.8,
-                y: isCardCompressed ? 8 : 0
-            )
-            .rotation3DEffect(.degrees(viewModel.flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.28)
-
-            EnergyDropletOrbView(
-                scale: viewModel.orbScale,
-                blur: viewModel.orbBlur,
-                opacity: viewModel.orbGlowOpacity
-            )
-        }
     }
 
     // MARK: - Dashboard Canvas

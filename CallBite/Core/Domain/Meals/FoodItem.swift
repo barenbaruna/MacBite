@@ -26,6 +26,11 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
     /// (`photoSystemName`) is used for display in that case.
     public var photoData: Data?
 
+    /// Returns true if this item has a captured or bundled photo.
+    public var hasPhoto: Bool {
+        photoData != nil || photoAssetName != nil
+    }
+
     public init(
         id: UUID = UUID(),
         name: String,
@@ -99,5 +104,15 @@ public extension FoodItem {
 
     static func currentMealType(for date: Date = Date(), calendar: Calendar = .current) -> String {
         MealTimeSlot.slot(for: date, calendar: calendar).displayName
+    }
+
+    static func currentDateString(for date: Date = Date(), locale: Locale = Locale(identifier: "en_GB")) -> String {
+        date.formatted(
+            .dateTime
+                .day()
+                .month(.wide)
+                .year()
+                .locale(locale)
+        )
     }
 }

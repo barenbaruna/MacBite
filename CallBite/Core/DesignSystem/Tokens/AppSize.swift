@@ -21,6 +21,7 @@ enum AppSize {
     static let cameraActionBarHeight: CGFloat = 117
     static let cameraControlStroke: CGFloat = 1
     static let cameraRoundControl: CGFloat = 40
+    static let cameraSecondaryControl: CGFloat = 44
     static let cameraSafeArea: CGFloat = 323
     static let cameraSafeAreaCornerRadius: CGFloat = 26
     static let cameraSafeAreaStroke: CGFloat = 4

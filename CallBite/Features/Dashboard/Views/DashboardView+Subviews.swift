@@ -16,15 +16,14 @@ extension DashboardView {
     }
 
     var profileSheet: some View {
-        ProfileView(
-            initialProfile: UserHealthProfile(
-                age: 22,
-                biologicalSex: .male,
-                weightKg: 56.0,
-                heightCm: 162.0
-            ),
-            onSave: { _ in
-                // Save updated profile
+        ProfileFactory.makeView(
+            onSave: { updatedProfile in
+                UserProfileStore.shared.updateProfile(updatedProfile)
+
+                // Recalculate and update dashboard targets in real-time
+                if let newGoal = UserProfileStore.shared.nutritionGoal {
+                    viewModel.updateNutritionTargets(newGoal)
+                }
             }
         )
     }
@@ -44,11 +43,13 @@ extension DashboardView {
     }
 
     var coachInsightSection: some View {
-        Text(viewModel.dailySummary.coachInsight)
+        Text(viewModel.coachInsight)
             .font(AppTypography.subheadline)
             .foregroundStyle(Color(uiColor: .label))
             .multilineTextAlignment(.center)
             .padding(.horizontal, AppSpacing.sm)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.md)
     }
 
     var macroGridSection: some View {
@@ -67,7 +68,12 @@ extension DashboardView {
     }
 
     var foodHistorySection: some View {
-        DashboardFoodHistorySection(foods: viewModel.foodsForSelectedDate)
+        DashboardFoodHistorySection(
+            foods: viewModel.foodsForSelectedDate,
+            onFoodTap: { food in
+                selectedHistoryFood = food
+            }
+        )
     }
 
     var floatingActionBar: some View {
@@ -151,17 +157,97 @@ extension DashboardView {
 
     // MARK: - Save Food Navigation
 
-    func handlePhotoCaptured(_ image: UIImage) {
-        presentedFullScreenRoute = nil
-        Task {
-            await viewModel.analyzeCapturedPhoto(image)
+    func handlePhotoCaptured(_ image: UIImage) async -> Bool {
+        let success = await viewModel.analyzeCapturedPhoto(image)
+        if success {
+            presentedFullScreenRoute = nil
+        } else {
+            viewModel.dismissNonFoodWarning()
         }
+        return success
     }
 
     func handleManualCalculation(name: String, ingredients: [ManualIngredientInput]) {
         presentedSheetRoute = nil
         Task {
             await viewModel.calculateManualNutrition(name: name, ingredients: ingredients)
+        }
+    }
+
+    // MARK: - Morphing Card Overlay (Full Page -> Floating Card -> 28pt Orb)
+
+    func morphingCardOverlay(fullSize: CGSize, safeArea: EdgeInsets) -> some View {
+        let isCardCompressed = viewModel.isCardCompressed
+        let topGap: CGFloat = max(safeArea.top + 10, 68)
+
+        let initialW = fullSize.width
+        let initialH = isCardCompressed ? (fullSize.height - topGap) : fullSize.height
+        let baseOffsetY: CGFloat = isCardCompressed ? (topGap / 2.0) : 0
+        let initialRadius: CGFloat = isCardCompressed ? AppCornerRadius.modalCard : 0
+
+        let targetDropletSize: CGFloat = AppMetrics.energyDropletSize
+        let progress = viewModel.morphProgress
+
+        let currentWidth = initialW - (initialW - targetDropletSize) * progress
+        let currentHeight = initialH - (initialH - targetDropletSize) * progress
+        let currentCornerRadius = initialRadius - (initialRadius - (targetDropletSize / 2)) * progress
+        let currentOffsetY = baseOffsetY * (1.0 - progress) + viewModel.cardOffsetY
+        let shadowRadius: CGFloat = isCardCompressed ? AppMetrics.modalCardShadowRadius * (1.0 - progress) : 0
+
+        return ZStack {
+            morphingCardInnerStack(
+                width: currentWidth,
+                height: currentHeight,
+                cornerRadius: currentCornerRadius,
+                shadowRadius: shadowRadius,
+                safeArea: safeArea
+            )
+            .offset(x: viewModel.cardOffsetX, y: currentOffsetY)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+    }
+
+    private func morphingCardInnerStack(
+        width: CGFloat,
+        height: CGFloat,
+        cornerRadius: CGFloat,
+        shadowRadius: CGFloat,
+        safeArea: EdgeInsets
+    ) -> some View {
+        let isCardCompressed = viewModel.isCardCompressed
+        let progress = viewModel.morphProgress
+        let orangeShadowOpacity = isCardCompressed ? (0.24 * (1.0 - progress)) : 0.0
+
+        return ZStack {
+            AddFoodReviewCard(
+                foodItem: $viewModel.currentFood,
+                isCompressed: isCardCompressed,
+                flipAngle: viewModel.flipAngle,
+                isSaveDisabled: viewModel.phase != .idle,
+                safeArea: safeArea,
+                onDismiss: dismissReviewCard,
+                onSave: triggerSaveAnimation
+            )
+            .opacity(viewModel.cardContentOpacity)
+            .frame(width: width, height: height)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(
+                color: AppColor.orange500.opacity(orangeShadowOpacity),
+                radius: shadowRadius,
+                y: isCardCompressed ? 12 : 0
+            )
+            .shadow(
+                color: Color.black.opacity(0.32 * (1.0 - progress)),
+                radius: shadowRadius * 0.8,
+                y: isCardCompressed ? 8 : 0
+            )
+            .rotation3DEffect(.degrees(viewModel.flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.28)
+
+            EnergyDropletOrbView(
+                scale: viewModel.orbScale,
+                blur: viewModel.orbBlur,
+                opacity: viewModel.orbGlowOpacity
+            )
         }
     }
 }

@@ -26,6 +26,8 @@ enum AppColor {
     static let dark800 = Color(hex: 0x26242E)
     static let dark900 = Color(hex: 0x19191B)
     static let dark950 = Color(hex: 0x0C0C0E)
+    static let foodSavedTop = Color(hex: 0x1B1414)
+    static let foodSavedBottom = Color(hex: 0x121112)
 
     // Activity Cards (Lifestyle)
     static let activityCardNormal = Color(hex: 0x1C1C1E)

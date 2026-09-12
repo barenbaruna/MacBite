@@ -29,16 +29,21 @@
 /// string-based UI state) so this Core/Domain protocol never depends on a
 /// Feature-specific model (01_Architecture.md: "Feature -> Core, tidak
 /// pernah sebaliknya").
+///
+/// NOTE: `ManualIngredientInput` still has a `cookingMethod` UI field (kept
+/// as-is, per product decision) — it's just not mapped here anymore.
+/// `FoundationModelNutritionEstimator` now infers preparation style from the
+/// meal name alone (e.g. "fried rice" implies frying) instead of a
+/// per-ingredient cooking method, which testing showed the model didn't
+/// weigh reliably against the meal name anyway.
 public struct ManualMealDescription: Sendable {
     public struct Ingredient: Sendable {
         public let name: String
         public let portionGrams: Double?
-        public let cookingMethod: String?
 
-        public init(name: String, portionGrams: Double?, cookingMethod: String?) {
+        public init(name: String, portionGrams: Double?) {
             self.name = name
             self.portionGrams = portionGrams
-            self.cookingMethod = cookingMethod
         }
     }
 

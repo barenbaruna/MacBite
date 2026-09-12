@@ -2,7 +2,7 @@
 //  NutritionEditAndAnalysisTests.swift
 //  CallBiteTests
 //
-//  Created by Codex on 11/09/26.
+//  Created by Joshua Valentine Manik on 11/09/26.
 //
 
 @testable import CallBite
@@ -66,14 +66,23 @@ struct FoodAnalyzerTests {
         let meal = ManualMealDescription(
             foodName: "Chicken & Rice",
             ingredients: [
-                .init(name: "Chicken Breast", portionGrams: 150, cookingMethod: "Grilled"),
-                .init(name: "Brown Rice", portionGrams: 100, cookingMethod: "Steamed")
+                .init(name: "Chicken Breast", portionGrams: 150),
+                .init(name: "Brown Rice", portionGrams: 100)
             ]
         )
 
         let nutrition = try await estimator.estimate(meal)
 
         #expect(nutrition == expectedNutrition)
+    }
+
+    @Test func testMockInsightGeneratorReturnsInsight() async throws {
+        let generator = MockInsightGenerator(resultToReturn: "You're on track — keep it up!")
+        let summary = DailySummary(targetCalories: 2000, consumedCalories: 1500)
+
+        let insight = try await generator.generateInsight(for: summary)
+
+        #expect(insight == "You're on track — keep it up!")
     }
 }
 

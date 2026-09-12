@@ -24,31 +24,43 @@ struct ManualLoggingView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                AppColor.dark950
-                    .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.large) {
-                        foodSection
-                        foodDetailsSection
+            scrollContent
+                .navigationTitle("Log Meal")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        dismissButton
                     }
-                    .padding(.horizontal, AppSpacing.manualScreenMargin)
-                    .padding(.top, AppSpacing.small)
-                    .padding(.bottom, AppSpacing.manualSectionGap)
                 }
-                .scrollDismissesKeyboard(.interactively)
-            }
-            .safeAreaInset(edge: .bottom, spacing: .zero) {
-                calculateButton
-            }
-            .navigationTitle("Log Meal")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    dismissButton
+        }
+    }
+
+    private var scrollContent: some View {
+        ZStack {
+            AppColor.dark950
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.large) {
+                    foodSection
+                    foodDetailsSection
                 }
+                .padding(.horizontal, AppSpacing.manualScreenMargin)
+                .padding(.top, AppSpacing.small)
+                .padding(.bottom, AppSpacing.manualSectionGap)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .onTapGesture {
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: .zero) {
+            calculateButton
         }
     }
 
@@ -88,9 +100,6 @@ struct ManualLoggingView: View {
                 onPortionChanged: { id, value in
                     viewModel.updatePortionGrams(value, id: id)
                 },
-                onCookingMethodChanged: { id, value in
-                    viewModel.updateCookingMethod(value, id: id)
-                },
                 onAddIngredient: {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         viewModel.addIngredient()
@@ -106,13 +115,14 @@ struct ManualLoggingView: View {
         } label: {
             Text("Calculate")
                 .font(AppTypography.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(viewModel.canCalculate ? .white : AppColor.white.opacity(0.4))
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.large)
-        .tint(AppColor.calorie)
+        .tint(viewModel.canCalculate ? AppColor.calorie : AppColor.buttonDisabled)
+        .disabled(!viewModel.canCalculate)
         .padding(.horizontal, AppSpacing.manualScreenMargin)
         .padding(.vertical, AppSpacing.manualBottomButtonInset)
     }

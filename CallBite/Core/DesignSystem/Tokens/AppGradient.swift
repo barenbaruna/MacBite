@@ -78,4 +78,11 @@ enum AppGradient {
         startPoint: .leading,
         endPoint: .trailing
     )
+
+    /// Food saved confirmation screen background gradient (#1B1414 -> #121112)
+    static let foodSavedBackground = LinearGradient(
+        colors: [AppColor.foodSavedTop, AppColor.foodSavedBottom],
+        startPoint: .top,
+        endPoint: .bottom
+    )
 }

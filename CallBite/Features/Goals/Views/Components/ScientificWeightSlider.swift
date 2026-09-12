@@ -161,7 +161,7 @@ struct ScientificWeightSlider: View {
                 .offset(x: outerInset)
 
             // 3. Anchor dot at current weight position
-            if healthyRange.contains(currentWeight) {
+            if range.contains(currentWeight) {
                 Circle()
                     .fill(Color.white)
                     .frame(width: 6, height: 6)
@@ -236,7 +236,7 @@ struct ScientificWeightSlider: View {
     }
 }
 
-// MARK: - Calculations & Value Mapping
+// MARK: - Layout & Interaction Math
 
 extension ScientificWeightSlider {
     private func calculateLayout(availableWidth: CGFloat) -> SliderLayout {
@@ -247,7 +247,7 @@ extension ScientificWeightSlider {
         let zone1StartKg = Int(range.lowerBound.rounded())
         let zone1EndKg = max(zone1StartKg + 1, Int(healthyRange.lowerBound.rounded()))
 
-        let zone3StartKg = Int(healthyRange.upperBound.rounded())
+        let zone3StartKg = max(zone1EndKg + 1, Int(healthyRange.upperBound.rounded()))
         let zone3EndKg = max(zone3StartKg + 1, Int(range.upperBound.rounded()))
 
         let minThumbMargin = (thumbWidth / 2) + 4.0 // 26.0 pt keeps thumb and halo strictly within card bounds
@@ -286,31 +286,33 @@ extension ScientificWeightSlider {
             let localX = layout.zone3LocalStartX + CGFloat(clampedProgress) * localSpan
             return layout.zone3Start + localX
         } else {
-            // Zone 2 (Middle / Recommended)
-            let midX = (layout.zone2Start + layout.zone2End) / 2.0
-            let safeCurrent = min(
-                max(currentWeight, Double(layout.zone1EndKg) + 0.5),
-                Double(layout.zone3StartKg) - 0.5
-            )
+            // Zone 2 (Middle / Recommended WHO Range)
+            let isCurrentInZone2 = healthyRange.contains(currentWeight)
+            let span = Double(layout.zone3StartKg - layout.zone1EndKg)
 
-            if weight <= safeCurrent {
-                let span = safeCurrent - Double(layout.zone1EndKg)
-                let progress = span > 0 ? (weight - Double(layout.zone1EndKg)) / span : 0.5
-                return layout.zone2Start + CGFloat(progress) * (midX - layout.zone2Start)
+            if isCurrentInZone2 {
+                let midX = (layout.zone2Start + layout.zone2End) / 2.0
+                let safeCurrent = currentWeight
+
+                if weight <= safeCurrent {
+                    let leftSpan = safeCurrent - Double(layout.zone1EndKg)
+                    let progress = leftSpan > 0 ? (weight - Double(layout.zone1EndKg)) / leftSpan : 0.5
+                    return layout.zone2Start + CGFloat(progress) * (midX - layout.zone2Start)
+                } else {
+                    let rightSpan = Double(layout.zone3StartKg) - safeCurrent
+                    let progress = rightSpan > 0 ? (weight - safeCurrent) / rightSpan : 0.5
+                    return midX + CGFloat(progress) * (layout.zone2End - midX)
+                }
             } else {
-                let span = Double(layout.zone3StartKg) - safeCurrent
-                let progress = span > 0 ? (weight - safeCurrent) / span : 0.5
-                return midX + CGFloat(progress) * (layout.zone2End - midX)
+                let progress = span > 0 ? (weight - Double(layout.zone1EndKg)) / span : 0.5
+                let clampedProgress = min(max(progress, 0), 1)
+                return layout.zone2Start + CGFloat(clampedProgress) * (layout.zone2End - layout.zone2Start)
             }
         }
     }
 
     private func updateValue(dragX: CGFloat, layout: SliderLayout) {
-        let safeCurrent = min(
-            max(currentWeight, Double(layout.zone1EndKg) + 0.5),
-            Double(layout.zone3StartKg) - 0.5
-        )
-
+        let isCurrentInZone2 = healthyRange.contains(currentWeight)
         var calculatedValue: Double
 
         if dragX <= layout.zone1LocalStartX {
@@ -322,15 +324,22 @@ extension ScientificWeightSlider {
         } else if dragX < layout.zone2Start {
             calculatedValue = Double(layout.zone1EndKg)
         } else if dragX <= layout.zone2End {
-            let midFraction = Double((dragX - layout.zone2Start) / max(1, layout.zone2End - layout.zone2Start))
-            if abs(midFraction - 0.5) <= 0.05 {
-                calculatedValue = safeCurrent
-            } else if midFraction < 0.5 {
-                let progress = midFraction / 0.5
-                calculatedValue = Double(layout.zone1EndKg) + progress * (safeCurrent - Double(layout.zone1EndKg))
+            let zone2Width = max(1, layout.zone2End - layout.zone2Start)
+            let midFraction = Double((dragX - layout.zone2Start) / zone2Width)
+
+            if isCurrentInZone2 {
+                if abs(midFraction - 0.5) <= 0.05 {
+                    calculatedValue = currentWeight
+                } else if midFraction < 0.5 {
+                    let progress = midFraction / 0.5
+                    calculatedValue = Double(layout.zone1EndKg) + progress * (currentWeight - Double(layout.zone1EndKg))
+                } else {
+                    let progress = (midFraction - 0.5) / 0.5
+                    calculatedValue = currentWeight + progress * (Double(layout.zone3StartKg) - currentWeight)
+                }
             } else {
-                let progress = (midFraction - 0.5) / 0.5
-                calculatedValue = safeCurrent + progress * (Double(layout.zone3StartKg) - safeCurrent)
+                let rangeDelta = layout.zone3StartKg - layout.zone1EndKg
+                calculatedValue = Double(layout.zone1EndKg) + midFraction * Double(rangeDelta)
             }
         } else if dragX < layout.zone3Start + layout.zone3LocalStartX {
             calculatedValue = Double(layout.zone3StartKg)
@@ -343,8 +352,8 @@ extension ScientificWeightSlider {
             calculatedValue = Double(layout.zone3StartKg) + progress * Double(layout.zone3EndKg - layout.zone3StartKg)
         }
 
-        if abs(calculatedValue - safeCurrent) <= 0.35 {
-            calculatedValue = safeCurrent
+        if abs(calculatedValue - currentWeight) <= 0.35 {
+            calculatedValue = currentWeight
         }
 
         let stepped = (calculatedValue / step).rounded() * step

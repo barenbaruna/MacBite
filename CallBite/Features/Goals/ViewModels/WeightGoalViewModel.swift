@@ -19,8 +19,17 @@ final class WeightGoalViewModel {
         }
     }
 
-    let minSliderWeight: Double = 40.0
-    let maxSliderWeight: Double = 90.0
+    var sliderRange: ClosedRange<Double> {
+        ScientificWeightEngine.sliderRange(currentWeightKg: currentWeightKg, heightCm: heightCm)
+    }
+
+    var minSliderWeight: Double {
+        sliderRange.lowerBound
+    }
+
+    var maxSliderWeight: Double {
+        sliderRange.upperBound
+    }
 
     var triggerCategoryHaptic: Bool = false
 

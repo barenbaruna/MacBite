@@ -31,6 +31,7 @@ final class FoodCaptureViewModel: ObservableObject {
     private let motionService: MotionServiceProtocol
     private let guideStore: CameraGuideStoreProtocol
     private let guidanceEvaluator = CameraGuidanceEvaluator()
+    private let croppingService: ImageCroppingServiceProtocol
     private var cancellables = Set<AnyCancellable>()
     private var viewportSize = CGSize.zero
     private var guideFrame = CGRect.zero
@@ -40,11 +41,13 @@ final class FoodCaptureViewModel: ObservableObject {
     init(
         cameraService: CameraServiceProtocol,
         motionService: MotionServiceProtocol,
-        guideStore: CameraGuideStoreProtocol
+        guideStore: CameraGuideStoreProtocol,
+        croppingService: ImageCroppingServiceProtocol = ImageCroppingService()
     ) {
         self.cameraService = cameraService
         self.motionService = motionService
         self.guideStore = guideStore
+        self.croppingService = croppingService
         captureSession = cameraService.captureSession
         isGuidePresented = !guideStore.hasSeenCameraGuide
         observeGuidanceInputs()
@@ -104,8 +107,9 @@ final class FoodCaptureViewModel: ObservableObject {
 
         state = .capturing
         do {
-            let image = try await cameraService.capturePhoto()
-            presentCapturedImage(image)
+            let rawImage = try await cameraService.capturePhoto()
+            let croppedImage = cropImageToGuideScope(rawImage)
+            presentCapturedImage(croppedImage)
         } catch {
             errorMessage = error.localizedDescription
             state = .live
@@ -113,19 +117,33 @@ final class FoodCaptureViewModel: ObservableObject {
     }
 
     func selectPhoto(data: Data) {
-        guard let image = UIImage(data: data) else {
+        guard let rawImage = UIImage(data: data) else {
             errorMessage = CameraServiceError.invalidPhotoData.localizedDescription
             return
         }
 
-        presentCapturedImage(image)
+        let croppedImage = cropToCenterSquare(image: rawImage)
+        presentCapturedImage(croppedImage)
+    }
+
+    func cropImageToGuideScope(_ image: UIImage) -> UIImage {
+        croppingService.cropImageToGuideScope(
+            image: image,
+            guideFrame: guideFrame,
+            viewportSize: viewportSize
+        )
+    }
+
+    func cropToCenterSquare(image: UIImage) -> UIImage {
+        croppingService.cropToCenterSquare(image: image)
     }
 
     func retakePhoto() async {
         capturedImage = nil
         resetGuidance()
-        state = .preparing
-        await prepareCamera()
+        await cameraService.startSession()
+        motionService.startUpdates()
+        state = .live
     }
 
     func updatePreviewLayout(viewportSize: CGSize, guideFrame: CGRect) {

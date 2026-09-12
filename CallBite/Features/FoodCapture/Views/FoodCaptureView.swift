@@ -9,16 +9,18 @@ import PhotosUI
 import SwiftUI
 
 struct FoodCaptureView: View {
-    @ObservedObject private var viewModel: FoodCaptureViewModel
-    @State private var selectedPhoto: PhotosPickerItem?
+    @ObservedObject var viewModel: FoodCaptureViewModel
+    @State var selectedPhoto: PhotosPickerItem?
+    @State private var isAnalyzing = false
+    @State private var nonFoodDetectedMessage: String?
 
     let onDismiss: () -> Void
-    let onUsePhoto: (UIImage) -> Void
+    let onUsePhoto: (UIImage) async -> Bool
 
     init(
         viewModel: FoodCaptureViewModel,
         onDismiss: @escaping () -> Void,
-        onUsePhoto: @escaping (UIImage) -> Void
+        onUsePhoto: @escaping (UIImage) async -> Bool
     ) {
         self.viewModel = viewModel
         self.onDismiss = onDismiss
@@ -26,27 +28,19 @@ struct FoodCaptureView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let layout = CameraGuidanceLayout(viewportSize: geometry.size)
+        ZStack {
+            cameraPreviewSection
+                .ignoresSafeArea()
 
-            cameraExperience(layout: layout)
-            .frame(
-                width: geometry.size.width,
-                height: geometry.size.height
-            )
-            .clipped()
-            .overlay(alignment: .bottom) {
-                capturedPhotoActions
-            }
-            .onAppear {
-                updatePreviewLayout(size: geometry.size, layout: layout)
-            }
-            .onChange(of: geometry.size) { _, newSize in
-                let updatedLayout = CameraGuidanceLayout(viewportSize: newSize)
-                updatePreviewLayout(size: newSize, layout: updatedLayout)
+            cameraControlsSection
+
+            if isAnalyzing {
+                AnalysisLoadingView(message: "Analyzing your meal…")
+                    .transition(.opacity)
+                    .zIndex(10)
             }
         }
-        .ignoresSafeArea()
+        .animation(.easeInOut(duration: 0.25), value: isAnalyzing)
         .task {
             await viewModel.prepareCamera()
         }
@@ -54,210 +48,88 @@ struct FoodCaptureView: View {
             viewModel.stopCamera()
         }
         .onChange(of: selectedPhoto) { _, newPhoto in
-            guard let newPhoto else { return }
-            Task {
-                if let data = try? await newPhoto.loadTransferable(type: Data.self) {
-                    viewModel.selectPhoto(data: data)
-                }
-                selectedPhoto = nil
-            }
+            handleSelectedPhoto(newPhoto)
         }
-        .alert(
-            "Unable to Take Photo",
-            isPresented: Binding(
-                get: { viewModel.errorMessage != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        viewModel.dismissError()
-                    }
-                }
-            )
-        ) {
-            Button("OK", role: .cancel) {
-                viewModel.dismissError()
-            }
+        .alert("Unable to Take Photo", isPresented: cameraErrorBinding) {
+            Button("OK", role: .cancel) { viewModel.dismissError() }
         } message: {
             Text(viewModel.errorMessage ?? "Please try again.")
         }
-    }
-
-    private func cameraExperience(layout: CameraGuidanceLayout) -> some View {
-        ZStack {
-            AppColor.dark950
-            cameraContent
-            liveExperience(layout: layout)
-            firstUseGuide
-        }
-    }
-
-    @ViewBuilder
-    private func liveExperience(layout: CameraGuidanceLayout) -> some View {
-        if viewModel.state != .captured {
-            AppColor.cameraPreviewScrim
-
-            if viewModel.state == .live || viewModel.state == .capturing {
-                CameraGuidanceOverlay(
-                    layout: layout,
-                    guidance: viewModel.positionGuidance,
-                    checks: viewModel.qualityChecks
-                )
+        .alert("Food Not Detected", isPresented: nonFoodBinding) {
+            Button("Retake Photo") {
+                nonFoodDetectedMessage = nil
+                Task { await viewModel.retakePhoto() }
             }
-
-            liveCameraControls
+            Button("Cancel", role: .cancel) {
+                nonFoodDetectedMessage = nil
+            }
+        } message: {
+            Text(nonFoodDetectedMessage ?? "Please retake the photo with your meal clearly visible in the guide frame.")
         }
     }
 
-    @ViewBuilder
-    private var capturedPhotoActions: some View {
-        if viewModel.state == .captured {
-            CapturedPhotoActionsView(
-                onRetake: retakePhoto,
-                onUsePhoto: usePhoto
-            )
-            .zIndex(1)
-        }
-    }
-
-    @ViewBuilder
-    private var firstUseGuide: some View {
-        if viewModel.isGuidePresented {
-            CameraGuideView {
-                viewModel.dismissGuide()
-                Task {
-                    await viewModel.prepareCamera()
+    private var cameraPreviewSection: some View {
+        GeometryReader { geometry in
+            let layout = CameraGuidanceLayout(viewportSize: geometry.size)
+            viewfinderLayer(layout: layout)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+                .onAppear {
+                    updatePreviewLayout(size: geometry.size, layout: layout)
                 }
-            }
+                .onChange(of: geometry.size) { _, newSize in
+                    let updatedLayout = CameraGuidanceLayout(viewportSize: newSize)
+                    updatePreviewLayout(size: newSize, layout: updatedLayout)
+                }
         }
     }
 
-    @ViewBuilder
-    private var cameraContent: some View {
-        if let capturedImage = viewModel.capturedImage {
-            Image(uiImage: capturedImage)
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .accessibilityLabel("Captured food photo")
-        } else {
-            CameraPreview(captureSession: viewModel.captureSession)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .accessibilityHidden(true)
-
-            cameraStatus
-        }
-    }
-
-    @ViewBuilder
-    private var cameraStatus: some View {
-        switch viewModel.state {
-        case .preparing:
-            ProgressView("Preparing Camera")
-                .tint(AppColor.white)
-                .foregroundStyle(AppColor.white)
-        case .permissionDenied:
-            ContentUnavailableView(
-                "Camera Access Needed",
-                systemImage: "camera.fill",
-                description: Text("Allow camera access in Settings to take a food photo.")
-            )
-            .foregroundStyle(AppColor.white)
-        case .unavailable:
-            ContentUnavailableView(
-                "Camera Unavailable",
-                systemImage: "camera.slash.fill",
-                description: Text("Choose a food photo from your gallery instead.")
-            )
-            .foregroundStyle(AppColor.white)
-        case .live, .capturing, .captured:
-            EmptyView()
-        }
-    }
-
-    private var liveCameraControls: some View {
+    private var cameraControlsSection: some View {
         VStack {
             cameraTopBar
-
             Spacer()
-
-            cameraBottomControls
+            if viewModel.state != .captured {
+                cameraBottomControls
+            }
         }
-    }
-
-    private var cameraTopBar: some View {
-        HStack {
-            cameraControlButton(
-                systemImage: "xmark",
-                accessibilityLabel: "Close Camera",
-                action: onDismiss
-            )
-            Spacer()
-        }
-        .padding(.top, AppSpacing.cameraCloseTopInset)
-        .padding(.horizontal, AppSpacing.cameraCloseHorizontalInset)
-    }
-
-    private var cameraBottomControls: some View {
-        HStack {
-            PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                CameraControlLabel(
-                    systemImage: "photo",
-                    accessibilityLabel: "Choose from Gallery"
+        .overlay(alignment: .bottom) {
+            if viewModel.state == .captured && !isAnalyzing {
+                CapturedPhotoActionsView(
+                    onRetake: retakePhoto,
+                    onUsePhoto: usePhoto
                 )
+                .padding(.bottom, 16)
+                .zIndex(1)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Choose from Gallery")
-
-            Spacer()
-
-            CaptureButton(isEnabled: viewModel.isCaptureReady) {
-                AppHaptics.primaryAction()
-                Task {
-                    await viewModel.capturePhoto()
-                }
-            }
-
-            Spacer()
-
-            cameraControlButton(
-                systemImage: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill",
-                accessibilityLabel: viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On"
-            ) {
-                AppHaptics.selectionChanged()
-                Task {
-                    await viewModel.toggleFlash()
-                }
-            }
-            .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
         }
-        .padding(.horizontal, AppSpacing.cameraBottomControlsHorizontalInset)
-        .padding(.bottom, AppSpacing.cameraBottomControlsInset)
     }
 
-    private func cameraControlButton(
-        systemImage: String,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            CameraControlLabel(
-                systemImage: systemImage,
-                accessibilityLabel: accessibilityLabel
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
-    }
-
-    private func updatePreviewLayout(
-        size: CGSize,
-        layout: CameraGuidanceLayout
-    ) {
-        viewModel.updatePreviewLayout(
-            viewportSize: size,
-            guideFrame: layout.guideFrame
+    private var cameraErrorBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.dismissError() } }
         )
+    }
+
+    private var nonFoodBinding: Binding<Bool> {
+        Binding(
+            get: { nonFoodDetectedMessage != nil },
+            set: { if !$0 { nonFoodDetectedMessage = nil } }
+        )
+    }
+
+    private func handleSelectedPhoto(_ newPhoto: PhotosPickerItem?) {
+        guard let newPhoto else { return }
+        Task {
+            if let data = try? await newPhoto.loadTransferable(type: Data.self) {
+                viewModel.selectPhoto(data: data)
+            }
+            selectedPhoto = nil
+        }
+    }
+
+    private func updatePreviewLayout(size: CGSize, layout: CameraGuidanceLayout) {
+        viewModel.updatePreviewLayout(viewportSize: size, guideFrame: layout.guideFrame)
     }
 
     private func retakePhoto() {
@@ -267,7 +139,21 @@ struct FoodCaptureView: View {
     }
 
     private func usePhoto() {
-        guard let image = viewModel.capturedImage else { return }
-        onUsePhoto(image)
+        guard let image = viewModel.capturedImage, !isAnalyzing else { return }
+        AppHaptics.primaryAction()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isAnalyzing = true
+        }
+        Task {
+            let success = await onUsePhoto(image)
+            if !success {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isAnalyzing = false
+                }
+                AppHaptics.warning()
+                nonFoodDetectedMessage = "We couldn't detect food in this photo. " +
+                    "Please retake the photo with your meal clearly visible in the guide frame."
+            }
+        }
     }
 }

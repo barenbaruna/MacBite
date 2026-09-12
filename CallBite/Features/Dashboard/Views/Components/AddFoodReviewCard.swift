@@ -52,7 +52,6 @@ public struct AddFoodReviewCard: View {
             frontDetailsFace
                 .opacity(flipAngle < 90 ? 1.0 : 0.0)
         }
-        .clipShape(RoundedRectangle(cornerRadius: isCompressed ? AppCornerRadius.modalCard : 0, style: .continuous))
     }
 
     // MARK: - Front Face
@@ -65,7 +64,6 @@ public struct AddFoodReviewCard: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     detailsToolbar
-                    keyboardToolbar
                 }
                 .sheet(isPresented: $isEditingName) {
                     nameEditModal
@@ -76,18 +74,8 @@ public struct AddFoodReviewCard: View {
     @ToolbarContentBuilder
     private var detailsToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button("Back", systemImage: "chevron.left", action: onDismiss)
-                .labelStyle(.iconOnly)
-                .font(AppTypography.headline)
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .controlSize(.regular)
-        }
-
-        ToolbarItem(placement: .principal) {
-            Text("Food Details")
-                .font(AppTypography.title2.weight(.bold))
-                .foregroundStyle(AppColor.white)
+            Button(role: .close, action: onDismiss)
+                .accessibilityLabel("Dismiss")
         }
     }
 
@@ -122,33 +110,26 @@ public struct AddFoodReviewCard: View {
         }
     }
 
+    @ViewBuilder
     private var foodPhotoView: some View {
-        Group {
-            if let photoData = foodItem.photoData,
-               let photo = UIImage(data: photoData) {
-                Image(uiImage: photo)
-                    .resizable()
-                    .scaledToFill()
-                    .accessibilityLabel("Food photo")
-            } else if let photoAssetName = foodItem.photoAssetName {
-                Image(photoAssetName)
-                    .resizable()
-                    .scaledToFill()
-                    .accessibilityLabel("Food photo")
-            } else {
-                RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
-                    .fill(Color(uiColor: .systemGray5))
-                    .overlay {
-                        Image(systemName: "photo")
-                            .font(.system(size: isCompressed ? 48 : 64, weight: .regular))
-                            .foregroundStyle(Color(uiColor: .systemGray3))
-                            .accessibilityHidden(true)
-                    }
-            }
+        if let photoData = foodItem.photoData,
+           let photo = UIImage(data: photoData) {
+            Image(uiImage: photo)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: isCompressed ? 160 : 210)
+                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
+                .accessibilityLabel("Food photo")
+        } else if let photoAssetName = foodItem.photoAssetName {
+            Image(photoAssetName)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: isCompressed ? 160 : 210)
+                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
+                .accessibilityLabel("Food photo")
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: isCompressed ? 160 : 210)
-        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
     }
 
     private var mealMetadataText: some View {
@@ -230,6 +211,11 @@ public struct AddFoodReviewCard: View {
             }
         }
         .padding(.vertical, AppSpacing.sm)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            AppHaptics.selectionChanged()
+            focusedField = .nutrition(field)
+        }
     }
 
     private func nutritionInputColor(for field: NutritionEditField) -> Color {
@@ -254,48 +240,44 @@ public struct AddFoodReviewCard: View {
     // MARK: - Back Face (3D Flip Confirmation)
 
     private var confirmationBackFace: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer()
+        ZStack {
+            AppGradient.foodSavedBackground
+                .ignoresSafeArea()
 
-            ZStack {
-                Circle()
-                    .fill(LinearGradient.foodConfirmation)
-                    .frame(width: 64, height: 64)
-                    .shadow(color: AppColor.orange500.opacity(0.30), radius: 12, y: 4)
+            VStack(spacing: AppSpacing.lg) {
+                Spacer()
 
-                Image(systemName: "checkmark")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white)
-                    .accessibilityHidden(true)
-            }
-            .symbolEffect(.bounce.byLayer, value: flipAngle >= 90)
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 72, height: 72)
+                        .shadow(color: Color.black.opacity(0.25), radius: 10, y: 4)
 
-            VStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(Color.black)
+                        .accessibilityHidden(true)
+                }
+                .symbolEffect(.bounce.byLayer, value: flipAngle >= 90)
+
                 Text("Your Food has been Saved")
                     .font(AppTypography.title2.weight(.bold))
-                    .foregroundStyle(Color(uiColor: .label))
+                    .foregroundStyle(Color.white)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.lg)
 
-                Text(mealTimeSlot.greetingMessage)
-                    .font(AppTypography.subheadline.weight(.semibold))
-                    .foregroundStyle(AppColor.orange500)
-
-                Text("+\(foodItem.calories) kcal from \(foodItem.name)")
-                    .font(AppTypography.footnote)
-                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                Spacer()
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(AppSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .dynamicGlassSurface(cornerRadius: isCompressed ? AppCornerRadius.modalCard : 0)
     }
 }
 
 private extension AddFoodReviewCard {
     var editableNameRow: some View {
         Button {
+            AppHaptics.selectionChanged()
             isEditingName = true
         } label: {
             HStack(spacing: AppSpacing.xs) {
@@ -311,6 +293,7 @@ private extension AddFoodReviewCard {
 
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -335,19 +318,6 @@ private extension AddFoodReviewCard {
             return AppSpacing.manualBottomButtonInset
         }
         return isCompressed ? AppSpacing.md : max(safeArea.bottom, AppSpacing.lg)
-    }
-
-    @ToolbarContentBuilder
-    var keyboardToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-
-            Button("Done") {
-                focusedField = nil
-            }
-            .font(AppTypography.headline)
-            .foregroundStyle(AppColor.orange500)
-        }
     }
 }
 

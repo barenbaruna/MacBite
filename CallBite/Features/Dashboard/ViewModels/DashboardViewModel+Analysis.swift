@@ -2,7 +2,7 @@
 //  DashboardViewModel+Analysis.swift
 //  CallBite
 //
-//  Created by Codex on 12/09/26.
+//  Created by Joshua Valentine Manik on 12/09/26.
 //
 
 import SwiftUI
@@ -14,6 +14,7 @@ extension DashboardViewModel {
     public func resetAndOpenAddFood() {
         var food = FoodItem.dimsumMentai
         food.mealType = FoodItem.currentMealType()
+        food.dateString = FoodItem.currentDateString()
         resetAndOpenAddFood(with: food)
     }
 
@@ -50,20 +51,28 @@ extension DashboardViewModel {
     }
 
     /// Analyzes a captured or selected food photo and opens the review card with the result.
-    public func analyzeCapturedPhoto(_ image: UIImage) async {
+    @discardableResult
+    public func analyzeCapturedPhoto(_ image: UIImage) async -> Bool {
+        isAnalyzing = true
+        analysisMessage = "Analyzing your meal…"
+
         do {
             let candidate = try await foodAnalyzer.analyze(image)
             openAddFoodCard(with: mapToFoodItem(candidate, photo: image))
+            return true
         } catch AppError.nonFoodDetected(let probability) {
+            isAnalyzing = false
             let percent = Int((probability * 100).rounded())
             nonFoodWarningMessage = "This photo wasn't detected as food (\(percent)% confidence). " +
                 "Please retake the photo with the food clearly visible."
+            return false
         } catch {
             var fallback = FoodItem.dimsumMentai
             fallback.mealType = FoodItem.currentMealType()
-            fallback.dateString = dailySummary.dateString
+            fallback.dateString = FoodItem.currentDateString()
             fallback.photoData = image.jpegData(compressionQuality: 0.8)
             openAddFoodCard(with: fallback)
+            return true
         }
     }
 
@@ -73,7 +82,13 @@ extension DashboardViewModel {
 
     /// Estimates nutrition for a manually typed meal, with ratio math as a safe fallback.
     func calculateManualNutrition(name: String, ingredients: [ManualIngredientInput]) async {
-        let meal = mapToMealDescription(name: name, ingredients: ingredients)
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        isAnalyzing = true
+        analysisMessage = "Estimating nutrition…"
+
+        let meal = mapToMealDescription(name: trimmed, ingredients: ingredients)
 
         #if DEBUG
         print(
@@ -81,7 +96,7 @@ extension DashboardViewModel {
                 "with name=\"\(name)\" rawIngredientCount=\(ingredients.count)"
         )
         let ingredientDescription = meal.ingredients.map {
-            "\($0.name)/\($0.portionGrams ?? -1)g/\($0.cookingMethod ?? "-")"
+            "\($0.name)/\($0.portionGrams ?? -1)g"
         }
         print(
             "[ManualNutrition] mapped meal: foodName=\"\(meal.foodName)\" " +
@@ -108,30 +123,20 @@ extension DashboardViewModel {
 
     private func openAddFoodCard(with food: FoodItem) {
         #if DEBUG
-        print("[ManualNutrition] openAddFoodCard scheduled on \(ObjectIdentifier(self))")
+        print(
+            "[ManualNutrition] openAddFoodCard firing on " +
+                "\(ObjectIdentifier(self)), setting isShowingAddFood=true"
+        )
         #endif
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
-            guard let self else {
-                #if DEBUG
-                print("[ManualNutrition] openAddFoodCard fired but self was deallocated.")
-                #endif
-                return
-            }
-            #if DEBUG
-            print(
-                "[ManualNutrition] openAddFoodCard firing on " +
-                    "\(ObjectIdentifier(self)), setting isShowingAddFood=true"
-            )
-            #endif
-            self.resetAndOpenAddFood(with: food)
-        }
+        self.isAnalyzing = false
+        self.resetAndOpenAddFood(with: food)
     }
 
     private func mapToFoodItem(_ candidate: FoodCandidate, photo: UIImage) -> FoodItem {
         FoodItem(
             name: candidate.name,
             mealType: FoodItem.currentMealType(),
-            dateString: dailySummary.dateString,
+            dateString: FoodItem.currentDateString(),
             calories: candidate.nutrition.calories,
             protein: candidate.nutrition.protein,
             carbs: candidate.nutrition.carbs,
@@ -152,11 +157,11 @@ extension DashboardViewModel {
             let trimmedIngredient = input.ingredient.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedIngredient.isEmpty else { return nil }
 
-            let trimmedMethod = input.cookingMethod.trimmingCharacters(in: .whitespacesAndNewlines)
+            // NOTE: input.cookingMethod (still a valid UI field) is intentionally
+            // not mapped — see the language note atop FoundationModelNutritionEstimator.
             return ManualMealDescription.Ingredient(
                 name: trimmedIngredient,
-                portionGrams: Double(input.portionGrams.trimmingCharacters(in: .whitespacesAndNewlines)),
-                cookingMethod: trimmedMethod.isEmpty ? nil : trimmedMethod
+                portionGrams: Double(input.portionGrams.trimmingCharacters(in: .whitespacesAndNewlines))
             )
         }
 
@@ -167,7 +172,7 @@ extension DashboardViewModel {
         FoodItem(
             name: name,
             mealType: FoodItem.currentMealType(),
-            dateString: dailySummary.dateString,
+            dateString: FoodItem.currentDateString(),
             calories: nutrition.calories,
             protein: nutrition.protein,
             carbs: nutrition.carbs,
@@ -179,7 +184,7 @@ extension DashboardViewModel {
 
     private func legacyRatioEstimate(name: String, ingredients: [ManualIngredientInput]) -> FoodItem {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = trimmed.isEmpty ? "Dimsum Mentai" : trimmed
+        let displayName = trimmed.isEmpty ? "Meal" : trimmed
         let totalGrams = ingredients.compactMap { Int($0.portionGrams) }.reduce(0, +)
         let baseGrams = totalGrams > 0 ? totalGrams : 100
         let ratio = Double(baseGrams) / 100.0
@@ -187,7 +192,7 @@ extension DashboardViewModel {
         return FoodItem(
             name: displayName,
             mealType: FoodItem.currentMealType(),
-            dateString: dailySummary.dateString,
+            dateString: FoodItem.currentDateString(),
             calories: max(50, Int(220.0 * ratio)),
             protein: max(5, Int(15.0 * ratio)),
             carbs: max(5, Int(25.0 * ratio)),

@@ -55,14 +55,17 @@ final class OnboardingViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let healthKitService: HealthServiceProtocol
+    private let profileStore: UserProfileStore
 
     // MARK: - Initialization
 
     init(
         healthKitService: HealthServiceProtocol? = nil,
+        profileStore: UserProfileStore = .shared,
         initialStep: OnboardingStep = .splash
     ) {
         self.healthKitService = healthKitService ?? HealthKitClient.shared
+        self.profileStore = profileStore
         self.currentStep = initialStep
         if initialStep == .personalize {
             self.navigationPath = [.personalize]
@@ -186,5 +189,21 @@ final class OnboardingViewModel: ObservableObject {
     func saveGoal(targetWeight: Double, category: GoalCategory) {
         healthProfile.targetWeightKg = targetWeight
         healthProfile.goalCategory = category
+    }
+
+    /// Persists all onboarding data (profile + activity + goal) to disk and
+    /// marks onboarding as complete. Called at the very end of the onboarding flow.
+    func finalizeOnboarding() {
+        guard let activity = selectedActivity else {
+            #if DEBUG
+            print("[OnboardingViewModel] finalizeOnboarding called without selectedActivity")
+            #endif
+            return
+        }
+
+        profileStore.saveOnboardingResult(
+            profile: healthProfile,
+            activityLevel: activity
+        )
     }
 }

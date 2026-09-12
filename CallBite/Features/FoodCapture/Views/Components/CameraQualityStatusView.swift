@@ -2,7 +2,7 @@
 //  CameraQualityStatusView.swift
 //  CallBite
 //
-//  Created by Codex on 12/09/26.
+//  Created by Joshua Valentine Manik on 12/09/26.
 //
 
 import SwiftUI
@@ -19,12 +19,12 @@ struct CameraQualityStatusView: View {
             )
             statusLabel(
                 title: "Angle",
-                systemImage: "gyroscope",
+                systemImage: "angle",
                 isPassing: checks.hasAcceptableAngle
             )
             statusLabel(
                 title: "Steady",
-                systemImage: "hand.raised.fill",
+                systemImage: "checkmark",
                 isPassing: checks.isSteady
             )
         }

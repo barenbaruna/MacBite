@@ -2,7 +2,7 @@
 //  ManualIngredientListView.swift
 //  CallBite
 //
-//  Created by Codex on 09/09/26.
+//  Created by Joshua Valentine Manik on 09/09/26.
 //
 
 import SwiftUI
@@ -11,7 +11,6 @@ struct ManualIngredientListView: View {
     let ingredients: [ManualIngredientInput]
     let onIngredientChanged: (UUID, String) -> Void
     let onPortionChanged: (UUID, String) -> Void
-    let onCookingMethodChanged: (UUID, String) -> Void
     let onAddIngredient: () -> Void
 
     var body: some View {
@@ -38,9 +37,6 @@ struct ManualIngredientListView: View {
             },
             onPortionChanged: { value in
                 onPortionChanged(ingredient.id, value)
-            },
-            onCookingMethodChanged: { value in
-                onCookingMethodChanged(ingredient.id, value)
             }
         )
     }
