@@ -82,6 +82,16 @@ public struct DashboardView: View {
         let fullWidth = safeProxy.size.width + safeArea.leading + safeArea.trailing
         let fullHeight = safeProxy.size.height + safeArea.top + safeArea.bottom
 
+        #if DEBUG
+        print(
+            "[DashboardView] render on \(ObjectIdentifier(viewModel)):",
+            "isShowingAddFood=\(viewModel.isShowingAddFood)",
+            "phase=\(viewModel.phase)",
+            "isPhaseOrbitingOrDissolving=\(isPhaseOrbitingOrDissolving)",
+            "presentedSheetRoute=\(String(describing: presentedSheetRoute))"
+        )
+        #endif
+
         return ZStack {
             dashboardNavigation(safeArea: safeArea)
 

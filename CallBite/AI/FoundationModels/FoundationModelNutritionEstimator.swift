@@ -30,8 +30,10 @@ public final class FoundationModelNutritionEstimator: NutritionEstimating, @unch
     @Generable
     struct EstimatedNutrition {
         @Guide(description: """
-        Total estimated calories in kcal for the ENTIRE meal (all ingredients \
-        combined using their gram portions) — not per-ingredient, not per 100g.
+        Total calories in kcal for the entire meal, computed as the SUM of each \
+        ingredient's own calorie estimate (based on that ingredient's specific \
+        gram portion and cooking method) — not a single per-100g rate applied \
+        to the whole meal.
         """)
         var calories: Int
 
@@ -62,17 +64,30 @@ public final class FoundationModelNutritionEstimator: NutritionEstimating, @unch
 
     private static let instructions = """
     You estimate total nutrition facts for a meal from its name and a list of \
-    ingredients with gram portions and cooking methods. Use general nutrition \
-    knowledge (typical macros per 100g for common ingredients, adjusted for the \
-    given portion and cooking method) to produce ONE combined estimate for the \
-    whole meal — sum across all ingredients, do not estimate per-ingredient.
+    ingredients with gram portions and cooking methods.
+
+    BOTH the meal name and the ingredient list matter, and you should use them \
+    together:
+    - The meal name gives you the overall dish identity/context — it can imply \
+      typical accompaniments or preparation details (e.g. oil, seasoning, sauce) \
+      that aren't spelled out as separate ingredient entries.
+    - Each ingredient's OWN gram portion and cooking method tells you specifically \
+      how THAT ingredient was prepared — use it to adjust that ingredient's \
+      estimate (e.g. fried adds more fat than steamed/boiled/grilled for the same \
+      ingredient). Do not apply one ingredient's cooking method to a different one.
+
+    To produce an accurate total, work ingredient by ingredient: for EACH \
+    ingredient, first estimate its own calories/protein/carbs/fat/fiber using \
+    typical macros per 100g for that ingredient, adjusted for its specific \
+    gram portion and cooking method, while keeping the overall meal name in mind \
+    for context. THEN sum all ingredients together into ONE combined total for \
+    the whole meal — the final numbers you output must be that sum, not a single \
+    rate applied to the meal as a whole.
 
     Rules:
     - Assume standard/typical nutrition values for named ingredients. If an
       ingredient is unclear or unfamiliar, make a reasonable estimate rather
       than refusing to answer.
-    - Cooking method affects the estimate (e.g. fried adds more fat than
-      steamed/boiled/grilled for the same ingredient).
     - If a portion size is missing for an ingredient, assume a typical serving
       size for that ingredient rather than treating it as zero.
     - Never return negative values.
