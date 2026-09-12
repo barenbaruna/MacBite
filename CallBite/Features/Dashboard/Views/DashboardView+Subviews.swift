@@ -163,11 +163,14 @@ extension DashboardView {
 
     // MARK: - Save Food Navigation
 
-    func handlePhotoCaptured(_ image: UIImage) {
-        presentedFullScreenRoute = nil
-        Task {
-            await viewModel.analyzeCapturedPhoto(image)
+    func handlePhotoCaptured(_ image: UIImage) async -> Bool {
+        let success = await viewModel.analyzeCapturedPhoto(image)
+        if success {
+            presentedFullScreenRoute = nil
+        } else {
+            viewModel.dismissNonFoodWarning()
         }
+        return success
     }
 
     func handleManualCalculation(name: String, ingredients: [ManualIngredientInput]) {

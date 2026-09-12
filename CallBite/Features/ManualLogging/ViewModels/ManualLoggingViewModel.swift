@@ -15,6 +15,10 @@ final class ManualLoggingViewModel: ObservableObject {
         ManualIngredientInput()
     ]
 
+    var canCalculate: Bool {
+        !foodName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func updateFoodName(_ foodName: String) {
         self.foodName = foodName
     }

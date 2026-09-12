@@ -52,7 +52,6 @@ public struct AddFoodReviewCard: View {
             frontDetailsFace
                 .opacity(flipAngle < 90 ? 1.0 : 0.0)
         }
-        .clipShape(RoundedRectangle(cornerRadius: isCompressed ? AppCornerRadius.modalCard : 0, style: .continuous))
     }
 
     // MARK: - Front Face
@@ -247,42 +246,37 @@ public struct AddFoodReviewCard: View {
     // MARK: - Back Face (3D Flip Confirmation)
 
     private var confirmationBackFace: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer()
+        ZStack {
+            AppGradient.foodSavedBackground
+                .ignoresSafeArea()
 
-            ZStack {
-                Circle()
-                    .fill(LinearGradient.foodConfirmation)
-                    .frame(width: 64, height: 64)
-                    .shadow(color: AppColor.orange500.opacity(0.30), radius: 12, y: 4)
+            VStack(spacing: AppSpacing.lg) {
+                Spacer()
 
-                Image(systemName: "checkmark")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white)
-                    .accessibilityHidden(true)
-            }
-            .symbolEffect(.bounce.byLayer, value: flipAngle >= 90)
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 72, height: 72)
+                        .shadow(color: Color.black.opacity(0.25), radius: 10, y: 4)
 
-            VStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(Color.black)
+                        .accessibilityHidden(true)
+                }
+                .symbolEffect(.bounce.byLayer, value: flipAngle >= 90)
+
                 Text("Your Food has been Saved")
                     .font(AppTypography.title2.weight(.bold))
-                    .foregroundStyle(Color(uiColor: .label))
+                    .foregroundStyle(Color.white)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.lg)
 
-                Text(mealTimeSlot.greetingMessage)
-                    .font(AppTypography.subheadline.weight(.semibold))
-                    .foregroundStyle(AppColor.orange500)
-
-                Text("+\(foodItem.calories) kcal from \(foodItem.name)")
-                    .font(AppTypography.footnote)
-                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                Spacer()
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(AppSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .dynamicGlassSurface(cornerRadius: isCompressed ? AppCornerRadius.modalCard : 0)
     }
 }
 

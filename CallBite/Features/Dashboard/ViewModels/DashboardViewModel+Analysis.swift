@@ -51,24 +51,28 @@ extension DashboardViewModel {
     }
 
     /// Analyzes a captured or selected food photo and opens the review card with the result.
-    public func analyzeCapturedPhoto(_ image: UIImage) async {
+    @discardableResult
+    public func analyzeCapturedPhoto(_ image: UIImage) async -> Bool {
         isAnalyzing = true
         analysisMessage = "Analyzing your meal…"
 
         do {
             let candidate = try await foodAnalyzer.analyze(image)
             openAddFoodCard(with: mapToFoodItem(candidate, photo: image))
+            return true
         } catch AppError.nonFoodDetected(let probability) {
             isAnalyzing = false
             let percent = Int((probability * 100).rounded())
             nonFoodWarningMessage = "This photo wasn't detected as food (\(percent)% confidence). " +
                 "Please retake the photo with the food clearly visible."
+            return false
         } catch {
             var fallback = FoodItem.dimsumMentai
             fallback.mealType = FoodItem.currentMealType()
             fallback.dateString = FoodItem.currentDateString()
             fallback.photoData = image.jpegData(compressionQuality: 0.8)
             openAddFoodCard(with: fallback)
+            return true
         }
     }
 
@@ -78,10 +82,13 @@ extension DashboardViewModel {
 
     /// Estimates nutrition for a manually typed meal, with ratio math as a safe fallback.
     func calculateManualNutrition(name: String, ingredients: [ManualIngredientInput]) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
         isAnalyzing = true
         analysisMessage = "Estimating nutrition…"
 
-        let meal = mapToMealDescription(name: name, ingredients: ingredients)
+        let meal = mapToMealDescription(name: trimmed, ingredients: ingredients)
 
         #if DEBUG
         print(
@@ -116,24 +123,13 @@ extension DashboardViewModel {
 
     private func openAddFoodCard(with food: FoodItem) {
         #if DEBUG
-        print("[ManualNutrition] openAddFoodCard scheduled on \(ObjectIdentifier(self))")
+        print(
+            "[ManualNutrition] openAddFoodCard firing on " +
+                "\(ObjectIdentifier(self)), setting isShowingAddFood=true"
+        )
         #endif
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
-            guard let self else {
-                #if DEBUG
-                print("[ManualNutrition] openAddFoodCard fired but self was deallocated.")
-                #endif
-                return
-            }
-            #if DEBUG
-            print(
-                "[ManualNutrition] openAddFoodCard firing on " +
-                    "\(ObjectIdentifier(self)), setting isShowingAddFood=true"
-            )
-            #endif
-            self.isAnalyzing = false
-            self.resetAndOpenAddFood(with: food)
-        }
+        self.isAnalyzing = false
+        self.resetAndOpenAddFood(with: food)
     }
 
     private func mapToFoodItem(_ candidate: FoodCandidate, photo: UIImage) -> FoodItem {
@@ -187,7 +183,7 @@ extension DashboardViewModel {
 
     private func legacyRatioEstimate(name: String, ingredients: [ManualIngredientInput]) -> FoodItem {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = trimmed.isEmpty ? "Dimsum Mentai" : trimmed
+        let displayName = trimmed.isEmpty ? "Meal" : trimmed
         let totalGrams = ingredients.compactMap { Int($0.portionGrams) }.reduce(0, +)
         let baseGrams = totalGrams > 0 ? totalGrams : 100
         let ratio = Double(baseGrams) / 100.0

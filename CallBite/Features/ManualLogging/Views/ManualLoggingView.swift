@@ -103,13 +103,14 @@ struct ManualLoggingView: View {
         } label: {
             Text("Calculate")
                 .font(AppTypography.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(viewModel.canCalculate ? .white : AppColor.white.opacity(0.4))
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.large)
-        .tint(AppColor.calorie)
+        .tint(viewModel.canCalculate ? AppColor.calorie : AppColor.buttonDisabled)
+        .disabled(!viewModel.canCalculate)
         .padding(.horizontal, AppSpacing.manualScreenMargin)
         .padding(.vertical, AppSpacing.manualBottomButtonInset)
     }

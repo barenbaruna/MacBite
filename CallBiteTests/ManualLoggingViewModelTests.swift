@@ -65,4 +65,21 @@ struct ManualLoggingViewModelTests {
         viewModel.removeIngredient(id: firstID)
         #expect(viewModel.ingredients.count == 1)
     }
+
+    @Test("canCalculate requires non-empty food name")
+    @MainActor
+    func canCalculateValidation() {
+        let viewModel = ManualLoggingViewModel()
+
+        #expect(!viewModel.canCalculate)
+
+        viewModel.updateFoodName("   ")
+        #expect(!viewModel.canCalculate)
+
+        viewModel.updateFoodName("Grilled Salmon")
+        #expect(viewModel.canCalculate)
+
+        viewModel.updateFoodName("")
+        #expect(!viewModel.canCalculate)
+    }
 }

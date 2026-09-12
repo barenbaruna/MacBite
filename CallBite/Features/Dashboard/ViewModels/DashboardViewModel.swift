@@ -87,12 +87,14 @@ public final class DashboardViewModel: ObservableObject {
     private var dailyFoodsByDate: [Date: [FoodItem]]
     let foodAnalyzer: FoodAnalyzing
     let nutritionEstimator: NutritionEstimating
+    private let mealStore: MealStoreProtocol
 
     // MARK: - Initialization
 
     public convenience init(
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
-        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        mealStore: MealStoreProtocol? = nil
     ) {
         let goal = UserProfileStore.shared.nutritionGoal
         let targetCalories = goal?.targetCalories ?? 2000
@@ -124,7 +126,8 @@ public final class DashboardViewModel: ObservableObject {
             dailySummaries: [:],
             dailyFoods: [:],
             foodAnalyzer: foodAnalyzer,
-            nutritionEstimator: nutritionEstimator
+            nutritionEstimator: nutritionEstimator,
+            mealStore: mealStore
         )
     }
 
@@ -137,16 +140,58 @@ public final class DashboardViewModel: ObservableObject {
         dailyFoods: [Date: [FoodItem]] = [:],
         calendar: Calendar = .current,
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
-        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        mealStore: MealStoreProtocol? = nil
     ) {
+        let resolvedStore = mealStore ?? SwiftDataMealStore.defaultStore()
         let normalizedToday = calendar.startOfDay(for: today)
         let requestedDate = calendar.startOfDay(for: selectedDate)
         let normalizedSelectedDate = min(requestedDate, normalizedToday)
         var normalizedSummaries = dailySummaries.reduce(into: [:]) { result, entry in
             result[calendar.startOfDay(for: entry.key)] = entry.value
         }
-        let normalizedFoods = dailyFoods.reduce(into: [:]) { result, entry in
+        var normalizedFoods = dailyFoods.reduce(into: [:]) { result, entry in
             result[calendar.startOfDay(for: entry.key)] = entry.value
+        }
+
+        if dailyFoods.isEmpty {
+            let storedMealsByDate = (try? resolvedStore.fetchAllMeals()) ?? [:]
+            for (date, meals) in storedMealsByDate {
+                let normalizedDay = calendar.startOfDay(for: date)
+                if normalizedFoods[normalizedDay] == nil {
+                    normalizedFoods[normalizedDay] = meals
+                }
+            }
+        }
+
+        for (date, foods) in normalizedFoods {
+            if let existing = normalizedSummaries[date] {
+                var updated = existing
+                if updated.consumedCalories == 0 && !foods.isEmpty {
+                    updated.consumedCalories = foods.reduce(0) { $0 + $1.calories }
+                    updated.totalProtein = foods.reduce(0) { $0 + $1.protein }
+                    updated.totalCarbs = foods.reduce(0) { $0 + $1.carbs }
+                    updated.totalFat = foods.reduce(0) { $0 + $1.fat }
+                    updated.totalFiber = foods.reduce(0) { $0 + $1.fiber }
+                }
+                normalizedSummaries[date] = updated
+            } else {
+                let dateStr = DashboardSampleData.displayDate(for: date, today: normalizedToday, calendar: calendar)
+                normalizedSummaries[date] = DailySummary(
+                    dateString: dateStr,
+                    targetCalories: dailySummary.targetCalories,
+                    consumedCalories: foods.reduce(0) { $0 + $1.calories },
+                    targetCarbs: dailySummary.targetCarbs,
+                    targetProtein: dailySummary.targetProtein,
+                    targetFat: dailySummary.targetFat,
+                    targetFiber: dailySummary.targetFiber,
+                    totalCarbs: foods.reduce(0) { $0 + $1.carbs },
+                    totalProtein: foods.reduce(0) { $0 + $1.protein },
+                    totalFat: foods.reduce(0) { $0 + $1.fat },
+                    totalFiber: foods.reduce(0) { $0 + $1.fiber },
+                    streakDays: dailySummary.streakDays
+                )
+            }
         }
 
         if normalizedSummaries[normalizedSelectedDate] == nil {
@@ -165,12 +210,11 @@ public final class DashboardViewModel: ObservableObject {
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
         self.foodAnalyzer = foodAnalyzer
         self.nutritionEstimator = nutritionEstimator
+        self.mealStore = resolvedStore
+
         let currentRatio = Self.rawProgress(for: initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
-        #if DEBUG
-        print("[DashboardViewModel] init (dailySummary:) -> \(ObjectIdentifier(self))")
-        #endif
     }
 
     // MARK: - Public Animation Methods
@@ -336,7 +380,22 @@ public final class DashboardViewModel: ObservableObject {
             foodsForSelectedDate.append(currentFood)
         }
         storeCurrentDay()
+        try? mealStore.saveMeal(currentFood, for: selectedDate)
         return CGFloat(dailySummary.consumedCalories) / CGFloat(max(1, dailySummary.targetCalories))
+    }
+
+    /// Deletes a logged food item and updates summary metrics accordingly.
+    public func deleteFood(_ food: FoodItem) {
+        guard let index = foodsForSelectedDate.firstIndex(where: { $0.id == food.id }) else { return }
+        let removed = foodsForSelectedDate.remove(at: index)
+        dailySummary.consumedCalories = max(0, dailySummary.consumedCalories - removed.calories)
+        dailySummary.totalProtein = max(0, dailySummary.totalProtein - removed.protein)
+        dailySummary.totalCarbs = max(0, dailySummary.totalCarbs - removed.carbs)
+        dailySummary.totalFat = max(0, dailySummary.totalFat - removed.fat)
+        dailySummary.totalFiber = max(0, dailySummary.totalFiber - removed.fiber)
+        storeCurrentDay()
+        syncProgressWithDailySummary()
+        try? mealStore.deleteMeal(id: food.id)
     }
 
     private func syncProgressWithDailySummary() {
@@ -361,14 +420,8 @@ public final class DashboardViewModel: ObservableObject {
         dailySummary.targetFat = goal.targetFatGrams
         dailySummary.targetFiber = goal.targetFiberGrams
 
-        // Also update the stored summary for the current date
         dailySummariesByDate[selectedDate] = dailySummary
-
         syncProgressWithDailySummary()
-
-        #if DEBUG
-        print("[DashboardViewModel] Targets updated: \(goal.targetCalories) kcal")
-        #endif
     }
 }
 
@@ -396,6 +449,22 @@ public extension DashboardViewModel {
 
         storeCurrentDay()
         selectedDate = normalizedDate
+
+        if dailyFoodsByDate[normalizedDate] == nil {
+            if let fetched = try? mealStore.fetchMeals(for: normalizedDate) {
+                dailyFoodsByDate[normalizedDate] = fetched
+                if dailySummariesByDate[normalizedDate] == nil {
+                    var summary = emptySummary(for: normalizedDate)
+                    summary.consumedCalories = fetched.reduce(0) { $0 + $1.calories }
+                    summary.totalProtein = fetched.reduce(0) { $0 + $1.protein }
+                    summary.totalCarbs = fetched.reduce(0) { $0 + $1.carbs }
+                    summary.totalFat = fetched.reduce(0) { $0 + $1.fat }
+                    summary.totalFiber = fetched.reduce(0) { $0 + $1.fiber }
+                    dailySummariesByDate[normalizedDate] = summary
+                }
+            }
+        }
+
         dailySummary = dailySummariesByDate[normalizedDate] ?? emptySummary(for: normalizedDate)
         foodsForSelectedDate = dailyFoodsByDate[normalizedDate] ?? []
         syncProgressWithDailySummary()

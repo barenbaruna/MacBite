@@ -11,7 +11,7 @@ import UIKit
 struct LoggingDestinationView: View {
     let route: AppRoute
     let onDismiss: () -> Void
-    var onUsePhoto: ((UIImage) -> Void)?
+    var onUsePhoto: ((UIImage) async -> Bool)?
     var onCalculate: ((String, [ManualIngredientInput]) -> Void)?
 
     @ViewBuilder
@@ -23,7 +23,10 @@ struct LoggingDestinationView: View {
             FoodCaptureFactory.makeView(
                 onDismiss: onDismiss,
                 onUsePhoto: { image in
-                    onUsePhoto?(image)
+                    if let onUsePhoto {
+                        return await onUsePhoto(image)
+                    }
+                    return true
                 }
             )
         case .manualLogging:

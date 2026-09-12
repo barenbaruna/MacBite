@@ -128,11 +128,10 @@ struct ContentView: View {
                 Color.black.ignoresSafeArea()
                 AddFoodReviewCard(
                     foodItem: $testFoodItem,
-                    isCompressed: true,
+                    isCompressed: false,
                     flipAngle: 180.0
                 )
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-                .frame(width: 360, height: 620)
             }
             .preferredColorScheme(.dark)
 

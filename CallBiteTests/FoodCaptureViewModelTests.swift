@@ -8,6 +8,7 @@
 @testable import CallBite
 import CoreGraphics
 import Testing
+import UIKit
 
 @Suite("FoodCaptureViewModel Tests")
 struct FoodCaptureViewModelTests {
@@ -199,5 +200,47 @@ struct FoodCaptureViewModelTests {
 
         await Task.yield()
         await Task.yield()
+    }
+
+    @Test("Image is cropped to guide scope aspect ratio")
+    @MainActor
+    func cropsImageToGuideScope() {
+        let viewModel = FoodCaptureViewModel(
+            cameraService: MockCameraService(),
+            motionService: MockMotionService(),
+            guideStore: MockCameraGuideStore(hasSeenCameraGuide: true)
+        )
+        let viewport = CGSize(width: 400, height: 800)
+        let guide = CGRect(x: 50, y: 200, width: 300, height: 300)
+        viewModel.updatePreviewLayout(viewportSize: viewport, guideFrame: guide)
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1000, height: 1500))
+        let testImage = renderer.image { ctx in
+            UIColor.red.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: 1000, height: 1500))
+        }
+
+        let cropped = viewModel.cropImageToGuideScope(testImage)
+        #expect(abs(cropped.size.width - cropped.size.height) < 1.0)
+    }
+
+    @Test("Gallery image is cropped to center square")
+    @MainActor
+    func cropsGalleryImageToCenterSquare() {
+        let viewModel = FoodCaptureViewModel(
+            cameraService: MockCameraService(),
+            motionService: MockMotionService(),
+            guideStore: MockCameraGuideStore(hasSeenCameraGuide: true)
+        )
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800))
+        let rectangularImage = renderer.image { ctx in
+            UIColor.green.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: 1200, height: 800))
+        }
+
+        let cropped = viewModel.cropToCenterSquare(image: rectangularImage)
+        #expect(cropped.size.width == 800)
+        #expect(cropped.size.height == 800)
     }
 }

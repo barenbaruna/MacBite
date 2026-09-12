@@ -184,20 +184,20 @@ public struct DashboardView: View {
 
     private func morphingCardOverlay(fullSize: CGSize, safeArea: EdgeInsets) -> some View {
         let isCardCompressed = viewModel.isCardCompressed
-        let maxCardW = min(AppMetrics.modalCardMaxWidth, fullSize.width - AppSpacing.lg)
-        let initialW = isCardCompressed ? maxCardW : fullSize.width
-        let maxCardH = min(
-            AppMetrics.modalCardMaxHeight,
-            fullSize.height * AppMetrics.modalCardHeightRatio
-        )
-        let initialH = isCardCompressed ? maxCardH : fullSize.height
+        let topGap: CGFloat = max(safeArea.top + 10, 68)
+
+        let initialW = fullSize.width
+        let initialH = isCardCompressed ? (fullSize.height - topGap) : fullSize.height
+        let baseOffsetY: CGFloat = isCardCompressed ? (topGap / 2.0) : 0
         let initialRadius: CGFloat = isCardCompressed ? AppCornerRadius.modalCard : 0
+
         let targetDropletSize: CGFloat = AppMetrics.energyDropletSize
         let progress = viewModel.morphProgress
 
         let currentWidth = initialW - (initialW - targetDropletSize) * progress
         let currentHeight = initialH - (initialH - targetDropletSize) * progress
         let currentCornerRadius = initialRadius - (initialRadius - (targetDropletSize / 2)) * progress
+        let currentOffsetY = baseOffsetY * (1.0 - progress) + viewModel.cardOffsetY
         let shadowRadius: CGFloat = isCardCompressed ? AppMetrics.modalCardShadowRadius * (1.0 - progress) : 0
 
         return ZStack {
@@ -208,7 +208,7 @@ public struct DashboardView: View {
                 shadowRadius: shadowRadius,
                 safeArea: safeArea
             )
-            .offset(x: viewModel.cardOffsetX, y: viewModel.cardOffsetY)
+            .offset(x: viewModel.cardOffsetX, y: currentOffsetY)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }

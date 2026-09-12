@@ -12,7 +12,7 @@ enum FoodCaptureFactory {
     @MainActor
     static func makeView(
         onDismiss: @escaping () -> Void = {},
-        onUsePhoto: @escaping (UIImage) -> Void = { _ in }
+        onUsePhoto: @escaping (UIImage) async -> Bool = { _ in true }
     ) -> some View {
         let cameraService = CameraService()
         let motionService = MotionService()

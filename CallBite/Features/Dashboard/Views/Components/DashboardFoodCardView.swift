@@ -22,10 +22,8 @@ struct DashboardFoodCardView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: AppSize.dashboardFoodCardHeight)
                     .clipped()
-                    .allowsHitTesting(false)
 
                 AppGradient.foodCardOverlay
-                    .allowsHitTesting(false)
 
                 VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
                     Text(food.mealType)
@@ -42,9 +40,11 @@ struct DashboardFoodCardView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: AppSize.dashboardFoodCardHeight)
+            .contentShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(food.mealType), \(food.name)")
     }
