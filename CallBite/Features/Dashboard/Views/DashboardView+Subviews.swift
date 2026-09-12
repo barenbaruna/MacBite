@@ -74,7 +74,12 @@ extension DashboardView {
     }
 
     var foodHistorySection: some View {
-        DashboardFoodHistorySection(foods: viewModel.foodsForSelectedDate)
+        DashboardFoodHistorySection(
+            foods: viewModel.foodsForSelectedDate,
+            onFoodTap: { food in
+                viewModel.resetAndOpenAddFood(with: food)
+            }
+        )
     }
 
     var floatingActionBar: some View {

@@ -122,33 +122,26 @@ public struct AddFoodReviewCard: View {
         }
     }
 
+    @ViewBuilder
     private var foodPhotoView: some View {
-        Group {
-            if let photoData = foodItem.photoData,
-               let photo = UIImage(data: photoData) {
-                Image(uiImage: photo)
-                    .resizable()
-                    .scaledToFill()
-                    .accessibilityLabel("Food photo")
-            } else if let photoAssetName = foodItem.photoAssetName {
-                Image(photoAssetName)
-                    .resizable()
-                    .scaledToFill()
-                    .accessibilityLabel("Food photo")
-            } else {
-                RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
-                    .fill(Color(uiColor: .systemGray5))
-                    .overlay {
-                        Image(systemName: "photo")
-                            .font(.system(size: isCompressed ? 48 : 64, weight: .regular))
-                            .foregroundStyle(Color(uiColor: .systemGray3))
-                            .accessibilityHidden(true)
-                    }
-            }
+        if let photoData = foodItem.photoData,
+           let photo = UIImage(data: photoData) {
+            Image(uiImage: photo)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: isCompressed ? 160 : 210)
+                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
+                .accessibilityLabel("Food photo")
+        } else if let photoAssetName = foodItem.photoAssetName {
+            Image(photoAssetName)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: isCompressed ? 160 : 210)
+                .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
+                .accessibilityLabel("Food photo")
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: isCompressed ? 160 : 210)
-        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
     }
 
     private var mealMetadataText: some View {

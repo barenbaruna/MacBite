@@ -94,32 +94,35 @@ public final class DashboardViewModel: ObservableObject {
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
         nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
     ) {
-        let summary: DailySummary
-        if let goal = UserProfileStore.shared.nutritionGoal {
-            summary = DailySummary(
-                dateString: DashboardSampleData.displayDate(
-                    for: .now,
-                    today: .now,
-                    calendar: .current
-                ),
-                targetCalories: goal.targetCalories,
-                consumedCalories: 0,
-                targetCarbs: goal.targetCarbsGrams,
-                targetProtein: goal.targetProteinGrams,
-                targetFat: goal.targetFatGrams,
-                targetFiber: goal.targetFiberGrams,
-                totalCarbs: 0,
-                totalProtein: 0,
-                totalFat: 0,
-                totalFiber: 0,
-                streakDays: 0
-            )
-        } else {
-            summary = .sampleDashboard
-        }
+        let goal = UserProfileStore.shared.nutritionGoal
+        let targetCalories = goal?.targetCalories ?? 2000
+        let targetCarbs = goal?.targetCarbsGrams ?? 250
+        let targetProtein = goal?.targetProteinGrams ?? 100
+        let targetFat = goal?.targetFatGrams ?? 65
+        let targetFiber = goal?.targetFiberGrams ?? 30
+        let summary = DailySummary(
+            dateString: DashboardSampleData.displayDate(
+                for: .now,
+                today: .now,
+                calendar: .current
+            ),
+            targetCalories: targetCalories,
+            consumedCalories: 0,
+            targetCarbs: targetCarbs,
+            targetProtein: targetProtein,
+            targetFat: targetFat,
+            targetFiber: targetFiber,
+            totalCarbs: 0,
+            totalProtein: 0,
+            totalFat: 0,
+            totalFiber: 0,
+            streakDays: 0
+        )
 
         self.init(
             dailySummary: summary,
+            dailySummaries: [:],
+            dailyFoods: [:],
             foodAnalyzer: foodAnalyzer,
             nutritionEstimator: nutritionEstimator
         )
@@ -234,14 +237,7 @@ public final class DashboardViewModel: ObservableObject {
         phase = .orbitingAndLoading
         orbProgress = Double(ringProgress)
 
-        let newConsumed = dailySummary.consumedCalories + currentFood.calories
-        dailySummary.consumedCalories = newConsumed
-        dailySummary.totalProtein += currentFood.protein
-        dailySummary.totalCarbs += currentFood.carbs
-        dailySummary.totalFat += currentFood.fat
-        dailySummary.totalFiber += currentFood.fiber
-        appendCurrentFoodAndStoreDay()
-        let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
+        let targetRatio = applyCurrentFoodAndStoreDay()
 
         withAnimation(MotionConfig.progressSpring) {
             ringProgress = targetRatio
@@ -285,14 +281,7 @@ public final class DashboardViewModel: ObservableObject {
     }
 
     private func executeReduceMotionFallback() {
-        let newConsumed = dailySummary.consumedCalories + currentFood.calories
-        dailySummary.consumedCalories = newConsumed
-        dailySummary.totalProtein += currentFood.protein
-        dailySummary.totalCarbs += currentFood.carbs
-        dailySummary.totalFat += currentFood.fat
-        dailySummary.totalFiber += currentFood.fiber
-        appendCurrentFoodAndStoreDay()
-        let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
+        let targetRatio = applyCurrentFoodAndStoreDay()
 
         withAnimation(.easeInOut(duration: 0.25)) {
             isShowingAddFood = false
@@ -328,9 +317,26 @@ public final class DashboardViewModel: ObservableObject {
         dailyFoodsByDate[selectedDate] = foodsForSelectedDate
     }
 
-    private func appendCurrentFoodAndStoreDay() {
-        foodsForSelectedDate.append(currentFood)
+    @discardableResult
+    private func applyCurrentFoodAndStoreDay() -> CGFloat {
+        if let index = foodsForSelectedDate.firstIndex(where: { $0.id == currentFood.id }) {
+            let oldFood = foodsForSelectedDate[index]
+            dailySummary.consumedCalories = max(0, dailySummary.consumedCalories - oldFood.calories + currentFood.calories)
+            dailySummary.totalProtein = max(0, dailySummary.totalProtein - oldFood.protein + currentFood.protein)
+            dailySummary.totalCarbs = max(0, dailySummary.totalCarbs - oldFood.carbs + currentFood.carbs)
+            dailySummary.totalFat = max(0, dailySummary.totalFat - oldFood.fat + currentFood.fat)
+            dailySummary.totalFiber = max(0, dailySummary.totalFiber - oldFood.fiber + currentFood.fiber)
+            foodsForSelectedDate[index] = currentFood
+        } else {
+            dailySummary.consumedCalories += currentFood.calories
+            dailySummary.totalProtein += currentFood.protein
+            dailySummary.totalCarbs += currentFood.carbs
+            dailySummary.totalFat += currentFood.fat
+            dailySummary.totalFiber += currentFood.fiber
+            foodsForSelectedDate.append(currentFood)
+        }
         storeCurrentDay()
+        return CGFloat(dailySummary.consumedCalories) / CGFloat(max(1, dailySummary.targetCalories))
     }
 
     private func syncProgressWithDailySummary() {

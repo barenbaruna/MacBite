@@ -100,4 +100,14 @@ public extension FoodItem {
     static func currentMealType(for date: Date = Date(), calendar: Calendar = .current) -> String {
         MealTimeSlot.slot(for: date, calendar: calendar).displayName
     }
+
+    static func currentDateString(for date: Date = Date(), locale: Locale = Locale(identifier: "en_GB")) -> String {
+        date.formatted(
+            .dateTime
+                .day()
+                .month(.wide)
+                .year()
+                .locale(locale)
+        )
+    }
 }

@@ -10,34 +10,41 @@ import UIKit
 
 struct DashboardFoodCardView: View {
     let food: FoodItem
+    var onTap: (() -> Void)? = nil
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            background
-                .frame(maxWidth: .infinity)
-                .frame(height: AppSize.dashboardFoodCardHeight)
-                .clipped()
-                .allowsHitTesting(false)
+        Button {
+            AppHaptics.primaryAction()
+            onTap?()
+        } label: {
+            ZStack(alignment: .leading) {
+                background
+                    .frame(maxWidth: .infinity)
+                    .frame(height: AppSize.dashboardFoodCardHeight)
+                    .clipped()
+                    .allowsHitTesting(false)
 
-            AppGradient.foodCardOverlay
-                .allowsHitTesting(false)
+                AppGradient.foodCardOverlay
+                    .allowsHitTesting(false)
 
-            VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                Text(food.mealType)
-                    .font(AppTypography.headline)
-                    .foregroundStyle(AppColor.white)
+                VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
+                    Text(food.mealType)
+                        .font(AppTypography.headline)
+                        .foregroundStyle(AppColor.white)
 
-                Text(food.name)
-                    .font(AppTypography.subheadline)
-                    .foregroundStyle(AppColor.foodCardName)
+                    Text(food.name)
+                        .font(AppTypography.subheadline)
+                        .foregroundStyle(AppColor.foodCardName)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, AppSpacing.dashboardFoodCardContentInset)
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .padding(.horizontal, AppSpacing.dashboardFoodCardContentInset)
+            .frame(maxWidth: .infinity)
+            .frame(height: AppSize.dashboardFoodCardHeight)
+            .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: AppSize.dashboardFoodCardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
+        .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(food.mealType), \(food.name)")
     }

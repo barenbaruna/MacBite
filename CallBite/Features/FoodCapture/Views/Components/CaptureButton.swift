@@ -15,7 +15,12 @@ struct CaptureButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(AppColor.gray200)
+                    .strokeBorder(Color.white.opacity(0.85), lineWidth: 4)
+                    .background(Circle().fill(.ultraThinMaterial))
+                    .frame(
+                        width: AppSize.cameraCaptureOuter,
+                        height: AppSize.cameraCaptureOuter
+                    )
 
                 Circle()
                     .fill(isEnabled ? AppColor.white : AppColor.buttonDisabled)

@@ -29,14 +29,14 @@ struct FoodCaptureView: View {
         GeometryReader { geometry in
             let layout = CameraGuidanceLayout(viewportSize: geometry.size)
 
-            cameraExperience(layout: layout)
+            cameraExperience(layout: layout, safeArea: geometry.safeAreaInsets)
             .frame(
                 width: geometry.size.width,
                 height: geometry.size.height
             )
             .clipped()
             .overlay(alignment: .bottom) {
-                capturedPhotoActions
+                capturedPhotoActions(safeAreaBottom: geometry.safeAreaInsets.bottom)
             }
             .onAppear {
                 updatePreviewLayout(size: geometry.size, layout: layout)
@@ -81,39 +81,59 @@ struct FoodCaptureView: View {
         }
     }
 
-    private func cameraExperience(layout: CameraGuidanceLayout) -> some View {
+    private func cameraExperience(layout: CameraGuidanceLayout, safeArea: EdgeInsets) -> some View {
         ZStack {
             AppColor.dark950
             cameraContent
-            liveExperience(layout: layout)
+            liveExperience(layout: layout, safeArea: safeArea)
             firstUseGuide
         }
     }
 
     @ViewBuilder
-    private func liveExperience(layout: CameraGuidanceLayout) -> some View {
+    private func liveExperience(layout: CameraGuidanceLayout, safeArea: EdgeInsets) -> some View {
         if viewModel.state != .captured {
-            AppColor.cameraPreviewScrim
-
             if viewModel.state == .live || viewModel.state == .capturing {
+                guideFrameBlurMask(layout: layout)
+
                 CameraGuidanceOverlay(
                     layout: layout,
                     guidance: viewModel.positionGuidance,
                     checks: viewModel.qualityChecks
                 )
+            } else {
+                AppColor.cameraPreviewScrim
             }
 
-            liveCameraControls
+            liveCameraControls(safeArea: safeArea)
         }
     }
 
+    private func guideFrameBlurMask(layout: CameraGuidanceLayout) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+
+            Color.black.opacity(0.18)
+        }
+        .mask {
+            InvertedCutoutShape(
+                cutoutRect: layout.guideFrame,
+                cornerRadius: AppSize.cameraSafeAreaCornerRadius
+            )
+            .fill(style: FillStyle(eoFill: true))
+        }
+        .allowsHitTesting(false)
+    }
+
     @ViewBuilder
-    private var capturedPhotoActions: some View {
+    private func capturedPhotoActions(safeAreaBottom: CGFloat) -> some View {
         if viewModel.state == .captured {
             CapturedPhotoActionsView(
                 onRetake: retakePhoto,
                 onUsePhoto: usePhoto
             )
+            .padding(.bottom, max(safeAreaBottom, 16))
             .zIndex(1)
         }
     }
@@ -175,38 +195,44 @@ struct FoodCaptureView: View {
         }
     }
 
-    private var liveCameraControls: some View {
+    private func liveCameraControls(safeArea: EdgeInsets) -> some View {
         VStack {
-            cameraTopBar
+            cameraTopBar(topInset: safeArea.top)
 
             Spacer()
 
-            cameraBottomControls
+            cameraBottomControls(bottomInset: safeArea.bottom)
         }
     }
 
-    private var cameraTopBar: some View {
+    private func cameraTopBar(topInset: CGFloat) -> some View {
         HStack {
-            cameraControlButton(
-                systemImage: "xmark",
-                accessibilityLabel: "Close Camera",
-                action: onDismiss
-            )
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(AppColor.white)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Close Camera")
+
             Spacer()
         }
-        .padding(.top, AppSpacing.cameraCloseTopInset)
+        .padding(.top, max(topInset + 8, AppSpacing.cameraCloseTopInset))
         .padding(.horizontal, AppSpacing.cameraCloseHorizontalInset)
     }
 
-    private var cameraBottomControls: some View {
+    private func cameraBottomControls(bottomInset: CGFloat) -> some View {
         HStack {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                CameraControlLabel(
-                    systemImage: "photo",
-                    accessibilityLabel: "Choose from Gallery"
-                )
+                Image(systemName: "photo")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.white)
+                    .frame(width: 48, height: 48)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
             .accessibilityLabel("Choose from Gallery")
 
             Spacer()
@@ -220,34 +246,24 @@ struct FoodCaptureView: View {
 
             Spacer()
 
-            cameraControlButton(
-                systemImage: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill",
-                accessibilityLabel: viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On"
-            ) {
+            Button {
                 AppHaptics.selectionChanged()
                 Task {
                     await viewModel.toggleFlash()
                 }
+            } label: {
+                Image(systemName: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(viewModel.isFlashEnabled ? AppColor.circleOne : AppColor.white)
+                    .frame(width: 48, height: 48)
             }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
             .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
+            .accessibilityLabel(viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On")
         }
         .padding(.horizontal, AppSpacing.cameraBottomControlsHorizontalInset)
-        .padding(.bottom, AppSpacing.cameraBottomControlsInset)
-    }
-
-    private func cameraControlButton(
-        systemImage: String,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            CameraControlLabel(
-                systemImage: systemImage,
-                accessibilityLabel: accessibilityLabel
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
+        .padding(.bottom, max(bottomInset + 8, AppSpacing.cameraBottomControlsInset))
     }
 
     private func updatePreviewLayout(
@@ -269,5 +285,21 @@ struct FoodCaptureView: View {
     private func usePhoto() {
         guard let image = viewModel.capturedImage else { return }
         onUsePhoto(image)
+    }
+}
+
+private struct InvertedCutoutShape: Shape {
+    let cutoutRect: CGRect
+    let cornerRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.addRect(rect)
+        path.addRoundedRect(
+            in: cutoutRect,
+            cornerSize: CGSize(width: cornerRadius, height: cornerRadius),
+            style: .continuous
+        )
+        return path
     }
 }

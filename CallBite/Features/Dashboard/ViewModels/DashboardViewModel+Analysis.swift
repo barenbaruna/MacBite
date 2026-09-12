@@ -14,6 +14,7 @@ extension DashboardViewModel {
     public func resetAndOpenAddFood() {
         var food = FoodItem.dimsumMentai
         food.mealType = FoodItem.currentMealType()
+        food.dateString = FoodItem.currentDateString()
         resetAndOpenAddFood(with: food)
     }
 
@@ -65,7 +66,7 @@ extension DashboardViewModel {
         } catch {
             var fallback = FoodItem.dimsumMentai
             fallback.mealType = FoodItem.currentMealType()
-            fallback.dateString = dailySummary.dateString
+            fallback.dateString = FoodItem.currentDateString()
             fallback.photoData = image.jpegData(compressionQuality: 0.8)
             openAddFoodCard(with: fallback)
         }
@@ -139,7 +140,7 @@ extension DashboardViewModel {
         FoodItem(
             name: candidate.name,
             mealType: FoodItem.currentMealType(),
-            dateString: dailySummary.dateString,
+            dateString: FoodItem.currentDateString(),
             calories: candidate.nutrition.calories,
             protein: candidate.nutrition.protein,
             carbs: candidate.nutrition.carbs,
@@ -174,7 +175,7 @@ extension DashboardViewModel {
         FoodItem(
             name: name,
             mealType: FoodItem.currentMealType(),
-            dateString: dailySummary.dateString,
+            dateString: FoodItem.currentDateString(),
             calories: nutrition.calories,
             protein: nutrition.protein,
             carbs: nutrition.carbs,
@@ -194,7 +195,7 @@ extension DashboardViewModel {
         return FoodItem(
             name: displayName,
             mealType: FoodItem.currentMealType(),
-            dateString: dailySummary.dateString,
+            dateString: FoodItem.currentDateString(),
             calories: max(50, Int(220.0 * ratio)),
             protein: max(5, Int(15.0 * ratio)),
             carbs: max(5, Int(25.0 * ratio)),
