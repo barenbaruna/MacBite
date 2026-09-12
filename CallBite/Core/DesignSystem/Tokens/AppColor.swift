@@ -29,7 +29,8 @@ enum AppColor {
 
     // Activity Cards (Lifestyle)
     static let activityCardNormal = Color(hex: 0x1C1C1E)
-    static let activityCardSelected = Color(hex: 0x29292C)
+    static let activityCardSelected = Color(hex: 0x3D3E42)
+    static let activityCardSelectedBorder = Color.white.opacity(0.3)
 
     // Neutral / Grayscale Series
     static let white = Color(hex: 0xFFFFFF)
@@ -57,10 +58,12 @@ enum AppColor {
     static let fat = Color.purple
 
     // Ring Classic Angular Gradient Series (Figma #F7E43F -> Orange -> Red)
-    static let ringYellow = Color(hex: 0xF7E43F)
-    static let ringOrange = Color(hex: 0xFF7A00)
-    static let ringCoral = Color(hex: 0xE53935)
+    static let ringYellow = Color(hex: 0xFFE43D)
+    static let ringOrange = Color(hex: 0xFF9738)
+    static let ringCoral = Color(hex: 0xE95521)
+    static let ringRed = Color(hex: 0xC91F22)
     static let ringTrack = Color(hex: 0x222126)
+    static let ringValue = Color(hex: 0xE95521)
     static let avatarBackground = Color(hex: 0xE65100)
 
     // Slider Gradient Series
@@ -71,10 +74,76 @@ enum AppColor {
     static let sliderCyan = lossWeight
     static let sliderMagenta = gainWeight
 
-    // Apple Fitness Over-Goal Multi-Lap Series (Electric Neon Rose -> Hot Magenta)
-    static let fitnessOverflowStart = Color(hex: 0xFF2D55)
-    static let fitnessOverflowMid = Color(hex: 0xFF375F)
-    static let fitnessOverflowEnd = Color(hex: 0xFF007A)
+    // Calorie Overlimit Base Ring (Reference: Bright Yellow -> Orange -> Red)
+    static let overlimitBaseYellow = Color(hex: 0xFEC902)
+    static let overlimitBaseOrange = Color(hex: 0xFFA50C)
+    static let overlimitBaseRed = Color(hex: 0xFB4D2E)
+
+    // Calorie Overlimit Second Lap (Bright Red -> Crimson -> Maroon -> Charcoal)
+    static let overlimitCrimson = Color(hex: 0xBD392F)
+    static let overlimitMaroon = Color(hex: 0x8A302B)
+    static let overlimitCharcoalRed = Color(hex: 0x5B2A2A)
+    static let overlimitNearBlack = Color(hex: 0x36282A)
+    static let overlimitText = Color(hex: 0xF83623)
+
+    // Legacy fitness overflow aliases for backward compatibility
+    static let fitnessOverflowStart = overlimitBaseRed
+    static let fitnessOverflowMid = overlimitMaroon
+    static let fitnessOverflowEnd = overlimitNearBlack
+
+    private struct RGBColorComponent {
+        let redValue: Double
+        let greenValue: Double
+        let blueValue: Double
+    }
+
+    /// Evaluates the dynamic color along the overlimit gradient for a given overflow fraction.
+    static func overlimitColor(at progress: CGFloat) -> Color {
+        let startRGB = RGBColorComponent(redValue: 251, greenValue: 77, blueValue: 46)
+        let crimsonRGB = RGBColorComponent(redValue: 189, greenValue: 57, blueValue: 47)
+        let maroonRGB = RGBColorComponent(redValue: 138, greenValue: 48, blueValue: 43)
+        let charcoalRGB = RGBColorComponent(redValue: 91, greenValue: 42, blueValue: 42)
+        let nearBlackRGB = RGBColorComponent(redValue: 54, greenValue: 40, blueValue: 42)
+
+        if progress <= 0.056 {
+            let stepFraction = progress / 0.056
+            return interpolate(from: startRGB, to: crimsonRGB, fraction: stepFraction)
+        } else if progress <= 0.097 {
+            let stepFraction = (progress - 0.056) / 0.041
+            return interpolate(from: crimsonRGB, to: maroonRGB, fraction: stepFraction)
+        } else if progress <= 0.139 {
+            let stepFraction = (progress - 0.097) / 0.042
+            return interpolate(from: maroonRGB, to: charcoalRGB, fraction: stepFraction)
+        } else if progress <= 0.18 {
+            let stepFraction = (progress - 0.139) / 0.041
+            return interpolate(from: charcoalRGB, to: nearBlackRGB, fraction: stepFraction)
+        } else {
+            return overlimitNearBlack
+        }
+    }
+
+    private static func interpolate(
+        from startComponent: RGBColorComponent,
+        to endComponent: RGBColorComponent,
+        fraction: CGFloat
+    ) -> Color {
+        let clampedFraction = max(0, min(1, Double(fraction)))
+        let deltaRed = endComponent.redValue - startComponent.redValue
+        let deltaGreen = endComponent.greenValue - startComponent.greenValue
+        let deltaBlue = endComponent.blueValue - startComponent.blueValue
+
+        let blendedRed = startComponent.redValue + deltaRed * clampedFraction
+        let blendedGreen = startComponent.greenValue + deltaGreen * clampedFraction
+        let blendedBlue = startComponent.blueValue + deltaBlue * clampedFraction
+
+        return Color(
+            .sRGB,
+            red: blendedRed / 255.0,
+            green: blendedGreen / 255.0,
+            blue: blendedBlue / 255.0,
+            opacity: 1.0
+        )
+    }
 
     // Liquid Glass Atmospheric Surface Series (Save Food Confirmation & Modal Glass)
     static let glassSurfaceBase = Color(hex: 0x1A1815)
@@ -96,11 +165,24 @@ enum AppColor {
     static let cameraTipBackground = Color(hex: 0x8A8A8A)
     static let cameraTipHeaderBackground = Color(hex: 0x727272)
     static let cameraActionBar = Color(hex: 0x000000)
+    static let cameraPreviewScrim = Color.black.opacity(0.47)
+    static let cameraInstructionBackground = Color(hex: 0x161517).opacity(0.70)
+    static let cameraStatusBackground = Color(hex: 0x2F1F19).opacity(0.80)
+    static let cameraCheckPassed = gainWeight
+    static let cameraCheckPending = white
+    static let cameraControlForeground = dark950
 
     // Manual Logging Flow
     static let manualFieldBackground = Color(hex: 0x2C2C2E)
     static let manualInputForeground = Color(hex: 0xCCCCCC)
     static let manualSeparator = Color(hex: 0x3A3A3C)
+
+    // Dashboard Food History
+    static let foodCardName = Color(hex: 0xFA6934)
+    static let foodCardOverlayLeading = Color.black.opacity(0.88)
+    static let foodCardOverlayTrailing = Color.black.opacity(0.04)
+    static let foodDetailSecondaryText = Color(hex: 0x9B9A9A)
+    static let foodDetailActiveInput = Color(hex: 0xE0511F)
 }
 
 // MARK: - Hex Initializer Helper

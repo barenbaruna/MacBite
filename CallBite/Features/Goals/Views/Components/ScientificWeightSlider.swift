@@ -7,173 +7,383 @@
 
 import SwiftUI
 
-/// Custom continuous slider with boundary indicators for setting weight goals.
+/// Continuous 3-zone proportional ruler slider with equal 1/3 division, 1-tick-1-kg representation, full-width edge docking, and 3-color spectrum track.
 struct ScientificWeightSlider: View {
     @Binding var value: Double
+    var currentWeight: Double = 60.0
     let range: ClosedRange<Double>
     let healthyRange: ClosedRange<Double>
     var step: Double = 0.5
 
     @State private var isDragging: Bool = false
-    @State private var lastReportedInteger: Int = 0
+    @State private var lastReportedStep: Int = 0
+    @State private var lastReportedZone: WeightRangeZone?
 
-    private let trackHeight: CGFloat = 12
-    private let thumbDiameter: CGFloat = 28
+    private let sliderHeight: CGFloat = 68
+    private let thumbWidth: CGFloat = 44
+    private let thumbHeight: CGFloat = 28
+    private let segmentGap: CGFloat = 8
 
     var body: some View {
         GeometryReader { proxy in
-            let availableWidth = proxy.size.width - thumbDiameter
-            let progress = CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound))
-            let clampedProgress = min(max(progress, 0.0), 1.0)
-            let thumbOffset = clampedProgress * availableWidth
+            let availableWidth = proxy.size.width
+            if availableWidth > 60 {
+                let layout = calculateLayout(availableWidth: availableWidth)
+                let thumbX = calculateX(for: value, layout: layout)
 
-            sliderTrackContent(availableWidth: availableWidth, thumbOffset: thumbOffset)
+                ZStack(alignment: .leading) {
+                    // 1. Equal 1/3 borderless ruler tracks with container card and uniform ticks
+                    rulerSegments(layout: layout, thumbX: thumbX)
+
+                    // 2. Horizontal continuous 3-color spectrum track line (Cyan -> Green -> Coral)
+                    horizontalCenterTrack(layout: layout, thumbX: thumbX)
+
+                    // 3. Glowing white capsule thumb
+                    thumbCapsule
+                        .position(x: thumbX, y: sliderHeight / 2)
+                }
+                .frame(width: availableWidth, height: sliderHeight)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { gesture in
+                            isDragging = true
+                            updateValue(dragX: gesture.location.x, layout: layout)
+                        }
+                        .onEnded { _ in
+                            isDragging = false
+                        }
+                )
+            }
         }
-        .frame(height: thumbDiameter)
+        .frame(height: sliderHeight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Weight Goal Slider")
-        .accessibilityValue(String(format: "%.1f kg", value))
+        .accessibilityValue(String(format: "%.1f kg, %@", value, activeZone.title))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment:
-                value = min(range.upperBound, value + 1.0)
+                applyValue(min(range.upperBound, value + 0.5))
             case .decrement:
-                value = max(range.lowerBound, value - 1.0)
+                applyValue(max(range.lowerBound, value - 0.5))
             @unknown default:
                 break
             }
         }
     }
 
-    private func sliderTrackContent(availableWidth: CGFloat, thumbOffset: CGFloat) -> some View {
-        ZStack(alignment: .leading) {
-            inactiveTrackBackground
-            activeGradientTrack(thumbOffset: thumbOffset)
-            thumbScrubber(availableWidth: availableWidth, thumbOffset: thumbOffset)
-            boundaryWarningBadge(thumbOffset: thumbOffset)
+    // MARK: - Subviews
+
+    private func rulerSegments(layout: SliderLayout, thumbX: CGFloat) -> some View {
+        let leftActiveRange: ClosedRange<CGFloat>? = {
+            guard value < healthyRange.lowerBound else { return nil }
+            let span = Double(layout.zone1EndKg - layout.zone1StartKg)
+            let progress = span > 0 ? (Double(layout.zone1EndKg) - value) / span : 1.0
+            let clampedProgress = min(max(CGFloat(progress), 0), 1)
+
+            // When progress reaches 1.0 (mentok kiri), start reaches 0.0 exactly
+            let start = layout.segmentWidth * (1.0 - clampedProgress)
+            let end = layout.segmentWidth
+            return min(start, end)...max(start, end)
+        }()
+
+        let rightActiveRange: ClosedRange<CGFloat>? = {
+            guard value > healthyRange.upperBound else { return nil }
+            let span = Double(layout.zone3EndKg - layout.zone3StartKg)
+            let progress = span > 0 ? (value - Double(layout.zone3StartKg)) / span : 1.0
+            let clampedProgress = min(max(CGFloat(progress), 0), 1)
+
+            // When progress reaches 1.0 (mentok kanan), end reaches segmentWidth exactly
+            let start: CGFloat = 0.0
+            let end = layout.segmentWidth * clampedProgress
+            return min(start, end)...max(start, end)
+        }()
+
+        return HStack(spacing: segmentGap) {
+            // Zone 1: Below Recommended (Left: 10 uniform spacious ticks)
+            RulerTicksSegment(
+                width: layout.segmentWidth,
+                height: sliderHeight,
+                tickCount: 10,
+                activeRange: leftActiveRange,
+                accentColor: AppColor.goalCyan,
+                boundaryEdge: .trailing
+            )
+
+            // Zone 2: Middle Recommended Range (Open gap)
+            Color.clear
+                .frame(width: layout.segmentWidth, height: sliderHeight)
+
+            // Zone 3: Above Recommended (Right: 10 uniform spacious ticks)
+            RulerTicksSegment(
+                width: layout.segmentWidth,
+                height: sliderHeight,
+                tickCount: 10,
+                activeRange: rightActiveRange,
+                accentColor: AppColor.goalCoral,
+                boundaryEdge: .leading
+            )
         }
-        .frame(height: thumbDiameter)
     }
 
-    private var inactiveTrackBackground: some View {
-        Capsule()
-            .fill(Color(.systemGray5).opacity(0.3))
-            .frame(height: trackHeight)
-    }
+    private func horizontalCenterTrack(layout: SliderLayout, thumbX: CGFloat) -> some View {
+        let trackHeight: CGFloat = 5.5
+        let outerInset: CGFloat = 6.0
+        let trackWidth = max(0, layout.availableWidth - (outerInset * 2))
 
-    private func activeGradientTrack(thumbOffset: CGFloat) -> some View {
-        let gradient = LinearGradient(
-            colors: [AppColor.lossWeight, AppColor.mainWeight, AppColor.gainWeight],
+        let trackGradient = LinearGradient(
+            stops: [
+                .init(color: AppColor.goalCyan, location: 0.0),
+                .init(color: AppColor.goalCyan, location: 0.28),
+                .init(color: AppColor.goalGreen, location: 0.50),
+                .init(color: AppColor.goalCoral, location: 0.72),
+                .init(color: AppColor.goalCoral, location: 1.0)
+            ],
             startPoint: .leading,
             endPoint: .trailing
         )
 
-        return Capsule()
-            .fill(gradient)
-            .frame(width: thumbOffset + (thumbDiameter / 2), height: trackHeight)
-            .mask(Capsule())
-    }
+        let currentX = calculateX(for: currentWeight, layout: layout)
 
-    private func thumbScrubber(availableWidth: CGFloat, thumbOffset: CGFloat) -> some View {
-        thumbKnob
-            .offset(x: thumbOffset)
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        isDragging = true
-                        updateValue(dragX: gesture.location.x, availableWidth: availableWidth)
-                    }
-                    .onEnded { _ in
-                        isDragging = false
-                    }
-            )
-    }
+        return ZStack(alignment: .leading) {
+            // 1. Subtle glow behind track line
+            Capsule()
+                .fill(trackGradient)
+                .frame(width: trackWidth, height: trackHeight)
+                .blur(radius: 3.0)
+                .opacity(0.40)
+                .offset(x: outerInset)
 
-    @ViewBuilder
-    private func boundaryWarningBadge(thumbOffset: CGFloat) -> some View {
-        if value > healthyRange.upperBound && isDragging {
-            Text("ABOVE RECOMMENDED RANGE")
-                .font(AppTypography.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(AppColor.gainWeight)
-                .clipShape(Capsule())
-                .offset(x: thumbOffset - 60, y: -24)
-        } else if value < healthyRange.lowerBound && isDragging {
-            Text("BELOW RECOMMENDED RANGE")
-                .font(AppTypography.caption.weight(.bold))
-                .foregroundStyle(.black)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(AppColor.lossWeight)
-                .clipShape(Capsule())
-                .offset(x: thumbOffset - 60, y: -24)
-        }
-    }
+            // 2. Continuous 3-color spectrum track line (5.5pt thickened, flush with vertical ticks)
+            Capsule()
+                .fill(trackGradient)
+                .frame(width: trackWidth, height: trackHeight)
+                .offset(x: outerInset)
 
-    private var currentAccentColor: Color {
-        if value < healthyRange.lowerBound {
-            return AppColor.lossWeight
-        } else if value > healthyRange.upperBound {
-            return AppColor.gainWeight
-        } else {
-            return AppColor.mainWeight
-        }
-    }
-
-    private var thumbKnob: some View {
-        ZStack {
-            Circle()
-                .fill(Color.white)
-                .frame(width: thumbDiameter, height: thumbDiameter)
-                .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-            
-            // Center indicator reflecting current active color
-            Circle()
-                .fill(currentAccentColor)
-                .frame(width: 8, height: 8)
-        }
-        .scaleEffect(isDragging ? 1.08 : 1.0)
-        .animation(.spring(response: 0.22, dampingFraction: 0.7), value: isDragging)
-    }
-
-    private func updateValue(dragX: CGFloat, availableWidth: CGFloat) {
-        guard availableWidth > 0 else { return }
-        let rawFraction = (dragX - (thumbDiameter / 2)) / availableWidth
-        let clampedFraction = Double(min(max(rawFraction, 0.0), 1.0))
-        let rawValue = range.lowerBound + clampedFraction * (range.upperBound - range.lowerBound)
-        let steppedValue = (rawValue / step).rounded() * step
-        let finalValue = min(max(steppedValue, range.lowerBound), range.upperBound)
-
-        if finalValue != value {
-            value = finalValue
-            let currentInt = Int(finalValue)
-            if currentInt != lastReportedInteger {
-                lastReportedInteger = currentInt
+            // 3. Anchor dot at current weight position
+            if healthyRange.contains(currentWeight) {
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 6, height: 6)
+                    .shadow(color: Color.black.opacity(0.5), radius: 2)
+                    .position(x: currentX, y: sliderHeight / 2)
             }
+        }
+        .frame(width: layout.availableWidth, height: sliderHeight, alignment: .leading)
+    }
+
+    private var isMaintaining: Bool {
+        abs(value - currentWeight) <= 0.5
+    }
+
+    private var activeGoalCategory: GoalCategory {
+        if isMaintaining {
+            return .maintaining
+        } else if value < currentWeight {
+            return .cutting
+        } else {
+            return .bulking
+        }
+    }
+
+    private var activeIndicatorColor: Color {
+        switch activeGoalCategory {
+        case .cutting: return AppColor.goalCyan
+        case .maintaining: return AppColor.goalGreen
+        case .bulking: return AppColor.goalCoral
+        }
+    }
+
+    private var thumbCapsule: some View {
+        ZStack {
+            // 1. Soft halo glow matching active category (selaras dengan tombol Done)
+            Capsule(style: .continuous)
+                .fill(activeIndicatorColor.opacity(0.45))
+                .frame(width: thumbWidth + 8, height: thumbHeight + 8)
+                .blur(radius: 4)
+
+            // 2. White capsule with colored accent border
+            Capsule(style: .continuous)
+                .fill(Color.white)
+                .frame(width: thumbWidth, height: thumbHeight)
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(activeIndicatorColor, lineWidth: 3.0)
+                )
+                .shadow(
+                    color: activeIndicatorColor.opacity(isMaintaining ? 0.60 : 0.40),
+                    radius: isMaintaining ? 5 : 3,
+                    x: 0,
+                    y: 0
+                )
+                .shadow(color: Color.black.opacity(0.35), radius: 4, x: 0, y: 2)
+        }
+        .scaleEffect(isDragging ? 1.05 : 1.0)
+        .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isDragging)
+        .animation(.smooth(duration: 0.2), value: activeIndicatorColor)
+    }
+
+    // MARK: - Layout & Value Computation
+
+    private var activeZone: WeightRangeZone {
+        if value < healthyRange.lowerBound {
+            return .belowRecommended
+        } else if value > healthyRange.upperBound {
+            return .aboveRecommended
+        } else {
+            return .recommended
         }
     }
 }
 
-// MARK: - Hatched Pattern Shape
-struct HatchedPattern: Shape {
-    let lineSpacing: CGFloat = 8
-    let lineWidth: CGFloat = 2
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        
-        let width = rect.width
-        let height = rect.height
-        
-        // Draw diagonal lines starting from x=0
-        for x in stride(from: -height, to: width, by: lineSpacing) {
-            path.move(to: CGPoint(x: x, y: height))
-            path.addLine(to: CGPoint(x: x + height, y: 0))
-        }
-        
-        // Using stroke instead of fill to respect line width
-        return path.strokedPath(StrokeStyle(lineWidth: lineWidth, lineCap: .square))
+// MARK: - Calculations & Value Mapping
+
+extension ScientificWeightSlider {
+    private func calculateLayout(availableWidth: CGFloat) -> SliderLayout {
+        let safeAvailableWidth = max(availableWidth, 120)
+        let usableWidth = max(0, safeAvailableWidth - (segmentGap * 2))
+        let equalWidth = max(30, usableWidth / 3.0)
+
+        let zone1StartKg = Int(range.lowerBound.rounded())
+        let zone1EndKg = max(zone1StartKg + 1, Int(healthyRange.lowerBound.rounded()))
+
+        let zone3StartKg = Int(healthyRange.upperBound.rounded())
+        let zone3EndKg = max(zone3StartKg + 1, Int(range.upperBound.rounded()))
+
+        let minThumbMargin = (thumbWidth / 2) + 4.0 // 26.0 pt keeps thumb and halo strictly within card bounds
+        let zone1LocalStartX = minThumbMargin
+        let zone1LocalEndX = max(zone1LocalStartX + 10, equalWidth - 4.0)
+
+        let zone2Start = equalWidth + segmentGap
+        let zone2End = (2.0 * equalWidth) + segmentGap
+
+        let zone3Start = zone2End + segmentGap
+        let zone3LocalStartX: CGFloat = 4.0
+        let zone3LocalEndX = max(zone3LocalStartX + 10, equalWidth - minThumbMargin)
+
+        return SliderLayout(
+            availableWidth: availableWidth, segmentWidth: equalWidth,
+            zone1StartKg: zone1StartKg, zone1EndKg: zone1EndKg,
+            zone1LocalStartX: zone1LocalStartX, zone1LocalEndX: zone1LocalEndX,
+            zone2Start: zone2Start, zone2End: zone2End, zone3Start: zone3Start,
+            zone3StartKg: zone3StartKg, zone3EndKg: zone3EndKg,
+            zone3LocalStartX: zone3LocalStartX, zone3LocalEndX: zone3LocalEndX
+        )
     }
+
+    private func calculateX(for weight: Double, layout: SliderLayout) -> CGFloat {
+        if weight <= Double(layout.zone1EndKg) {
+            let span = Double(layout.zone1EndKg - layout.zone1StartKg)
+            let progress = span > 0 ? (weight - Double(layout.zone1StartKg)) / span : 0
+            let clampedProgress = min(max(progress, 0), 1)
+            let localSpan = layout.zone1LocalEndX - layout.zone1LocalStartX
+            return layout.zone1LocalStartX + CGFloat(clampedProgress) * localSpan
+        } else if weight >= Double(layout.zone3StartKg) {
+            let span = Double(layout.zone3EndKg - layout.zone3StartKg)
+            let progress = span > 0 ? (weight - Double(layout.zone3StartKg)) / span : 0
+            let clampedProgress = min(max(progress, 0), 1)
+            let localSpan = layout.zone3LocalEndX - layout.zone3LocalStartX
+            let localX = layout.zone3LocalStartX + CGFloat(clampedProgress) * localSpan
+            return layout.zone3Start + localX
+        } else {
+            // Zone 2 (Middle / Recommended)
+            let midX = (layout.zone2Start + layout.zone2End) / 2.0
+            let safeCurrent = min(
+                max(currentWeight, Double(layout.zone1EndKg) + 0.5),
+                Double(layout.zone3StartKg) - 0.5
+            )
+
+            if weight <= safeCurrent {
+                let span = safeCurrent - Double(layout.zone1EndKg)
+                let progress = span > 0 ? (weight - Double(layout.zone1EndKg)) / span : 0.5
+                return layout.zone2Start + CGFloat(progress) * (midX - layout.zone2Start)
+            } else {
+                let span = Double(layout.zone3StartKg) - safeCurrent
+                let progress = span > 0 ? (weight - safeCurrent) / span : 0.5
+                return midX + CGFloat(progress) * (layout.zone2End - midX)
+            }
+        }
+    }
+
+    private func updateValue(dragX: CGFloat, layout: SliderLayout) {
+        let safeCurrent = min(
+            max(currentWeight, Double(layout.zone1EndKg) + 0.5),
+            Double(layout.zone3StartKg) - 0.5
+        )
+
+        var calculatedValue: Double
+
+        if dragX <= layout.zone1LocalStartX {
+            calculatedValue = Double(layout.zone1StartKg)
+        } else if dragX <= layout.zone1LocalEndX {
+            let span = layout.zone1LocalEndX - layout.zone1LocalStartX
+            let progress = Double((dragX - layout.zone1LocalStartX) / max(1, span))
+            calculatedValue = Double(layout.zone1StartKg) + progress * Double(layout.zone1EndKg - layout.zone1StartKg)
+        } else if dragX < layout.zone2Start {
+            calculatedValue = Double(layout.zone1EndKg)
+        } else if dragX <= layout.zone2End {
+            let midFraction = Double((dragX - layout.zone2Start) / max(1, layout.zone2End - layout.zone2Start))
+            if abs(midFraction - 0.5) <= 0.05 {
+                calculatedValue = safeCurrent
+            } else if midFraction < 0.5 {
+                let progress = midFraction / 0.5
+                calculatedValue = Double(layout.zone1EndKg) + progress * (safeCurrent - Double(layout.zone1EndKg))
+            } else {
+                let progress = (midFraction - 0.5) / 0.5
+                calculatedValue = safeCurrent + progress * (Double(layout.zone3StartKg) - safeCurrent)
+            }
+        } else if dragX < layout.zone3Start + layout.zone3LocalStartX {
+            calculatedValue = Double(layout.zone3StartKg)
+        } else if dragX >= layout.zone3Start + layout.zone3LocalEndX {
+            calculatedValue = Double(layout.zone3EndKg)
+        } else {
+            let localX = dragX - (layout.zone3Start + layout.zone3LocalStartX)
+            let span = layout.zone3LocalEndX - layout.zone3LocalStartX
+            let progress = Double(localX / max(1, span))
+            calculatedValue = Double(layout.zone3StartKg) + progress * Double(layout.zone3EndKg - layout.zone3StartKg)
+        }
+
+        if abs(calculatedValue - safeCurrent) <= 0.35 {
+            calculatedValue = safeCurrent
+        }
+
+        let stepped = (calculatedValue / step).rounded() * step
+        let clamped = min(max(stepped, range.lowerBound), range.upperBound)
+        applyValue(clamped)
+    }
+
+    private func applyValue(_ newValue: Double) {
+        if newValue != value {
+            value = newValue
+
+            let stepInt = Int((newValue / step).rounded())
+            if stepInt != lastReportedStep {
+                lastReportedStep = stepInt
+                if abs(newValue - currentWeight) <= 0.1 {
+                    AppHaptics.selectionChanged()
+                } else if healthyRange.contains(newValue) {
+                    AppHaptics.sliderRecommendedTick()
+                } else {
+                    AppHaptics.sliderWarningTick()
+                }
+            }
+
+            let newZone = activeZone
+            if let last = lastReportedZone, newZone != last {
+                AppHaptics.boundaryCrossed()
+            }
+            lastReportedZone = newZone
+        }
+    }
+}
+
+// MARK: - Internal Layout Helper
+
+private struct SliderLayout {
+    let availableWidth, segmentWidth: CGFloat
+    let zone1StartKg, zone1EndKg: Int
+    let zone1LocalStartX, zone1LocalEndX: CGFloat
+    let zone2Start, zone2End, zone3Start: CGFloat
+    let zone3StartKg, zone3EndKg: Int
+    let zone3LocalStartX, zone3LocalEndX: CGFloat
 }

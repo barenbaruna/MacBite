@@ -13,7 +13,18 @@ struct CameraControlLabel: View {
 
     var body: some View {
         Image(systemName: systemImage)
-            .font(AppTypography.body)
+            .font(.system(size: 16, weight: .regular))
+            .foregroundStyle(AppColor.cameraControlForeground)
+            .frame(
+                width: AppSize.cameraRoundControl,
+                height: AppSize.cameraRoundControl
+            )
+            .background(AppColor.cameraControlBackground)
+            .clipShape(Circle())
+            .frame(
+                minWidth: AppSize.minimumTouchTarget,
+                minHeight: AppSize.minimumTouchTarget
+            )
             .accessibilityLabel(accessibilityLabel)
     }
 }

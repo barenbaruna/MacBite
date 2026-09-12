@@ -45,13 +45,13 @@ enum ActivityLevel: String, CaseIterable, Identifiable, Codable {
     var iconName: String {
         switch self {
         case .sedentary:
-            return "figure.seated.side.left"
+            return "figure.seated.side.right"
         case .lightlyActive:
             return "figure.walk"
         case .moderatelyActive:
             return "figure.run"
         case .highlyActive:
-            return "flame.fill"
+            return "figure.strengthtraining.traditional"
         }
     }
 }

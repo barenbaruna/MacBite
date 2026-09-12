@@ -19,6 +19,12 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
     public var fat: Int
     public var fiber: Int
     public var photoSystemName: String
+    /// Bundled image asset used by dashboard samples when no captured photo is available.
+    public var photoAssetName: String?
+    /// Actual captured/picked photo, encoded as JPEG. `nil` for entries without
+    /// a real photo (e.g. manual logging) — the SF Symbol fallback
+    /// (`photoSystemName`) is used for display in that case.
+    public var photoData: Data?
 
     public init(
         id: UUID = UUID(),
@@ -30,7 +36,9 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
         carbs: Int,
         fat: Int,
         fiber: Int = 0,
-        photoSystemName: String = "fork.knife"
+        photoSystemName: String = "fork.knife",
+        photoAssetName: String? = nil,
+        photoData: Data? = nil
     ) {
         self.id = id
         self.name = name
@@ -42,6 +50,8 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
         self.fat = fat
         self.fiber = fiber
         self.photoSystemName = photoSystemName
+        self.photoAssetName = photoAssetName
+        self.photoData = photoData
     }
 }
 
@@ -49,14 +59,15 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
 public extension FoodItem {
     static let dimsumMentai = FoodItem(
         name: "Dimsum Mentai",
-        mealType: "1st Meal",
+        mealType: "Breakfast",
         dateString: "4 September 2026",
         calories: 475,
         protein: 14,
         carbs: 81,
         fat: 12,
         fiber: 4,
-        photoSystemName: "fork.knife"
+        photoSystemName: "fork.knife",
+        photoAssetName: "FoodDemoOne"
     )
 
     static let chickenRiceBowl = FoodItem(
@@ -68,7 +79,8 @@ public extension FoodItem {
         carbs: 65,
         fat: 18,
         fiber: 6,
-        photoSystemName: "takeoutbag.and.cup.and.straw.fill"
+        photoSystemName: "takeoutbag.and.cup.and.straw.fill",
+        photoAssetName: "FoodDemoTwo"
     )
 
     static let oatmealBerry = FoodItem(
@@ -84,4 +96,8 @@ public extension FoodItem {
     )
 
     static let allPresets: [FoodItem] = [dimsumMentai, chickenRiceBowl, oatmealBerry]
+
+    static func currentMealType(for date: Date = Date(), calendar: Calendar = .current) -> String {
+        MealTimeSlot.slot(for: date, calendar: calendar).displayName
+    }
 }

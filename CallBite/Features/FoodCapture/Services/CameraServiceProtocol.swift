@@ -6,10 +6,12 @@
 //
 
 @preconcurrency import AVFoundation
+import Combine
 import UIKit
 
 protocol CameraServiceProtocol: AnyObject {
     var captureSession: AVCaptureSession { get }
+    var frameAnalysisPublisher: AnyPublisher<CameraFrameAnalysis, Never> { get }
 
     func authorizationStatus() -> AVAuthorizationStatus
     func requestAccess() async -> Bool

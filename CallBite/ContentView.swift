@@ -9,8 +9,12 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var screenState: AppScreenState = {
-        if ProcessInfo.processInfo.arguments.contains("-testProfile") {
+        if ProcessInfo.processInfo.arguments.contains("-testProfileChangeGoal") {
+            return .testProfileChangeGoal
+        } else if ProcessInfo.processInfo.arguments.contains("-testProfile") {
             return .testProfile
+        } else if ProcessInfo.processInfo.arguments.contains("-testDashboardReview") {
+            return .testDashboardReview
         } else if ProcessInfo.processInfo.arguments.contains("-testEditSheet") {
             return .testEditSheet
         } else if ProcessInfo.processInfo.arguments.contains("-testFoodCardFront") {
@@ -23,6 +27,16 @@ struct ContentView: View {
             return .testLoggingOverlay
         } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
             return .testManualLogging
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalCutting") {
+            return .testWeightGoalCutting
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalBulking") {
+            return .testWeightGoalBulking
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoal") {
+            return .testWeightGoal
+        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalizeEditing") {
+            return .testPersonalizeEditing
+        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
+            return .testPersonalize
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
             return .dashboard
         }
@@ -32,6 +46,19 @@ struct ContentView: View {
     @State private var testFoodItem: FoodItem = .dimsumMentai
 
     @State private var isTestEditSheetPresented = false
+
+    // MUST be @StateObject, not created via DashboardFactory.makeView() inline
+    // in `body` — `body` (this switch) re-runs on every SwiftUI re-render for
+    // ANY reason, and a plain function call would construct a BRAND NEW
+    // DashboardViewModel every single time, silently orphaning whatever
+    // ViewModel the on-screen DashboardView was actually observing mid-flow.
+    // Confirmed via real device testing: an async operation (manual nutrition
+    // estimation) would complete and mutate its ViewModel's @Published state
+    // correctly, but the state change was invisible on screen because a
+    // second DashboardViewModel had already been created and was the one the
+    // currently-rendered DashboardView was bound to. @StateObject guarantees
+    // SwiftUI keeps this ONE instance for ContentView's entire lifetime.
+    @StateObject private var dashboardViewModel = DashboardViewModel()
 
     var body: some View {
         switch screenState {
@@ -54,11 +81,38 @@ struct ContentView: View {
             })
 
         case .dashboard:
-            DashboardFactory.makeView()
+            DashboardView(viewModel: dashboardViewModel)
 
         case .testProfile:
             ProfileView()
                 .preferredColorScheme(.dark)
+
+        case .testDashboardReview:
+            DashboardView(
+                viewModel: {
+                    let viewModel = DashboardViewModel()
+                    viewModel.isShowingAddFood = true
+                    return viewModel
+                }()
+            )
+            .preferredColorScheme(.dark)
+
+        case .testProfileChangeGoal:
+            ProfileView(
+                viewModel: {
+                    let vm = ProfileViewModel(
+                        initialProfile: UserHealthProfile(
+                            age: 22,
+                            biologicalSex: .preferNotToSay,
+                            weightKg: 56.0,
+                            heightCm: 162.0
+                        )
+                    )
+                    vm.isShowingChangeGoal = true
+                    return vm
+                }()
+            )
+            .preferredColorScheme(.dark)
 
         case .testFoodCard:
             ZStack {
@@ -121,6 +175,54 @@ struct ContentView: View {
 
         case .testManualLogging:
             testManualLoggingView
+
+        case .testPersonalize:
+            NavigationStack {
+                PersonalizeHealthView(viewModel: OnboardingViewModel())
+            }
+            .preferredColorScheme(.dark)
+
+        case .testPersonalizeEditing:
+            NavigationStack {
+                PersonalizeHealthView(
+                    viewModel: OnboardingViewModel(),
+                    initialActiveField: .age
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoal:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: nil,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoalCutting:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 48.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoalBulking:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 78.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -201,12 +303,19 @@ private enum AppScreenState {
     case onboarding
     case dashboard
     case testProfile
+    case testDashboardReview
+    case testProfileChangeGoal
     case testFoodCard
     case testFoodCardFront
     case testEditSheet
     case testDashboardExpanded
     case testLoggingOverlay
     case testManualLogging
+    case testPersonalize
+    case testPersonalizeEditing
+    case testWeightGoal
+    case testWeightGoalCutting
+    case testWeightGoalBulking
 }
 
 #Preview {

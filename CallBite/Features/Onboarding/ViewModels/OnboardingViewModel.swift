@@ -9,14 +9,6 @@ import Combine
 import Foundation
 import UIKit
 
-enum OnboardingStep: Int, CaseIterable {
-    case splash = 0
-    case healthPrompt = 1
-    case personalize = 2
-    case lifestyle = 3
-    case targetGoal = 4
-}
-
 @MainActor
 final class OnboardingViewModel: ObservableObject {
 
@@ -40,6 +32,24 @@ final class OnboardingViewModel: ObservableObject {
 
     var canProceedFromLifestyle: Bool {
         selectedActivity != nil
+    }
+
+    var calculatedBMR: Double {
+        GoalCalculator.calculateBMR(profile: healthProfile)
+    }
+
+    var calculatedTDEE: Double {
+        guard let activity = selectedActivity else { return 0.0 }
+        return GoalCalculator.calculateTDEE(bmr: calculatedBMR, activityLevel: activity)
+    }
+
+    func calculatedDailyCalories(for category: GoalCategory) -> Int {
+        GoalCalculator.calculateDailyCalorieTarget(tdee: calculatedTDEE, category: category)
+    }
+
+    func calculatedNutritionGoal(for category: GoalCategory) -> NutritionGoal {
+        let calories = calculatedDailyCalories(for: category)
+        return GoalCalculator.calculateMacronutrients(dailyCalories: calories)
     }
 
     // MARK: - Dependencies
@@ -171,5 +181,10 @@ final class OnboardingViewModel: ObservableObject {
         generator.notificationOccurred(.success)
         currentStep = .targetGoal
         navigationPath = isHealthAccessGranted ? [.lifestyle, .targetGoal] : [.personalize, .lifestyle, .targetGoal]
+    }
+
+    func saveGoal(targetWeight: Double, category: GoalCategory) {
+        healthProfile.targetWeightKg = targetWeight
+        healthProfile.goalCategory = category
     }
 }

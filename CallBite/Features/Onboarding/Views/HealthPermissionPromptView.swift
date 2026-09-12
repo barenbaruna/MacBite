@@ -17,22 +17,24 @@ struct HealthPermissionPromptView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+        VStack(alignment: .leading) {
             headerSection
-                .padding(.top, AppSpacing.lg)
+                .padding(.top, AppSpacing.large)
 
             Spacer()
 
             actionSection
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .padding(.bottom, AppSpacing.xl)
+        .padding(.top, AppSpacing.extraLarge)
+        .padding(.horizontal, AppSpacing.large)
+        .padding(.bottom, AppSpacing.extraLarge)
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
             Text("Let’s Sync with Apple Health")
-                .font(AppTypography.largeTitle)
+                .font(AppTypography.title2)
+                .fontWeight(.bold)
                 .foregroundStyle(.primary)
 
             Text("Sharing your activity data helps MacBite automatically adjust your daily calorie and macro goals.")
@@ -42,9 +44,8 @@ struct HealthPermissionPromptView: View {
     }
 
     private var actionSection: some View {
-        VStack(spacing: AppSpacing.md) {
+        VStack(spacing: AppSpacing.medium) {
             connectToHealthButton
-            setupManuallyButton
             privacyDisclaimerSection
         }
     }
@@ -68,32 +69,18 @@ struct HealthPermissionPromptView: View {
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.large)
-        .tint(AppColor.orange500)
         .disabled(viewModel.isLoading)
     }
 
-    private var setupManuallyButton: some View {
-        Button {
-            viewModel.enterManually()
-        } label: {
-            Text("Set Up Manually")
-                .font(AppTypography.button)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
-    }
-
     private var privacyDisclaimerSection: some View {
-        VStack(spacing: AppSpacing.xxs) {
+        VStack(spacing: AppSpacing.extraSmall) {
             Text("Your health data will never leave this device.")
                 .font(AppTypography.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
             Text(
                 "MacBite is not a substitute for professional medical advice. "
-                + "Always consult your physician first."
+                    + "Always consult your physician first."
             )
             .font(AppTypography.footnote)
             .foregroundStyle(.secondary)
@@ -105,6 +92,6 @@ struct HealthPermissionPromptView: View {
 
 #Preview {
     NavigationStack {
-        HealthPermissionPromptView(viewModel: OnboardingViewModel())
+        HealthPermissionPromptView(viewModel: OnboardingFactory.makePreviewViewModel(initialStep: .healthPrompt))
     }
 }

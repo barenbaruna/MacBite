@@ -14,4 +14,12 @@ enum OnboardingFactory {
         let viewModel = OnboardingViewModel(initialStep: .healthPrompt)
         return OnboardingContainerView(viewModel: viewModel, onFinish: onFinish)
     }
+
+    @MainActor
+    static func makePreviewViewModel(initialStep: OnboardingStep = .personalize) -> OnboardingViewModel {
+        OnboardingViewModel(
+            healthKitService: MockHealthKitService(),
+            initialStep: initialStep
+        )
+    }
 }

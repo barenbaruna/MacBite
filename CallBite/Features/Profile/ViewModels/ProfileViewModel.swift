@@ -34,6 +34,8 @@ final class ProfileViewModel: ObservableObject {
     @Published var biologicalSex: BiologicalSex
     @Published var weightKg: Double
     @Published var heightCm: Double
+    @Published var targetWeightKg: Double?
+    @Published var goalCategory: GoalCategory?
 
     @Published var isShowingChangeGoal = false
     @Published var activeFieldForEdit: ProfileField?
@@ -43,16 +45,18 @@ final class ProfileViewModel: ObservableObject {
     init(
         initialProfile: UserHealthProfile = UserHealthProfile(
             age: 22,
-            biologicalSex: .male,
+            biologicalSex: .preferNotToSay,
             weightKg: 56.0,
             heightCm: 162.0
         ),
         onSave: ((UserHealthProfile) -> Void)? = nil
     ) {
         self.age = initialProfile.age > 0 ? initialProfile.age : 22
-        self.biologicalSex = initialProfile.biologicalSex != .notSet ? initialProfile.biologicalSex : .male
+        self.biologicalSex = initialProfile.biologicalSex != .notSet ? initialProfile.biologicalSex : .preferNotToSay
         self.weightKg = initialProfile.weightKg > 0 ? initialProfile.weightKg : 56.0
         self.heightCm = initialProfile.heightCm > 0 ? initialProfile.heightCm : 162.0
+        self.targetWeightKg = initialProfile.targetWeightKg
+        self.goalCategory = initialProfile.goalCategory
         self.onSave = onSave
     }
 
@@ -61,8 +65,20 @@ final class ProfileViewModel: ObservableObject {
             age: age,
             biologicalSex: biologicalSex,
             weightKg: weightKg,
-            heightCm: heightCm
+            heightCm: heightCm,
+            targetWeightKg: targetWeightKg,
+            goalCategory: goalCategory
         )
+    }
+
+    var goalSummaryText: String? {
+        guard let target = targetWeightKg, let category = goalCategory else { return nil }
+        return "\(category.displayName) (\(Int(target.rounded()))kg)"
+    }
+
+    func updateGoal(targetWeight: Double, category: GoalCategory) {
+        self.targetWeightKg = targetWeight
+        self.goalCategory = category
     }
 
     func saveProfile() {

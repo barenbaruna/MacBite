@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CaptureButton: View {
+    let isEnabled: Bool
     let action: () -> Void
 
     var body: some View {
@@ -17,7 +18,7 @@ struct CaptureButton: View {
                     .fill(AppColor.gray200)
 
                 Circle()
-                    .fill(AppColor.white)
+                    .fill(isEnabled ? AppColor.white : AppColor.buttonDisabled)
                     .frame(
                         width: AppSize.cameraCaptureInner,
                         height: AppSize.cameraCaptureInner
@@ -29,6 +30,12 @@ struct CaptureButton: View {
             )
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
         .accessibilityLabel("Take Photo")
+        .accessibilityHint(
+            isEnabled
+                ? "Captures the meal photo"
+                : "Complete the light, angle, steadiness, and plate position checks first"
+        )
     }
 }

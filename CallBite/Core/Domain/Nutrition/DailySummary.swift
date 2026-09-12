@@ -12,6 +12,10 @@ public struct DailySummary: Equatable, Hashable, Sendable {
     public var dateString: String
     public var targetCalories: Int
     public var consumedCalories: Int
+    public var targetCarbs: Int
+    public var targetProtein: Int
+    public var targetFat: Int
+    public var targetFiber: Int
     public var totalCarbs: Int
     public var totalProtein: Int
     public var totalFat: Int
@@ -43,8 +47,12 @@ public struct DailySummary: Equatable, Hashable, Sendable {
         dateString: String = "Today, 4 Sep 2026",
         targetCalories: Int = 2654,
         consumedCalories: Int = 200,
+        targetCarbs: Int = 300,
+        targetProtein: Int = 70,
+        targetFat: Int = 70,
+        targetFiber: Int = 70,
         totalCarbs: Int = 17,
-        totalProtein: Int = 100,
+        totalProtein: Int = 14,
         totalFat: Int = 17,
         totalFiber: Int = 100,
         streakDays: Int = 0
@@ -52,6 +60,10 @@ public struct DailySummary: Equatable, Hashable, Sendable {
         self.dateString = dateString
         self.targetCalories = targetCalories
         self.consumedCalories = consumedCalories
+        self.targetCarbs = targetCarbs
+        self.targetProtein = targetProtein
+        self.targetFat = targetFat
+        self.targetFiber = targetFiber
         self.totalCarbs = totalCarbs
         self.totalProtein = totalProtein
         self.totalFat = totalFat
@@ -64,7 +76,7 @@ public struct DailySummary: Equatable, Hashable, Sendable {
         targetCalories: 2654,
         consumedCalories: 200,
         totalCarbs: 17,
-        totalProtein: 100,
+        totalProtein: 14,
         totalFat: 17,
         totalFiber: 100,
         streakDays: 0

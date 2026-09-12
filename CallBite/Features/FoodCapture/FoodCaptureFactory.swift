@@ -15,9 +15,11 @@ enum FoodCaptureFactory {
         onUsePhoto: @escaping (UIImage) -> Void = { _ in }
     ) -> some View {
         let cameraService = CameraService()
+        let motionService = MotionService()
         let guideStore = UserDefaultsCameraGuideStore()
         let viewModel = FoodCaptureViewModel(
             cameraService: cameraService,
+            motionService: motionService,
             guideStore: guideStore
         )
 

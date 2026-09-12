@@ -135,7 +135,7 @@ final class HealthKitClient: HealthServiceProtocol, @unchecked Sendable {
             case .male:
                 return .male
             case .other:
-                return .other
+                return .preferNotToSay
             case .notSet:
                 #if DEBUG
                 print("[HealthKitClient] BiologicalSex is .notSet (unconfigured or permission denied)")

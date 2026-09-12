@@ -26,67 +26,108 @@ struct FoodCaptureView: View {
     }
 
     var body: some View {
-        AppColor.dark950
-            .ignoresSafeArea()
-            .overlay {
-                cameraContent
-            }
-            .overlay(alignment: .bottom) {
-                if viewModel.state == .captured {
-                    CapturedPhotoActionsView(
-                        onRetake: retakePhoto,
-                        onUsePhoto: usePhoto
-                    )
-                }
-            }
-            .overlay {
-                ZStack {
-                    if viewModel.state != .captured {
-                        liveCameraControls
-                    }
+        GeometryReader { geometry in
+            let layout = CameraGuidanceLayout(viewportSize: geometry.size)
 
-                    if viewModel.isGuidePresented {
-                        CameraGuideView {
-                            viewModel.dismissGuide()
-                            Task {
-                                await viewModel.prepareCamera()
-                            }
-                        }
+            cameraExperience(layout: layout)
+            .frame(
+                width: geometry.size.width,
+                height: geometry.size.height
+            )
+            .clipped()
+            .overlay(alignment: .bottom) {
+                capturedPhotoActions
+            }
+            .onAppear {
+                updatePreviewLayout(size: geometry.size, layout: layout)
+            }
+            .onChange(of: geometry.size) { _, newSize in
+                let updatedLayout = CameraGuidanceLayout(viewportSize: newSize)
+                updatePreviewLayout(size: newSize, layout: updatedLayout)
+            }
+        }
+        .ignoresSafeArea()
+        .task {
+            await viewModel.prepareCamera()
+        }
+        .onDisappear {
+            viewModel.stopCamera()
+        }
+        .onChange(of: selectedPhoto) { _, newPhoto in
+            guard let newPhoto else { return }
+            Task {
+                if let data = try? await newPhoto.loadTransferable(type: Data.self) {
+                    viewModel.selectPhoto(data: data)
+                }
+                selectedPhoto = nil
+            }
+        }
+        .alert(
+            "Unable to Take Photo",
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        viewModel.dismissError()
                     }
                 }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                viewModel.dismissError()
             }
-            .task {
-                await viewModel.prepareCamera()
-            }
-            .onDisappear {
-                viewModel.stopCamera()
-            }
-            .onChange(of: selectedPhoto) { _, newPhoto in
-                guard let newPhoto else { return }
-                Task {
-                    if let data = try? await newPhoto.loadTransferable(type: Data.self) {
-                        viewModel.selectPhoto(data: data)
-                    }
-                    selectedPhoto = nil
-                }
-            }
-            .alert(
-                "Unable to Take Photo",
-                isPresented: Binding(
-                    get: { viewModel.errorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            viewModel.dismissError()
-                        }
-                    }
+        } message: {
+            Text(viewModel.errorMessage ?? "Please try again.")
+        }
+    }
+
+    private func cameraExperience(layout: CameraGuidanceLayout) -> some View {
+        ZStack {
+            AppColor.dark950
+            cameraContent
+            liveExperience(layout: layout)
+            firstUseGuide
+        }
+    }
+
+    @ViewBuilder
+    private func liveExperience(layout: CameraGuidanceLayout) -> some View {
+        if viewModel.state != .captured {
+            AppColor.cameraPreviewScrim
+
+            if viewModel.state == .live || viewModel.state == .capturing {
+                CameraGuidanceOverlay(
+                    layout: layout,
+                    guidance: viewModel.positionGuidance,
+                    checks: viewModel.qualityChecks
                 )
-            ) {
-                Button("OK", role: .cancel) {
-                    viewModel.dismissError()
-                }
-            } message: {
-                Text(viewModel.errorMessage ?? "Please try again.")
             }
+
+            liveCameraControls
+        }
+    }
+
+    @ViewBuilder
+    private var capturedPhotoActions: some View {
+        if viewModel.state == .captured {
+            CapturedPhotoActionsView(
+                onRetake: retakePhoto,
+                onUsePhoto: usePhoto
+            )
+            .zIndex(1)
+        }
+    }
+
+    @ViewBuilder
+    private var firstUseGuide: some View {
+        if viewModel.isGuidePresented {
+            CameraGuideView {
+                viewModel.dismissGuide()
+                Task {
+                    await viewModel.prepareCamera()
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -140,10 +181,6 @@ struct FoodCaptureView: View {
 
             Spacer()
 
-            if viewModel.state == .live {
-                CameraTipView()
-            }
-
             cameraBottomControls
         }
     }
@@ -157,30 +194,29 @@ struct FoodCaptureView: View {
             )
             Spacer()
         }
-        .padding(.top, AppSpacing.cameraTopControl)
-        .padding(.horizontal, AppSpacing.extraExtraLarge)
+        .padding(.top, AppSpacing.cameraCloseTopInset)
+        .padding(.horizontal, AppSpacing.cameraCloseHorizontalInset)
     }
 
     private var cameraBottomControls: some View {
         HStack {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                Image(systemName: "photo")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(AppColor.white)
+                CameraControlLabel(
+                    systemImage: "photo",
+                    accessibilityLabel: "Choose from Gallery"
+                )
             }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
+            .buttonStyle(.plain)
             .accessibilityLabel("Choose from Gallery")
 
             Spacer()
 
-            CaptureButton {
+            CaptureButton(isEnabled: viewModel.isCaptureReady) {
                 AppHaptics.primaryAction()
                 Task {
                     await viewModel.capturePhoto()
                 }
             }
-            .disabled(viewModel.state != .live)
 
             Spacer()
 
@@ -195,8 +231,8 @@ struct FoodCaptureView: View {
             }
             .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
         }
-        .padding(.horizontal, AppSpacing.extraExtraLarge)
-        .padding(.bottom, AppSpacing.extraLarge)
+        .padding(.horizontal, AppSpacing.cameraBottomControlsHorizontalInset)
+        .padding(.bottom, AppSpacing.cameraBottomControlsInset)
     }
 
     private func cameraControlButton(
@@ -205,13 +241,23 @@ struct FoodCaptureView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(AppColor.white)
+            CameraControlLabel(
+                systemImage: systemImage,
+                accessibilityLabel: accessibilityLabel
+            )
         }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
+        .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
+    }
+
+    private func updatePreviewLayout(
+        size: CGSize,
+        layout: CameraGuidanceLayout
+    ) {
+        viewModel.updatePreviewLayout(
+            viewportSize: size,
+            guideFrame: layout.guideFrame
+        )
     }
 
     private func retakePhoto() {

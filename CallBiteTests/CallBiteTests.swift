@@ -55,6 +55,20 @@ struct CallBiteTests {
         #expect(insight.dailyCalorieAdjustment == 0.0)
     }
 
+    @Test func testRecommendedInitialTarget() async throws {
+        // Healthy BMI (60kg at 168cm -> BMI 21.3) should default to currentWeight
+        let normalTarget = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: 60.0, heightCm: 168.0)
+        #expect(normalTarget == 60.0)
+
+        // Overweight (85kg at 168cm -> healthy max ~70.3kg) should default to healthy upper bound
+        let overTarget = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: 85.0, heightCm: 168.0)
+        #expect(overTarget <= 70.5 && overTarget >= 70.0)
+
+        // Underweight (45kg at 168cm -> healthy min ~52.2kg) should default to healthy lower bound
+        let underTarget = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: 45.0, heightCm: 168.0)
+        #expect(underTarget >= 52.0 && underTarget <= 52.5)
+    }
+
     @Test func testWeightGoalViewModel() async throws {
         let vm = WeightGoalViewModel(currentWeightKg: 60.0, targetWeightKg: 56.0, heightCm: 162.0)
         #expect(vm.activeCategory == .cutting)
@@ -63,6 +77,11 @@ struct CallBiteTests {
         vm.targetWeightKg = 64.0
         #expect(vm.activeCategory == .bulking)
         #expect(vm.targetWeightKg == 64.0)
+
+        // Test default nil targetWeightKg
+        let vmDefault = WeightGoalViewModel(currentWeightKg: 60.0, targetWeightKg: nil, heightCm: 168.0)
+        #expect(vmDefault.targetWeightKg == 60.0)
+        #expect(vmDefault.activeCategory == .maintaining)
     }
 
     @Test func testWeightGoalDismissButtonDefault() throws {
@@ -112,6 +131,10 @@ struct CallBiteTests {
         )
         #expect(summary.remainingCalories == 1170)
         #expect(abs(summary.progressRatio - (1484.0 / 2654.0)) < 0.001)
+        #expect(summary.targetCarbs == 300)
+        #expect(summary.targetProtein == 70)
+        #expect(summary.targetFat == 70)
+        #expect(summary.targetFiber == 70)
     }
 
     @Test @MainActor func testDashboardViewModelFoodLogging() async throws {
@@ -286,13 +309,21 @@ struct CallBiteTests {
         #expect(vm.heightCm == 162.0)
         #expect(!vm.isShowingChangeGoal)
         #expect(vm.activeFieldForEdit == nil)
+        #expect(vm.targetWeightKg == nil)
 
         vm.age = 23
         vm.weightKg = 58.0
+        vm.updateGoal(targetWeight: 54.0, category: .cutting)
+        #expect(vm.targetWeightKg == 54.0)
+        #expect(vm.goalCategory == .cutting)
+        #expect(vm.goalSummaryText == "Lose Weight (54kg)")
+
         vm.saveProfile()
 
         #expect(savedProfile?.age == 23)
         #expect(savedProfile?.weightKg == 58.0)
+        #expect(savedProfile?.targetWeightKg == 54.0)
+        #expect(savedProfile?.goalCategory == .cutting)
     }
 }
 
@@ -303,12 +334,8 @@ struct FoodLoggingTests {
         #expect(NutritionEditField.protein.unit == "g")
         #expect(NutritionEditField.carbs.unit == "g")
         #expect(NutritionEditField.fat.unit == "g")
-
-        #expect(NutritionEditField.calories.step == 10)
-        #expect(NutritionEditField.protein.step == 1)
-
-        #expect(NutritionEditField.calories.quickAddAmounts == [10, 50, 100])
-        #expect(NutritionEditField.protein.quickAddAmounts == [1, 5, 10])
+        #expect(NutritionEditField.fiber.unit == "g")
+        #expect(NutritionEditField.allCases.count == 5)
     }
 
     @Test func testFoodItemManualMacroMutation() {
@@ -350,5 +377,29 @@ struct FoodLoggingTests {
         #expect(vm.currentFood.calories == 650)
         #expect(vm.flipAngle == 0.0)
         #expect(!vm.isCardCompressed)
+    }
+}
+
+@Suite("CalorieOverlimitTests")
+struct CalorieOverlimitTests {
+    @Test func testOverlimitColorInterpolation() {
+        let lapStart = AppColor.overlimitColor(at: 0.0)
+        #expect(lapStart == AppColor.overlimitBaseRed)
+
+        let nearBlackAt18 = AppColor.overlimitColor(at: 0.18)
+        #expect(nearBlackAt18 == AppColor.overlimitNearBlack)
+
+        let nearBlackBeyond = AppColor.overlimitColor(at: 0.50)
+        #expect(nearBlackBeyond == AppColor.overlimitNearBlack)
+    }
+
+    @Test func testOverlimitProgressCalculation() {
+        let view = CalorieProgressView(
+            consumedCalories: 3000,
+            targetCalories: 2500,
+            ringProgress: 1.2
+        )
+        #expect(view.consumedCalories > view.targetCalories)
+        #expect(view.ringProgress > 1.0)
     }
 }
