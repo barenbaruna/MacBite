@@ -64,7 +64,6 @@ public struct AddFoodReviewCard: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     detailsToolbar
-                    keyboardToolbar
                 }
                 .sheet(isPresented: $isEditingName) {
                     nameEditModal
@@ -319,19 +318,6 @@ private extension AddFoodReviewCard {
             return AppSpacing.manualBottomButtonInset
         }
         return isCompressed ? AppSpacing.md : max(safeArea.bottom, AppSpacing.lg)
-    }
-
-    @ToolbarContentBuilder
-    var keyboardToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-
-            Button("Done") {
-                focusedField = nil
-            }
-            .font(AppTypography.headline)
-            .foregroundStyle(AppColor.orange500)
-        }
     }
 }
 

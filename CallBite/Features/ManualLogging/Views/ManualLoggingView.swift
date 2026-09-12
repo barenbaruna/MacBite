@@ -24,31 +24,43 @@ struct ManualLoggingView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                AppColor.dark950
-                    .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.large) {
-                        foodSection
-                        foodDetailsSection
+            scrollContent
+                .navigationTitle("Log Meal")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        dismissButton
                     }
-                    .padding(.horizontal, AppSpacing.manualScreenMargin)
-                    .padding(.top, AppSpacing.small)
-                    .padding(.bottom, AppSpacing.manualSectionGap)
                 }
-                .scrollDismissesKeyboard(.interactively)
-            }
-            .safeAreaInset(edge: .bottom, spacing: .zero) {
-                calculateButton
-            }
-            .navigationTitle("Log Meal")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    dismissButton
+        }
+    }
+
+    private var scrollContent: some View {
+        ZStack {
+            AppColor.dark950
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.large) {
+                    foodSection
+                    foodDetailsSection
                 }
+                .padding(.horizontal, AppSpacing.manualScreenMargin)
+                .padding(.top, AppSpacing.small)
+                .padding(.bottom, AppSpacing.manualSectionGap)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .onTapGesture {
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: .zero) {
+            calculateButton
         }
     }
 

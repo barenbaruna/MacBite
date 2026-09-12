@@ -46,9 +46,14 @@ public struct FoodDetailView: View {
         }
         .background(AppColor.backgroundGrouped)
         .scrollDismissesKeyboard(.interactively)
+        .onTapGesture {
+            focusedField = nil
+        }
+        .accessibilityAction(named: "Dismiss Keyboard") {
+            focusedField = nil
+        }
         .navigationTitle("Food Details")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { keyboardToolbar }
         .sheet(isPresented: $isEditingName) { nameEditSheet }
     }
 }
@@ -79,7 +84,7 @@ private extension FoodDetailView {
     }
 
     var mealMetadataText: some View {
-        Text(foodItem.hasPhoto ? "\(foodItem.mealType) | \(foodItem.dateString)" : foodItem.dateString)
+        Text("\(foodItem.mealType) | \(foodItem.dateString)")
             .font(AppTypography.caption2)
             .foregroundStyle(AppColor.foodDetailSecondaryText)
             .frame(maxWidth: .infinity, alignment: .center)
@@ -212,18 +217,6 @@ private extension FoodDetailView {
                 isEditingName = false
             }
         )
-    }
-
-    @ToolbarContentBuilder
-    var keyboardToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-            Button("Done") {
-                focusedField = nil
-            }
-            .font(AppTypography.headline)
-            .foregroundStyle(AppColor.orange500)
-        }
     }
 }
 
