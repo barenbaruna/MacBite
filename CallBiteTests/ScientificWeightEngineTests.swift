@@ -23,7 +23,10 @@ struct ScientificWeightEngineTests {
         #expect(range.upperBound >= 82.0 && range.upperBound <= 82.6)
 
         // 69kg is within healthy range -> recommended initial target is 69.0 (Maintain)
-        let recommended = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: currentWeight, heightCm: height)
+        let recommended = ScientificWeightEngine.recommendedInitialTarget(
+            currentWeightKg: currentWeight,
+            heightCm: height
+        )
         #expect(recommended == 69.0)
 
         // Slider range must comfortably accommodate Zone 1, 2, and 3
@@ -55,7 +58,10 @@ struct ScientificWeightEngineTests {
         #expect(range.upperBound >= 94.5 && range.upperBound <= 95.0)
 
         // 99kg is overweight by 4.3kg (within 15kg of boundary) -> targets healthy upper bound ~94.5kg (Cutting)
-        let recommended = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: currentWeight, heightCm: height)
+        let recommended = ScientificWeightEngine.recommendedInitialTarget(
+            currentWeightKg: currentWeight,
+            heightCm: height
+        )
         #expect(recommended >= 94.0 && recommended <= 95.0)
 
         // Dynamic slider range MUST extend well beyond 99kg (at least 99 + 15 = 114kg)
@@ -89,7 +95,10 @@ struct ScientificWeightEngineTests {
         let height = 175.0
         let currentWeight = 130.0
 
-        let recommended = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: currentWeight, heightCm: height)
+        let recommended = ScientificWeightEngine.recommendedInitialTarget(
+            currentWeightKg: currentWeight,
+            heightCm: height
+        )
         // 10% loss of 130kg = 13kg loss -> 117.0kg milestone target
         #expect(recommended == 117.0)
 

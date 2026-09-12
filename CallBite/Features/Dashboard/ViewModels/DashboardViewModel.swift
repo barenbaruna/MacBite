@@ -379,11 +379,16 @@ public final class DashboardViewModel: ObservableObject {
     private func applyCurrentFoodAndStoreDay() -> CGFloat {
         if let index = foodsForSelectedDate.firstIndex(where: { $0.id == currentFood.id }) {
             let oldFood = foodsForSelectedDate[index]
-            dailySummary.consumedCalories = max(0, dailySummary.consumedCalories - oldFood.calories + currentFood.calories)
-            dailySummary.totalProtein = max(0, dailySummary.totalProtein - oldFood.protein + currentFood.protein)
-            dailySummary.totalCarbs = max(0, dailySummary.totalCarbs - oldFood.carbs + currentFood.carbs)
-            dailySummary.totalFat = max(0, dailySummary.totalFat - oldFood.fat + currentFood.fat)
-            dailySummary.totalFiber = max(0, dailySummary.totalFiber - oldFood.fiber + currentFood.fiber)
+            let updatedCalories = dailySummary.consumedCalories - oldFood.calories + currentFood.calories
+            dailySummary.consumedCalories = max(0, updatedCalories)
+            let updatedProtein = dailySummary.totalProtein - oldFood.protein + currentFood.protein
+            dailySummary.totalProtein = max(0, updatedProtein)
+            let updatedCarbs = dailySummary.totalCarbs - oldFood.carbs + currentFood.carbs
+            dailySummary.totalCarbs = max(0, updatedCarbs)
+            let updatedFat = dailySummary.totalFat - oldFood.fat + currentFood.fat
+            dailySummary.totalFat = max(0, updatedFat)
+            let updatedFiber = dailySummary.totalFiber - oldFood.fiber + currentFood.fiber
+            dailySummary.totalFiber = max(0, updatedFiber)
             foodsForSelectedDate[index] = currentFood
         } else {
             dailySummary.consumedCalories += currentFood.calories

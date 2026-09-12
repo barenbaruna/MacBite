@@ -245,20 +245,16 @@ struct FoodCaptureView: View {
         HStack {
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.black)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(AppColor.white)
                     .frame(
-                        width: AppSize.cameraRoundControl,
-                        height: AppSize.cameraRoundControl
+                        width: AppSize.cameraSecondaryControl,
+                        height: AppSize.cameraSecondaryControl
                     )
-                    .background(Circle().fill(Color.white))
+                    .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            .frame(
-                width: AppSize.minimumTouchTarget,
-                height: AppSize.minimumTouchTarget
-            )
-            .contentShape(Circle())
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
             .accessibilityLabel("Close Camera")
 
             Spacer()
@@ -283,19 +279,15 @@ struct FoodCaptureView: View {
         PhotosPicker(selection: $selectedPhoto, matching: .images) {
             Image(systemName: "photo")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.black)
+                .foregroundStyle(AppColor.white)
                 .frame(
                     width: AppSize.cameraSecondaryControl,
                     height: AppSize.cameraSecondaryControl
                 )
-                .background(Circle().fill(Color.white))
+                .accessibilityHidden(true)
         }
-        .buttonStyle(.plain)
-        .frame(
-            width: AppSize.cameraSecondaryControl,
-            height: AppSize.cameraSecondaryControl
-        )
-        .contentShape(Circle())
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
         .accessibilityLabel("Choose from Gallery")
     }
 
@@ -317,19 +309,15 @@ struct FoodCaptureView: View {
         } label: {
             Image(systemName: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(viewModel.isFlashEnabled ? AppColor.circleOne : .black)
+                .foregroundStyle(viewModel.isFlashEnabled ? AppColor.circleOne : AppColor.white)
                 .frame(
                     width: AppSize.cameraSecondaryControl,
                     height: AppSize.cameraSecondaryControl
                 )
-                .background(Circle().fill(Color.white))
+                .accessibilityHidden(true)
         }
-        .buttonStyle(.plain)
-        .frame(
-            width: AppSize.cameraSecondaryControl,
-            height: AppSize.cameraSecondaryControl
-        )
-        .contentShape(Circle())
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
         .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
         .accessibilityLabel(viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On")
     }

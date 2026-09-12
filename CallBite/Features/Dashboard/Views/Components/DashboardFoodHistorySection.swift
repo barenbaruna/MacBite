@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DashboardFoodHistorySection: View {
     let foods: [FoodItem]
-    var onFoodTap: ((FoodItem) -> Void)? = nil
+    var onFoodTap: ((FoodItem) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.regular) {
@@ -42,6 +42,7 @@ struct DashboardFoodHistorySection: View {
                 Image(systemName: "fork.knife")
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(AppColor.orange400)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: 4) {

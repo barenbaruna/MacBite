@@ -107,7 +107,10 @@ final class UserProfileStore: @unchecked Sendable {
         #if DEBUG
         print("[UserProfileStore] Onboarding saved — profile: \(profile), activity: \(activityLevel.rawValue)")
         if let goal = nutritionGoal {
-            print("[UserProfileStore] Computed goal: \(goal.targetCalories) kcal, P\(goal.targetProteinGrams)g, C\(goal.targetCarbsGrams)g, F\(goal.targetFatGrams)g")
+            print(
+                "[UserProfileStore] Computed goal: \(goal.targetCalories) kcal, " +
+                "P\(goal.targetProteinGrams)g, C\(goal.targetCarbsGrams)g, F\(goal.targetFatGrams)g"
+            )
         }
         #endif
     }

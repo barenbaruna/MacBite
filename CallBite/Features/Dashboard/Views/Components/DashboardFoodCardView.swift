@@ -10,7 +10,7 @@ import UIKit
 
 struct DashboardFoodCardView: View {
     let food: FoodItem
-    var onTap: (() -> Void)? = nil
+    var onTap: (() -> Void)?
 
     var body: some View {
         Button {

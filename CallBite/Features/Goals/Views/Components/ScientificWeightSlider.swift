@@ -338,7 +338,8 @@ extension ScientificWeightSlider {
                     calculatedValue = currentWeight + progress * (Double(layout.zone3StartKg) - currentWeight)
                 }
             } else {
-                calculatedValue = Double(layout.zone1EndKg) + midFraction * Double(layout.zone3StartKg - layout.zone1EndKg)
+                let rangeDelta = layout.zone3StartKg - layout.zone1EndKg
+                calculatedValue = Double(layout.zone1EndKg) + midFraction * Double(rangeDelta)
             }
         } else if dragX < layout.zone3Start + layout.zone3LocalStartX {
             calculatedValue = Double(layout.zone3StartKg)
