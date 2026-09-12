@@ -11,7 +11,6 @@ struct ManualIngredientGroupView: View {
     let ingredient: ManualIngredientInput
     let onIngredientChanged: (String) -> Void
     let onPortionChanged: (String) -> Void
-    let onCookingMethodChanged: (String) -> Void
 
     var body: some View {
         VStack(spacing: .zero) {
@@ -32,17 +31,6 @@ struct ManualIngredientGroupView: View {
                 text: ingredient.portionGrams,
                 suffix: "g",
                 onTextChanged: onPortionChanged
-            )
-
-            Divider()
-                .overlay(AppColor.manualSeparator)
-                .padding(.horizontal, AppSpacing.regular)
-
-            ManualTextInputRow(
-                title: "Cooking method",
-                placeholder: "Steamed",
-                text: ingredient.cookingMethod,
-                onTextChanged: onCookingMethodChanged
             )
         }
     }

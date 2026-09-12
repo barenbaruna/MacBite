@@ -11,17 +11,14 @@ struct ManualIngredientInput: Identifiable, Equatable {
     let id: UUID
     var ingredient: String
     var portionGrams: String
-    var cookingMethod: String
 
     init(
         id: UUID = UUID(),
         ingredient: String = "",
-        portionGrams: String = "",
-        cookingMethod: String = ""
+        portionGrams: String = ""
     ) {
         self.id = id
         self.ingredient = ingredient
         self.portionGrams = portionGrams
-        self.cookingMethod = cookingMethod
     }
 }

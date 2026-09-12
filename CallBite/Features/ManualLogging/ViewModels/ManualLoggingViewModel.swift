@@ -31,12 +31,6 @@ final class ManualLoggingViewModel: ObservableObject {
         }
     }
 
-    func updateCookingMethod(_ cookingMethod: String, id: UUID) {
-        updateIngredientGroup(id: id) { group in
-            group.cookingMethod = cookingMethod
-        }
-    }
-
     func addIngredient() {
         ingredients.append(ManualIngredientInput())
     }

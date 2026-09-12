@@ -88,9 +88,6 @@ struct ManualLoggingView: View {
                 onPortionChanged: { id, value in
                     viewModel.updatePortionGrams(value, id: id)
                 },
-                onCookingMethodChanged: { id, value in
-                    viewModel.updateCookingMethod(value, id: id)
-                },
                 onAddIngredient: {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         viewModel.addIngredient()

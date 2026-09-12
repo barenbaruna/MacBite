@@ -96,8 +96,8 @@ struct DashboardViewModelTests {
             nutritionEstimator: estimator
         )
         let ingredients = [
-            ManualIngredientInput(ingredient: "Chicken Breast", portionGrams: "150", cookingMethod: "Grilled"),
-            ManualIngredientInput(ingredient: "White Rice", portionGrams: "200", cookingMethod: "Steamed")
+            ManualIngredientInput(ingredient: "Chicken Breast", portionGrams: "150"),
+            ManualIngredientInput(ingredient: "White Rice", portionGrams: "200")
         ]
 
         await viewModel.calculateManualNutrition(name: "Grilled Chicken Rice Bowl", ingredients: ingredients)
@@ -121,7 +121,7 @@ struct DashboardViewModelTests {
             nutritionEstimator: estimator
         )
         let ingredients = [
-            ManualIngredientInput(ingredient: "Tofu", portionGrams: "200", cookingMethod: "Fried")
+            ManualIngredientInput(ingredient: "Tofu", portionGrams: "200")
         ]
 
         await viewModel.calculateManualNutrition(name: "Fried Tofu", ingredients: ingredients)
