@@ -107,6 +107,7 @@ private extension FoodDetailView {
 
     var editableNameRow: some View {
         Button {
+            AppHaptics.selectionChanged()
             isEditingName = true
         } label: {
             HStack(spacing: AppSpacing.xs) {
@@ -122,6 +123,7 @@ private extension FoodDetailView {
 
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -170,6 +172,11 @@ private extension FoodDetailView {
             }
         }
         .padding(.vertical, AppSpacing.sm)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            AppHaptics.selectionChanged()
+            focusedField = .nutrition(field)
+        }
     }
 
     func nutritionInputColor(for field: NutritionEditField) -> Color {

@@ -218,6 +218,11 @@ public struct AddFoodReviewCard: View {
             }
         }
         .padding(.vertical, AppSpacing.sm)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            AppHaptics.selectionChanged()
+            focusedField = .nutrition(field)
+        }
     }
 
     private func nutritionInputColor(for field: NutritionEditField) -> Color {
@@ -279,6 +284,7 @@ public struct AddFoodReviewCard: View {
 private extension AddFoodReviewCard {
     var editableNameRow: some View {
         Button {
+            AppHaptics.selectionChanged()
             isEditingName = true
         } label: {
             HStack(spacing: AppSpacing.xs) {
@@ -294,6 +300,7 @@ private extension AddFoodReviewCard {
 
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
