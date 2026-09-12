@@ -23,16 +23,20 @@ struct DashboardFoodCardView: View {
                     .frame(height: AppSize.dashboardFoodCardHeight)
                     .clipped()
 
-                AppGradient.foodCardOverlay
+                if food.hasPhoto {
+                    AppGradient.foodCardOverlay
+                }
 
                 VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                    Text(food.mealType)
-                        .font(AppTypography.headline)
-                        .foregroundStyle(AppColor.white)
+                    if food.hasPhoto {
+                        Text(food.mealType)
+                            .font(AppTypography.headline)
+                            .foregroundStyle(AppColor.white)
+                    }
 
                     Text(food.name)
-                        .font(AppTypography.subheadline)
-                        .foregroundStyle(AppColor.foodCardName)
+                        .font(food.hasPhoto ? AppTypography.subheadline : AppTypography.headline)
+                        .foregroundStyle(food.hasPhoto ? AppColor.foodCardName : AppColor.white)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -46,7 +50,7 @@ struct DashboardFoodCardView: View {
         .buttonStyle(.plain)
         .contentShape(RoundedRectangle(cornerRadius: AppCornerRadius.card, style: .continuous))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(food.mealType), \(food.name)")
+        .accessibilityLabel(food.hasPhoto ? "\(food.mealType), \(food.name)" : food.name)
     }
 
     @ViewBuilder
@@ -63,7 +67,7 @@ struct DashboardFoodCardView: View {
                 .scaledToFill()
                 .accessibilityHidden(true)
         } else {
-            AppGradient.foodCardFallback
+            AppColor.activityCardNormal
         }
     }
 }

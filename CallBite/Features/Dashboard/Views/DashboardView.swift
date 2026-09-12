@@ -155,9 +155,6 @@ public struct DashboardView: View {
                         foodItem: food,
                         onSave: { updated in
                             viewModel.updateFood(updated)
-                        },
-                        onDelete: { toDelete in
-                            viewModel.deleteFood(toDelete)
                         }
                     )
                 }

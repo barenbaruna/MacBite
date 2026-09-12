@@ -26,6 +26,11 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
     /// (`photoSystemName`) is used for display in that case.
     public var photoData: Data?
 
+    /// Returns true if this item has a captured or bundled photo.
+    public var hasPhoto: Bool {
+        photoData != nil || photoAssetName != nil
+    }
+
     public init(
         id: UUID = UUID(),
         name: String,

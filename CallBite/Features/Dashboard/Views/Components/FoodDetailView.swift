@@ -13,11 +13,9 @@ public struct FoodDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var foodItem: FoodItem
     @State private var isEditingName = false
-    @State private var isShowingDeleteConfirmation = false
     @FocusState private var focusedField: EditableField?
 
     public let onSave: (FoodItem) -> Void
-    public let onDelete: (FoodItem) -> Void
 
     private enum EditableField: Hashable {
         case nutrition(NutritionEditField)
@@ -25,12 +23,10 @@ public struct FoodDetailView: View {
 
     public init(
         foodItem: FoodItem,
-        onSave: @escaping (FoodItem) -> Void = { _ in },
-        onDelete: @escaping (FoodItem) -> Void = { _ in }
+        onSave: @escaping (FoodItem) -> Void = { _ in }
     ) {
         self._foodItem = State(initialValue: foodItem)
         self.onSave = onSave
-        self.onDelete = onDelete
     }
 
     public var body: some View {
@@ -54,19 +50,6 @@ public struct FoodDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { keyboardToolbar }
         .sheet(isPresented: $isEditingName) { nameEditSheet }
-        .confirmationDialog(
-            "Delete Meal",
-            isPresented: $isShowingDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete Meal", role: .destructive) {
-                onDelete(foodItem)
-                dismiss()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Are you sure you want to delete this meal? This action cannot be undone.")
-        }
     }
 }
 
@@ -92,22 +75,11 @@ private extension FoodDetailView {
                 .frame(height: 210)
                 .clipShape(RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous))
                 .accessibilityLabel("Food photo")
-        } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppCornerRadius.extraLarge, style: .continuous)
-                    .fill(AppColor.activityCardNormal)
-                    .frame(height: 160)
-
-                Image(systemName: foodItem.photoSystemName)
-                    .font(.system(size: 48))
-                    .foregroundStyle(AppColor.orange400)
-                    .accessibilityHidden(true)
-            }
         }
     }
 
     var mealMetadataText: some View {
-        Text("\(foodItem.mealType) | \(foodItem.dateString)")
+        Text(foodItem.hasPhoto ? "\(foodItem.mealType) | \(foodItem.dateString)" : foodItem.dateString)
             .font(AppTypography.caption2)
             .foregroundStyle(AppColor.foodDetailSecondaryText)
             .frame(maxWidth: .infinity, alignment: .center)
@@ -207,29 +179,18 @@ private extension FoodDetailView {
     }
 
     var actionsSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            Button {
-                onSave(foodItem)
-                dismiss()
-            } label: {
-                Text("Save Changes")
-                    .font(AppTypography.button)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.glassProminent)
-            .buttonBorderShape(.capsule)
-            .controlSize(.large)
-            .tint(AppColor.orange500)
-
-            Button(role: .destructive) {
-                isShowingDeleteConfirmation = true
-            } label: {
-                Text("Delete Meal")
-                    .font(AppTypography.body.weight(.medium))
-                    .foregroundStyle(.red)
-            }
-            .padding(.top, AppSpacing.xs)
+        Button {
+            onSave(foodItem)
+            dismiss()
+        } label: {
+            Text("Save Changes")
+                .font(AppTypography.button)
+                .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.glassProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .tint(AppColor.orange500)
         .padding(.top, AppSpacing.md)
     }
 
