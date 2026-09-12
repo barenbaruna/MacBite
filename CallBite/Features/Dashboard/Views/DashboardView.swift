@@ -115,7 +115,14 @@ public struct DashboardView: View {
                 activeOrbOrbitingLayer
                     .zIndex(20)
             }
+
+            if viewModel.isAnalyzing {
+                AnalysisLoadingView(message: viewModel.analysisMessage)
+                    .transition(.opacity)
+                    .zIndex(30)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isAnalyzing)
         .frame(width: fullWidth, height: fullHeight)
         .coordinateSpace(name: "saveFlowCoordinateSpace")
         .ignoresSafeArea(.container)

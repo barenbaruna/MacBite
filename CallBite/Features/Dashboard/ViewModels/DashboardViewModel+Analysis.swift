@@ -51,10 +51,14 @@ extension DashboardViewModel {
 
     /// Analyzes a captured or selected food photo and opens the review card with the result.
     public func analyzeCapturedPhoto(_ image: UIImage) async {
+        isAnalyzing = true
+        analysisMessage = "Analyzing your meal…"
+
         do {
             let candidate = try await foodAnalyzer.analyze(image)
             openAddFoodCard(with: mapToFoodItem(candidate, photo: image))
         } catch AppError.nonFoodDetected(let probability) {
+            isAnalyzing = false
             let percent = Int((probability * 100).rounded())
             nonFoodWarningMessage = "This photo wasn't detected as food (\(percent)% confidence). " +
                 "Please retake the photo with the food clearly visible."
@@ -73,6 +77,9 @@ extension DashboardViewModel {
 
     /// Estimates nutrition for a manually typed meal, with ratio math as a safe fallback.
     func calculateManualNutrition(name: String, ingredients: [ManualIngredientInput]) async {
+        isAnalyzing = true
+        analysisMessage = "Estimating nutrition…"
+
         let meal = mapToMealDescription(name: name, ingredients: ingredients)
 
         #if DEBUG
@@ -123,6 +130,7 @@ extension DashboardViewModel {
                     "\(ObjectIdentifier(self)), setting isShowingAddFood=true"
             )
             #endif
+            self.isAnalyzing = false
             self.resetAndOpenAddFood(with: food)
         }
     }
@@ -152,11 +160,10 @@ extension DashboardViewModel {
             let trimmedIngredient = input.ingredient.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedIngredient.isEmpty else { return nil }
 
-            let trimmedMethod = input.cookingMethod.trimmingCharacters(in: .whitespacesAndNewlines)
             return ManualMealDescription.Ingredient(
                 name: trimmedIngredient,
                 portionGrams: Double(input.portionGrams.trimmingCharacters(in: .whitespacesAndNewlines)),
-                cookingMethod: trimmedMethod.isEmpty ? nil : trimmedMethod
+                cookingMethod: nil
             )
         }
 
