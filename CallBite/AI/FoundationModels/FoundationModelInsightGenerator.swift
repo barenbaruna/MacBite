@@ -36,19 +36,46 @@ public final class FoundationModelInsightGenerator: InsightGenerating, @unchecke
 
     private static let instructions = """
     You are a friendly, concise nutrition coach. Given a user's daily calorie \
-    and macronutrient progress against their personal targets, write ONE short \
-    coaching insight about their next meal.
+    and macronutrient progress against their personal targets, write a short \
+    coaching insight about their next meal in EXACTLY 2 sentences, structured \
+    like this:
 
-    STRICT LENGTH LIMIT: at most 2 short sentences, total. Never write a third \
-    sentence. Do not list all the numbers back — a natural, conversational \
-    line is preferred over a robotic report of raw figures.
+    1. A very short opener (3-5 words only, like a quick exclamation) — vary
+       your wording every time instead of reusing the same phrase. Draw from
+       a wide range of styles, e.g. "Nice progress!", "Keep it going!",
+       "Almost there!", "Solid effort today!", "Right on track!", "Good
+       pace!", "Halfway there!", "Great choices today!" — or invent similarly
+       short, varied phrasing that fits the specific situation below. NOT a
+       full description of what they achieved.
+    2. ONE sentence with the actual actionable insight or detail.
+
+    Example of the right length: "Nice progress! You still have some room
+    for a balanced dinner." NOT: "You're doing fantastic with your
+    macronutrient goals today, keep up the great work and consider a
+    balanced dinner." — that second version is too long for the opener.
+
+    STRICT LENGTH LIMIT: EXACTLY 2 sentences, total, and the FIRST one must \
+    stay under 5 words. Never write a third sentence. Do not list all the \
+    numbers back — a natural, conversational line is preferred over a \
+    robotic report of raw figures.
+
+    You will be given how many calories are REMAINING or, if the user has
+    gone OVER their target, exactly how many calories OVER. Pay close
+    attention to which one it is and by how much — a small overage and a
+    large overage call for different tones:
 
     Rules:
-    - If the calorie target is already met or exceeded, congratulate them —
-      do not suggest eating more.
-    - If a macro is notably behind its target (e.g. protein far below target
-      while calories are on track), you may call it out specifically.
-    - If they're close to their calorie limit, suggest a lighter next meal.
+    - If calories are OVER target: do NOT suggest eating more food, no
+      matter how far behind a macronutrient is. If the overage is small,
+      reassure them it's not a big deal. If it's large, stay supportive and
+      non-judgmental — suggest going lighter or drinking water for the rest
+      of the day, never a specific dish to eat next.
+    - If calories are exactly at or essentially at target (very few kcal
+      remaining), congratulate them and do not suggest more food either.
+    - If there is a meaningful amount of calories remaining: this is the
+      only case where you may suggest what kind of next meal fits — and you
+      may call out a macronutrient that's notably behind its target (e.g.
+      protein far below target) if a meal choice could help close that gap.
     - Keep it warm and practical — no medical advice, no guilt-tripping.
     """
 
@@ -68,12 +95,17 @@ public final class FoundationModelInsightGenerator: InsightGenerating, @unchecke
         let prompt = buildPrompt(for: summary)
 
         do {
-            // sampling: .greedy — same determinism convention as the other
-            // two generators in this app (FoundationModelFoodNamer,
-            // FoundationModelNutritionEstimator).
+            // Deliberately NOT sampling: .greedy here, unlike the other two
+            // generators (FoundationModelFoodNamer, FoundationModelNutritionEstimator).
+            // Greedy is right for THOSE because a numeric estimate should be
+            // consistent for the same input. This generator writes a short
+            // coaching message — greedy made the SAME day's numbers always
+            // produce the exact same opener, which felt robotic/repetitive
+            // (found via real testing). Random sampling gives natural variety
+            // across calls while `temperature` keeps it from wandering too far.
             let response = try await session.respond(
                 to: prompt,
-                options: GenerationOptions(sampling: .greedy)
+                options: GenerationOptions(sampling: .random(probabilityThreshold: 0.9), temperature: 1.0)
             )
             return Self.clamp(toSentences: Self.maxSentences, response.content)
         } catch {
@@ -84,10 +116,21 @@ public final class FoundationModelInsightGenerator: InsightGenerating, @unchecke
     // MARK: - Prompt Building
 
     private func buildPrompt(for summary: DailySummary) -> String {
-        """
+        // `DailySummary.remainingCalories` clamps at 0, so it can't tell the
+        // model HOW FAR over budget the user is once they've exceeded their
+        // target — compute the real signed balance here instead so an
+        // overage of 50 kcal and one of 800 kcal aren't indistinguishable.
+        let calorieBalanceLine: String
+        let overage = summary.consumedCalories - summary.targetCalories
+        if overage > 0 {
+            calorieBalanceLine = "\(overage) kcal OVER target"
+        } else {
+            calorieBalanceLine = "\(summary.remainingCalories) kcal remaining"
+        }
+
+        return """
         Today's progress:
-        - Calories: \(summary.consumedCalories)/\(summary.targetCalories) kcal \
-        (\(summary.remainingCalories) kcal remaining)
+        - Calories: \(summary.consumedCalories)/\(summary.targetCalories) kcal consumed (\(calorieBalanceLine))
         - Protein: \(summary.totalProtein)/\(summary.targetProtein) g
         - Carbs: \(summary.totalCarbs)/\(summary.targetCarbs) g
         - Fat: \(summary.totalFat)/\(summary.targetFat) g
