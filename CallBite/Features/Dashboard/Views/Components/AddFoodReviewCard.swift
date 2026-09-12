@@ -75,18 +75,14 @@ public struct AddFoodReviewCard: View {
     @ToolbarContentBuilder
     private var detailsToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button("Back", systemImage: "chevron.left", action: onDismiss)
-                .labelStyle(.iconOnly)
-                .font(AppTypography.headline)
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .controlSize(.regular)
-        }
-
-        ToolbarItem(placement: .principal) {
-            Text("Food Details")
-                .font(AppTypography.title2.weight(.bold))
-                .foregroundStyle(AppColor.white)
+            Button(action: onDismiss) {
+                Image(systemName: "chevron.left")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(AppColor.white)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Dismiss")
         }
     }
 

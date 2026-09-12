@@ -71,7 +71,7 @@ extension DashboardView {
         DashboardFoodHistorySection(
             foods: viewModel.foodsForSelectedDate,
             onFoodTap: { food in
-                viewModel.resetAndOpenAddFood(with: food)
+                selectedHistoryFood = food
             }
         )
     }

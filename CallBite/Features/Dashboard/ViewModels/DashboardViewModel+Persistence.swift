@@ -65,6 +65,13 @@ extension DashboardViewModel {
         return CGFloat(dailySummary.consumedCalories) / CGFloat(max(1, dailySummary.targetCalories))
     }
 
+    /// Updates an existing logged food item, recalculates daily metrics, syncs the ring, and persists to store.
+    public func updateFood(_ food: FoodItem) {
+        currentFood = food
+        applyCurrentFoodAndStoreDay()
+        syncProgressWithDailySummary()
+    }
+
     /// Deletes a logged food item and updates summary metrics accordingly.
     public func deleteFood(_ food: FoodItem) {
         guard let index = foodsForSelectedDate.firstIndex(where: { $0.id == food.id }) else { return }

@@ -19,6 +19,7 @@ public struct DashboardView: View {
     @State var presentedFullScreenRoute: AppRoute?
     @State var presentedSheetRoute: AppRoute?
     @State var isShowingCalendar = false
+    @State var selectedHistoryFood: FoodItem?
 
     public init(viewModel: DashboardViewModel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -147,6 +148,17 @@ public struct DashboardView: View {
                         onReturnToToday: returnToToday,
                         onCalendarSelected: showCalendar,
                         onProfileSelected: showProfile
+                    )
+                }
+                .navigationDestination(item: $selectedHistoryFood) { food in
+                    FoodDetailView(
+                        foodItem: food,
+                        onSave: { updated in
+                            viewModel.updateFood(updated)
+                        },
+                        onDelete: { toDelete in
+                            viewModel.deleteFood(toDelete)
+                        }
                     )
                 }
         }

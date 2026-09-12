@@ -145,6 +145,47 @@ struct DashboardFoodHistoryTests {
         #expect(viewModel.dailySummary.totalProtein == 15)
     }
 
+    @Test("updateFood directly updates history item and daily metrics")
+    @MainActor
+    func updateFoodDirectlyUpdatesHistoryAndMetrics() {
+        let initialFood = FoodItem(
+            name: "Oatmeal",
+            mealType: "Breakfast",
+            dateString: "12 September 2026",
+            calories: 250,
+            protein: 8,
+            carbs: 45,
+            fat: 4,
+            fiber: 5
+        )
+        let summary = DailySummary(
+            targetCalories: 2_000,
+            consumedCalories: 0,
+            totalCarbs: 0,
+            totalProtein: 0,
+            totalFat: 0,
+            totalFiber: 0
+        )
+        let viewModel = DashboardViewModel(dailySummary: summary)
+
+        viewModel.resetAndOpenAddFood(with: initialFood)
+        viewModel.startSaveAnimation(reduceMotion: true)
+        #expect(viewModel.foodsForSelectedDate.count == 1)
+        #expect(viewModel.dailySummary.consumedCalories == 250)
+
+        var updated = initialFood
+        updated.name = "Oatmeal with Berries"
+        updated.calories = 300
+        updated.carbs = 55
+        viewModel.updateFood(updated)
+
+        #expect(viewModel.foodsForSelectedDate.count == 1)
+        #expect(viewModel.foodsForSelectedDate.first?.name == "Oatmeal with Berries")
+        #expect(viewModel.foodsForSelectedDate.first?.calories == 300)
+        #expect(viewModel.dailySummary.consumedCalories == 300)
+        #expect(viewModel.dailySummary.totalCarbs == 55)
+    }
+
     @Test("FoodItem currentDateString formats accurately")
     func foodItemCurrentDateStringFormat() {
         let calendar = makeCalendar()
