@@ -16,15 +16,22 @@ extension DashboardView {
     }
 
     var profileSheet: some View {
-        ProfileView(
-            initialProfile: UserHealthProfile(
-                age: 22,
-                biologicalSex: .male,
-                weightKg: 56.0,
-                heightCm: 162.0
-            ),
-            onSave: { _ in
-                // Save updated profile
+        let storedProfile = UserProfileStore.shared.healthProfile ?? UserHealthProfile(
+            age: 22,
+            biologicalSex: .preferNotToSay,
+            weightKg: 56.0,
+            heightCm: 162.0
+        )
+
+        return ProfileView(
+            initialProfile: storedProfile,
+            onSave: { updatedProfile in
+                UserProfileStore.shared.updateProfile(updatedProfile)
+
+                // Recalculate and update dashboard targets in real-time
+                if let newGoal = UserProfileStore.shared.nutritionGoal {
+                    viewModel.updateNutritionTargets(newGoal)
+                }
             }
         )
     }

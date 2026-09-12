@@ -40,6 +40,12 @@ struct ContentView: View {
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
             return .dashboard
         }
+
+        // Skip onboarding if the user has already completed it
+        if UserProfileStore.shared.hasCompletedOnboarding {
+            return .dashboard
+        }
+
         return .splash
     }()
 
@@ -75,6 +81,9 @@ struct ContentView: View {
 
         case .onboarding:
             OnboardingFactory.makeView(onFinish: {
+                if let goal = UserProfileStore.shared.nutritionGoal {
+                    dashboardViewModel.updateNutritionTargets(goal)
+                }
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
                     screenState = .dashboard
                 }

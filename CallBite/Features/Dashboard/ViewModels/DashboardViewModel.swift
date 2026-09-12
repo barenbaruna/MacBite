@@ -76,6 +76,8 @@ public final class DashboardViewModel: ObservableObject {
 
     // AI Analysis Feedback
     @Published public var nonFoodWarningMessage: String?
+    @Published public var isAnalyzing: Bool = false
+    @Published public var analysisMessage: String = ""
 
     // MARK: - Dependencies
 
@@ -92,8 +94,32 @@ public final class DashboardViewModel: ObservableObject {
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
         nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
     ) {
+        let summary: DailySummary
+        if let goal = UserProfileStore.shared.nutritionGoal {
+            summary = DailySummary(
+                dateString: DashboardSampleData.displayDate(
+                    for: .now,
+                    today: .now,
+                    calendar: .current
+                ),
+                targetCalories: goal.targetCalories,
+                consumedCalories: 0,
+                targetCarbs: goal.targetCarbsGrams,
+                targetProtein: goal.targetProteinGrams,
+                targetFat: goal.targetFatGrams,
+                targetFiber: goal.targetFiberGrams,
+                totalCarbs: 0,
+                totalProtein: 0,
+                totalFat: 0,
+                totalFiber: 0,
+                streakDays: 0
+            )
+        } else {
+            summary = .sampleDashboard
+        }
+
         self.init(
-            dailySummary: .sampleDashboard,
+            dailySummary: summary,
             foodAnalyzer: foodAnalyzer,
             nutritionEstimator: nutritionEstimator
         )
@@ -318,6 +344,25 @@ public final class DashboardViewModel: ObservableObject {
 
     private static func rawProgress(for summary: DailySummary) -> CGFloat {
         CGFloat(summary.consumedCalories) / CGFloat(max(1, summary.targetCalories))
+    }
+
+    /// Updates the daily summary targets with a new nutrition goal (e.g. after Profile edit).
+    /// Preserves consumed amounts and recalculates progress ring.
+    public func updateNutritionTargets(_ goal: NutritionGoal) {
+        dailySummary.targetCalories = goal.targetCalories
+        dailySummary.targetCarbs = goal.targetCarbsGrams
+        dailySummary.targetProtein = goal.targetProteinGrams
+        dailySummary.targetFat = goal.targetFatGrams
+        dailySummary.targetFiber = goal.targetFiberGrams
+
+        // Also update the stored summary for the current date
+        dailySummariesByDate[selectedDate] = dailySummary
+
+        syncProgressWithDailySummary()
+
+        #if DEBUG
+        print("[DashboardViewModel] Targets updated: \(goal.targetCalories) kcal")
+        #endif
     }
 }
 
