@@ -51,7 +51,7 @@ extension DashboardView {
     }
 
     var coachInsightSection: some View {
-        Text(viewModel.dailySummary.coachInsight)
+        Text(viewModel.coachInsight)
             .font(AppTypography.subheadline)
             .foregroundStyle(Color(uiColor: .label))
             .multilineTextAlignment(.center)

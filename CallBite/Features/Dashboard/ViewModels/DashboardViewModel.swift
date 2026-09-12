@@ -79,6 +79,11 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var isAnalyzing: Bool = false
     @Published public var analysisMessage: String = ""
 
+    // AI Coach Insight — always has a value (rule-based fallback set
+    // synchronously in init, potentially replaced by the AI-generated
+    // version shortly after; see DashboardViewModel+Insight.swift).
+    @Published public var coachInsight: String = ""
+
     // MARK: - Dependencies
 
     private let dateCalendar: Calendar
@@ -87,6 +92,7 @@ public final class DashboardViewModel: ObservableObject {
     private var dailyFoodsByDate: [Date: [FoodItem]]
     let foodAnalyzer: FoodAnalyzing
     let nutritionEstimator: NutritionEstimating
+    let insightGenerator: InsightGenerating
     private let mealStore: MealStoreProtocol
 
     // MARK: - Initialization
@@ -94,6 +100,7 @@ public final class DashboardViewModel: ObservableObject {
     public convenience init(
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
         nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        insightGenerator: InsightGenerating = FoundationModelInsightGenerator(),
         mealStore: MealStoreProtocol? = nil
     ) {
         let goal = UserProfileStore.shared.nutritionGoal
@@ -127,6 +134,7 @@ public final class DashboardViewModel: ObservableObject {
             dailyFoods: [:],
             foodAnalyzer: foodAnalyzer,
             nutritionEstimator: nutritionEstimator,
+            insightGenerator: insightGenerator,
             mealStore: mealStore
         )
     }
@@ -141,6 +149,7 @@ public final class DashboardViewModel: ObservableObject {
         calendar: Calendar = .current,
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
         nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        insightGenerator: InsightGenerating = FoundationModelInsightGenerator(),
         mealStore: MealStoreProtocol? = nil
     ) {
         let resolvedStore = mealStore ?? SwiftDataMealStore.defaultStore()
@@ -210,11 +219,16 @@ public final class DashboardViewModel: ObservableObject {
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
         self.foodAnalyzer = foodAnalyzer
         self.nutritionEstimator = nutritionEstimator
+        self.insightGenerator = insightGenerator
         self.mealStore = resolvedStore
 
         let currentRatio = Self.rawProgress(for: initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
+        #if DEBUG
+        print("[DashboardViewModel] init (dailySummary:) -> \(ObjectIdentifier(self))")
+        #endif
+        refreshCoachInsight()
     }
 
     // MARK: - Public Animation Methods
@@ -381,6 +395,7 @@ public final class DashboardViewModel: ObservableObject {
         }
         storeCurrentDay()
         try? mealStore.saveMeal(currentFood, for: selectedDate)
+        refreshCoachInsight()
         return CGFloat(dailySummary.consumedCalories) / CGFloat(max(1, dailySummary.targetCalories))
     }
 
@@ -396,6 +411,7 @@ public final class DashboardViewModel: ObservableObject {
         storeCurrentDay()
         syncProgressWithDailySummary()
         try? mealStore.deleteMeal(id: food.id)
+        refreshCoachInsight()
     }
 
     private func syncProgressWithDailySummary() {
@@ -469,6 +485,7 @@ public extension DashboardViewModel {
         foodsForSelectedDate = dailyFoodsByDate[normalizedDate] ?? []
         syncProgressWithDailySummary()
         hideLoggingOptions()
+        refreshCoachInsight()
         return true
     }
 
