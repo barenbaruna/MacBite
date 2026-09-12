@@ -14,17 +14,7 @@ enum FoodCaptureFactory {
         onDismiss: @escaping () -> Void = {},
         onUsePhoto: @escaping (UIImage) async -> Bool = { _ in true }
     ) -> some View {
-        let cameraService = CameraService()
-        let motionService = MotionService()
-        let guideStore = UserDefaultsCameraGuideStore()
-        let viewModel = FoodCaptureViewModel(
-            cameraService: cameraService,
-            motionService: motionService,
-            guideStore: guideStore
-        )
-
-        return FoodCaptureView(
-            viewModel: viewModel,
+        FoodCaptureContainerView(
             onDismiss: onDismiss,
             onUsePhoto: onUsePhoto
         )

@@ -56,6 +56,8 @@ extension DashboardView {
             .foregroundStyle(Color(uiColor: .label))
             .multilineTextAlignment(.center)
             .padding(.horizontal, AppSpacing.sm)
+            .padding(.top, AppSpacing.md)
+            .padding(.bottom, AppSpacing.md)
     }
 
     var macroGridSection: some View {

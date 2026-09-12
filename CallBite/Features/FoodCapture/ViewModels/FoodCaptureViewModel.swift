@@ -187,8 +187,8 @@ final class FoodCaptureViewModel: ObservableObject {
     func retakePhoto() async {
         capturedImage = nil
         resetGuidance()
-        state = .preparing
-        await prepareCamera()
+        motionService.startUpdates()
+        state = .live
     }
 
     func updatePreviewLayout(viewportSize: CGSize, guideFrame: CGRect) {
