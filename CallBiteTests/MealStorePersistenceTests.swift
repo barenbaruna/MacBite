@@ -2,7 +2,7 @@
 //  MealStorePersistenceTests.swift
 //  CallBiteTests
 //
-//  Created by Codex on 12/09/26.
+//  Created by Joshua Valentine Manik on 12/09/26.
 //
 
 @testable import CallBite
@@ -16,7 +16,7 @@ struct MealStorePersistenceTests {
     func storeSavesAndFetchesMeals() throws {
         let calendar = makeCalendar()
         let store = SwiftDataMealStore(inMemory: true, calendar: calendar)
-        let date = calendar.date(from: DateComponents(year: 2026, month: 9, day: 12))!
+        let date = makeTestDate(calendar: calendar)
 
         let food = FoodItem(
             name: "Avocado Toast",
@@ -56,20 +56,8 @@ struct MealStorePersistenceTests {
     func dashboardRestoresMealsAcrossRelaunch() {
         let calendar = makeCalendar()
         let store = SwiftDataMealStore(inMemory: true, calendar: calendar)
-        let today = calendar.date(from: DateComponents(year: 2026, month: 9, day: 12))!
-
-        let summary = DailySummary(
-            targetCalories: 2000,
-            consumedCalories: 0,
-            targetCarbs: 250,
-            targetProtein: 100,
-            targetFat: 65,
-            targetFiber: 30,
-            totalCarbs: 0,
-            totalProtein: 0,
-            totalFat: 0,
-            totalFiber: 0
-        )
+        let today = makeTestDate(calendar: calendar)
+        let summary = makeDailySummary()
 
         // Session 1: User logs a meal
         let sessionOneVM = DashboardViewModel(
@@ -80,17 +68,7 @@ struct MealStorePersistenceTests {
             mealStore: store
         )
 
-        let lunch = FoodItem(
-            name: "Salmon Salad",
-            mealType: "Lunch",
-            dateString: "12 September 2026",
-            calories: 550,
-            protein: 42,
-            carbs: 12,
-            fat: 26,
-            fiber: 5
-        )
-
+        let lunch = makeSampleFoodItem()
         sessionOneVM.resetAndOpenAddFood(with: lunch)
         sessionOneVM.startSaveAnimation(reduceMotion: true)
 
@@ -98,7 +76,7 @@ struct MealStorePersistenceTests {
         #expect(sessionOneVM.dailySummary.consumedCalories == 550)
         #expect(abs(sessionOneVM.ringProgress - 0.275) < 0.001)
 
-        // Session 2: User closes and re-opens app (simulated by new ViewModel reading same store)
+        // Session 2: User closes and re-opens app
         let sessionTwoVM = DashboardViewModel(
             dailySummary: summary,
             selectedDate: today,
@@ -115,6 +93,38 @@ struct MealStorePersistenceTests {
         #expect(sessionTwoVM.dailySummary.totalFat == 26)
         #expect(sessionTwoVM.dailySummary.totalFiber == 5)
         #expect(abs(sessionTwoVM.ringProgress - 0.275) < 0.001)
+    }
+
+    private func makeTestDate(calendar: Calendar) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 9, day: 12)) ?? Date(timeIntervalSince1970: 0)
+    }
+
+    private func makeDailySummary() -> DailySummary {
+        DailySummary(
+            targetCalories: 2000,
+            consumedCalories: 0,
+            targetCarbs: 250,
+            targetProtein: 100,
+            targetFat: 65,
+            targetFiber: 30,
+            totalCarbs: 0,
+            totalProtein: 0,
+            totalFat: 0,
+            totalFiber: 0
+        )
+    }
+
+    private func makeSampleFoodItem() -> FoodItem {
+        FoodItem(
+            name: "Salmon Salad",
+            mealType: "Lunch",
+            dateString: "12 September 2026",
+            calories: 550,
+            protein: 42,
+            carbs: 12,
+            fat: 26,
+            fiber: 5
+        )
     }
 
     private func makeCalendar() -> Calendar {

@@ -113,6 +113,8 @@ struct FoodCaptureViewModelTests {
         #expect(viewModel.capturedImage == nil)
         #expect(viewModel.state == .live)
         #expect(!viewModel.isCaptureReady)
+        #expect(cameraService.isSessionStarted)
+        #expect(!cameraService.isSessionStopped)
     }
 
     @Test("Shutter uses the three visible quality checks")

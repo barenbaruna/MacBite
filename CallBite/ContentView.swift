@@ -8,62 +8,10 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var screenState: AppScreenState = {
-        if ProcessInfo.processInfo.arguments.contains("-testProfileChangeGoal") {
-            return .testProfileChangeGoal
-        } else if ProcessInfo.processInfo.arguments.contains("-testProfile") {
-            return .testProfile
-        } else if ProcessInfo.processInfo.arguments.contains("-testDashboardReview") {
-            return .testDashboardReview
-        } else if ProcessInfo.processInfo.arguments.contains("-testEditSheet") {
-            return .testEditSheet
-        } else if ProcessInfo.processInfo.arguments.contains("-testFoodCardFront") {
-            return .testFoodCardFront
-        } else if ProcessInfo.processInfo.arguments.contains("-testFoodCard") {
-            return .testFoodCard
-        } else if ProcessInfo.processInfo.arguments.contains("-testDashboardExpanded") {
-            return .testDashboardExpanded
-        } else if ProcessInfo.processInfo.arguments.contains("-testLoggingOverlay") {
-            return .testLoggingOverlay
-        } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
-            return .testManualLogging
-        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalCutting") {
-            return .testWeightGoalCutting
-        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalBulking") {
-            return .testWeightGoalBulking
-        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoal") {
-            return .testWeightGoal
-        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalizeEditing") {
-            return .testPersonalizeEditing
-        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
-            return .testPersonalize
-        } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
-            return .dashboard
-        }
+    @State private var screenState: AppScreenState = ContentView.initialScreenState()
+    @State var testFoodItem: FoodItem = .dimsumMentai
+    @State var isTestEditSheetPresented = false
 
-        // Skip onboarding if the user has already completed it
-        if UserProfileStore.shared.hasCompletedOnboarding {
-            return .dashboard
-        }
-
-        return .splash
-    }()
-
-    @State private var testFoodItem: FoodItem = .dimsumMentai
-
-    @State private var isTestEditSheetPresented = false
-
-    // MUST be @StateObject, not created via DashboardFactory.makeView() inline
-    // in `body` — `body` (this switch) re-runs on every SwiftUI re-render for
-    // ANY reason, and a plain function call would construct a BRAND NEW
-    // DashboardViewModel every single time, silently orphaning whatever
-    // ViewModel the on-screen DashboardView was actually observing mid-flow.
-    // Confirmed via real device testing: an async operation (manual nutrition
-    // estimation) would complete and mutate its ViewModel's @Published state
-    // correctly, but the state change was invisible on screen because a
-    // second DashboardViewModel had already been created and was the one the
-    // currently-rendered DashboardView was bound to. @StateObject guarantees
-    // SwiftUI keeps this ONE instance for ContentView's entire lifetime.
     @StateObject private var dashboardViewModel = DashboardViewModel()
 
     var body: some View {
@@ -92,221 +40,44 @@ struct ContentView: View {
         case .dashboard:
             DashboardView(viewModel: dashboardViewModel)
 
-        case .testProfile:
-            ProfileView()
-                .preferredColorScheme(.dark)
-
-        case .testDashboardReview:
-            DashboardView(
-                viewModel: {
-                    let viewModel = DashboardViewModel()
-                    viewModel.isShowingAddFood = true
-                    return viewModel
-                }()
-            )
-            .preferredColorScheme(.dark)
-
-        case .testProfileChangeGoal:
-            ProfileView(
-                viewModel: {
-                    let vm = ProfileViewModel(
-                        initialProfile: UserHealthProfile(
-                            age: 22,
-                            biologicalSex: .preferNotToSay,
-                            weightKg: 56.0,
-                            heightCm: 162.0
-                        )
-                    )
-                    vm.isShowingChangeGoal = true
-                    return vm
-                }()
-            )
-            .preferredColorScheme(.dark)
-
-        case .testFoodCard:
-            ZStack {
-                Color.black.ignoresSafeArea()
-                AddFoodReviewCard(
-                    foodItem: $testFoodItem,
-                    isCompressed: false,
-                    flipAngle: 180.0
-                )
-                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-            }
-            .preferredColorScheme(.dark)
-
-        case .testFoodCardFront:
-            ZStack {
-                Color.black.ignoresSafeArea()
-                AddFoodReviewCard(
-                    foodItem: $testFoodItem,
-                    isCompressed: false,
-                    flipAngle: 0.0
-                )
-            }
-            .preferredColorScheme(.dark)
-
-        case .testEditSheet:
-            ZStack {
-                Color.black.ignoresSafeArea()
-                AddFoodReviewCard(
-                    foodItem: $testFoodItem,
-                    isCompressed: false,
-                    flipAngle: 0.0
-                )
-            }
-            .sheet(isPresented: $isTestEditSheetPresented) {
-                NutritionEditSheet(
-                    field: .calories,
-                    initialValue: testFoodItem.calories,
-                    onSave: { updated in
-                        testFoodItem.calories = updated
-                        isTestEditSheetPresented = false
-                    },
-                    onCancel: {
-                        isTestEditSheetPresented = false
-                    }
-                )
-            }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    isTestEditSheetPresented = true
-                }
-            }
-            .preferredColorScheme(.dark)
-
-        case .testDashboardExpanded:
-            testDashboardExpandedView
-
-        case .testLoggingOverlay:
-            testLoggingOverlayView
-
-        case .testManualLogging:
-            testManualLoggingView
-
-        case .testPersonalize:
-            NavigationStack {
-                PersonalizeHealthView(viewModel: OnboardingViewModel())
-            }
-            .preferredColorScheme(.dark)
-
-        case .testPersonalizeEditing:
-            NavigationStack {
-                PersonalizeHealthView(
-                    viewModel: OnboardingViewModel(),
-                    initialActiveField: .age
-                )
-            }
-            .preferredColorScheme(.dark)
-
-        case .testWeightGoal:
-            NavigationStack {
-                WeightGoalView(
-                    currentWeightKg: 60.0,
-                    targetWeightKg: nil,
-                    heightCm: 168.0,
-                    onBack: {}
-                )
-            }
-            .preferredColorScheme(.dark)
-
-        case .testWeightGoalCutting:
-            NavigationStack {
-                WeightGoalView(
-                    currentWeightKg: 60.0,
-                    targetWeightKg: 48.0,
-                    heightCm: 168.0,
-                    onBack: {}
-                )
-            }
-            .preferredColorScheme(.dark)
-
-        case .testWeightGoalBulking:
-            NavigationStack {
-                WeightGoalView(
-                    currentWeightKg: 60.0,
-                    targetWeightKg: 78.0,
-                    heightCm: 168.0,
-                    onBack: {}
-                )
-            }
-            .preferredColorScheme(.dark)
+        default:
+            testView(for: screenState)
         }
     }
 
-    private var testLoggingOverlayView: some View {
-        DashboardView(
-            viewModel: {
-                let vm = DashboardViewModel()
-                vm.isShowingLoggingOptions = true
-                return vm
-            }()
-        )
-        .preferredColorScheme(.dark)
-    }
+    private static let testScreenArguments: [(String, AppScreenState)] = [
+        ("-testProfileChangeGoal", .testProfileChangeGoal),
+        ("-testProfile", .testProfile),
+        ("-testDashboardReview", .testDashboardReview),
+        ("-testEditSheet", .testEditSheet),
+        ("-testFoodCardFront", .testFoodCardFront),
+        ("-testFoodCard", .testFoodCard),
+        ("-testDashboardExpanded", .testDashboardExpanded),
+        ("-testLoggingOverlay", .testLoggingOverlay),
+        ("-testManualLogging", .testManualLogging),
+        ("-testWeightGoalCutting", .testWeightGoalCutting),
+        ("-testWeightGoalBulking", .testWeightGoalBulking),
+        ("-testWeightGoal", .testWeightGoal),
+        ("-testPersonalizeEditing", .testPersonalizeEditing),
+        ("-testPersonalize", .testPersonalize),
+        ("-testDashboard", .dashboard)
+    ]
 
-    private var testManualLoggingView: some View {
-        ManualLoggingView(
-            viewModel: ManualLoggingViewModel(),
-            onDismiss: {},
-            onCalculate: { _, _ in }
-        )
-        .preferredColorScheme(.dark)
-    }
+    private static func initialScreenState() -> AppScreenState {
+        let args = ProcessInfo.processInfo.arguments
+        for (flag, screen) in testScreenArguments where args.contains(flag) {
+            return screen
+        }
 
-    private var testDashboardExpandedView: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            expandedContentColumn
+        if UserProfileStore.shared.hasCompletedOnboarding {
+            return .dashboard
         }
-        .preferredColorScheme(.dark)
-    }
 
-    private var expandedContentColumn: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: AppSpacing.sm)
-            CalorieProgressView(consumedCalories: 200, targetCalories: 2654)
-            Spacer().frame(height: AppSpacing.md)
-            Text("Heads up! You have 200 kcal remaining.\nConsider a lighter option for your next meal.")
-                .font(AppTypography.subheadline)
-                .foregroundStyle(Color(uiColor: .label))
-                .multilineTextAlignment(.center)
-            Spacer(minLength: AppSpacing.sm)
-            MacroSummaryGridView(
-                consumedCalories: 200,
-                targetCalories: 2654,
-                carbsGrams: 17,
-                proteinGrams: 100,
-                fatGrams: 17,
-                fiberGrams: 100,
-                initiallyExpanded: true
-            )
-            Spacer(minLength: AppSpacing.xl)
-        }
-        .padding(.horizontal, AppSpacing.lg)
-        .overlay(alignment: .bottomTrailing) {
-            floatingAddButton
-        }
-    }
-
-    private var floatingAddButton: some View {
-        Button {} label: {
-            Image(systemName: "plus")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.black)
-                .accessibilityHidden(true)
-        }
-        .buttonStyle(.glassProminent)
-        .buttonBorderShape(.circle)
-        .controlSize(.large)
-        .tint(.white)
-        .padding(.trailing, AppSpacing.lg)
-        .padding(.bottom, AppSpacing.md)
-        .accessibilityLabel("Add Food")
+        return .splash
     }
 }
 
-private enum AppScreenState {
+enum AppScreenState {
     case splash
     case onboarding
     case dashboard

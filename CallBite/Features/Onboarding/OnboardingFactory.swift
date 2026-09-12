@@ -19,7 +19,7 @@ enum OnboardingFactory {
     static func makePreviewViewModel(initialStep: OnboardingStep = .personalize) -> OnboardingViewModel {
         OnboardingViewModel(
             healthKitService: MockHealthKitService(),
-            profileStore: UserProfileStore(defaults: UserDefaults(suiteName: "preview")!),
+            profileStore: UserProfileStore(defaults: UserDefaults(suiteName: "preview") ?? .standard),
             initialStep: initialStep
         )
     }

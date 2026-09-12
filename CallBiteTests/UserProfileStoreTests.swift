@@ -13,7 +13,7 @@ import Testing
 struct UserProfileStoreTests {
     private func makeIsolatedStore() -> (UserProfileStore, UserDefaults) {
         let suiteName = "test.userProfileStore.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         let store = UserProfileStore(defaults: defaults)
         return (store, defaults)
     }
@@ -64,7 +64,7 @@ struct UserProfileStoreTests {
     @Test("Data persists across different instances sharing the same UserDefaults")
     func persistsAcrossInstances() {
         let suiteName = "test.userProfileStore.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
 
         let storeA = UserProfileStore(defaults: defaults)
         let profile = UserHealthProfile(

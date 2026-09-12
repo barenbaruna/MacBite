@@ -2,7 +2,7 @@
 //  ManualIngredientListView.swift
 //  CallBite
 //
-//  Created by Codex on 09/09/26.
+//  Created by Joshua Valentine Manik on 09/09/26.
 //
 
 import SwiftUI

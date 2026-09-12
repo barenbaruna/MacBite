@@ -2,7 +2,7 @@
 //  CameraGuidanceOverlay.swift
 //  CallBite
 //
-//  Created by Codex on 12/09/26.
+//  Created by Joshua Valentine Manik on 12/09/26.
 //
 
 import SwiftUI

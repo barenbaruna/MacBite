@@ -15,68 +15,78 @@ public enum DashboardFactory {
         let calendar = Calendar.current
         let normalizedToday = calendar.startOfDay(for: today)
 
+        let viewModel: DashboardViewModel
         if useSampleData {
-            let baseSummary = dailySummary ?? .sampleDashboard
-            let sampleHistory = DashboardSampleData.makeHistory(
-                endingOn: normalizedToday,
-                currentSummary: baseSummary,
+            viewModel = makeSampleViewModel(
+                baseSummary: dailySummary,
+                normalizedToday: normalizedToday,
                 calendar: calendar
             )
-            let sampleFoods = DashboardSampleData.makeFoodHistory(
-                summaries: sampleHistory,
-                endingOn: normalizedToday,
+        } else {
+            let summary = dailySummary ?? makeDefaultSummary(
+                for: today,
+                normalizedToday: normalizedToday,
                 calendar: calendar
             )
-            let currentSummary = sampleHistory[normalizedToday] ?? baseSummary
-            let viewModel = DashboardViewModel(
-                dailySummary: currentSummary,
+            viewModel = DashboardViewModel(
+                dailySummary: summary,
                 selectedDate: normalizedToday,
                 today: normalizedToday,
-                dailySummaries: sampleHistory,
-                dailyFoods: sampleFoods,
+                dailySummaries: [:],
+                dailyFoods: [:],
                 calendar: calendar
             )
-            return DashboardView(viewModel: viewModel)
         }
 
-        let summary: DailySummary
-        if let dailySummary {
-            summary = dailySummary
-        } else {
-            let goal = UserProfileStore.shared.nutritionGoal
-            let targetCalories = goal?.targetCalories ?? 2000
-            let targetCarbs = goal?.targetCarbsGrams ?? 250
-            let targetProtein = goal?.targetProteinGrams ?? 100
-            let targetFat = goal?.targetFatGrams ?? 65
-            let targetFiber = goal?.targetFiberGrams ?? 30
-            summary = DailySummary(
-                dateString: DashboardSampleData.displayDate(
-                    for: today,
-                    today: normalizedToday,
-                    calendar: calendar
-                ),
-                targetCalories: targetCalories,
-                consumedCalories: 0,
-                targetCarbs: targetCarbs,
-                targetProtein: targetProtein,
-                targetFat: targetFat,
-                targetFiber: targetFiber,
-                totalCarbs: 0,
-                totalProtein: 0,
-                totalFat: 0,
-                totalFiber: 0,
-                streakDays: 0
-            )
-        }
+        return DashboardView(viewModel: viewModel)
+    }
 
-        let viewModel = DashboardViewModel(
-            dailySummary: summary,
-            selectedDate: normalizedToday,
-            today: normalizedToday,
-            dailySummaries: [:],
-            dailyFoods: [:],
+    private static func makeSampleViewModel(
+        baseSummary: DailySummary?,
+        normalizedToday: Date,
+        calendar: Calendar
+    ) -> DashboardViewModel {
+        let summary = baseSummary ?? .sampleDashboard
+        let sampleHistory = DashboardSampleData.makeHistory(
+            endingOn: normalizedToday,
+            currentSummary: summary,
             calendar: calendar
         )
-        return DashboardView(viewModel: viewModel)
+        let sampleFoods = DashboardSampleData.makeFoodHistory(
+            summaries: sampleHistory,
+            endingOn: normalizedToday,
+            calendar: calendar
+        )
+        let currentSummary = sampleHistory[normalizedToday] ?? summary
+        return DashboardViewModel(
+            dailySummary: currentSummary,
+            selectedDate: normalizedToday,
+            today: normalizedToday,
+            dailySummaries: sampleHistory,
+            dailyFoods: sampleFoods,
+            calendar: calendar
+        )
+    }
+
+    private static func makeDefaultSummary(
+        for today: Date,
+        normalizedToday: Date,
+        calendar: Calendar
+    ) -> DailySummary {
+        let goal = UserProfileStore.shared.nutritionGoal
+        return DailySummary(
+            dateString: DashboardSampleData.displayDate(for: today, today: normalizedToday, calendar: calendar),
+            targetCalories: goal?.targetCalories ?? 2000,
+            consumedCalories: 0,
+            targetCarbs: goal?.targetCarbsGrams ?? 250,
+            targetProtein: goal?.targetProteinGrams ?? 100,
+            targetFat: goal?.targetFatGrams ?? 65,
+            targetFiber: goal?.targetFiberGrams ?? 30,
+            totalCarbs: 0,
+            totalProtein: 0,
+            totalFat: 0,
+            totalFiber: 0,
+            streakDays: 0
+        )
     }
 }

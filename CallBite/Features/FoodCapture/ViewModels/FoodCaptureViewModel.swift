@@ -31,6 +31,7 @@ final class FoodCaptureViewModel: ObservableObject {
     private let motionService: MotionServiceProtocol
     private let guideStore: CameraGuideStoreProtocol
     private let guidanceEvaluator = CameraGuidanceEvaluator()
+    private let croppingService: ImageCroppingServiceProtocol
     private var cancellables = Set<AnyCancellable>()
     private var viewportSize = CGSize.zero
     private var guideFrame = CGRect.zero
@@ -40,11 +41,13 @@ final class FoodCaptureViewModel: ObservableObject {
     init(
         cameraService: CameraServiceProtocol,
         motionService: MotionServiceProtocol,
-        guideStore: CameraGuideStoreProtocol
+        guideStore: CameraGuideStoreProtocol,
+        croppingService: ImageCroppingServiceProtocol = ImageCroppingService()
     ) {
         self.cameraService = cameraService
         self.motionService = motionService
         self.guideStore = guideStore
+        self.croppingService = croppingService
         captureSession = cameraService.captureSession
         isGuidePresented = !guideStore.hasSeenCameraGuide
         observeGuidanceInputs()
@@ -124,69 +127,21 @@ final class FoodCaptureViewModel: ObservableObject {
     }
 
     func cropImageToGuideScope(_ image: UIImage) -> UIImage {
-        guard image.size.width > 0, image.size.height > 0 else {
-            return image
-        }
-
-        guard viewportSize.width > 0,
-              viewportSize.height > 0,
-              guideFrame.width > 0,
-              guideFrame.height > 0 else {
-            return cropToCenterSquare(image: image)
-        }
-
-        let scale = max(viewportSize.width / image.size.width, viewportSize.height / image.size.height)
-        guard scale > 0 else {
-            return cropToCenterSquare(image: image)
-        }
-
-        let renderedWidth = image.size.width * scale
-        let renderedHeight = image.size.height * scale
-        let originX = (viewportSize.width - renderedWidth) / 2.0
-        let originY = (viewportSize.height - renderedHeight) / 2.0
-
-        let cropX = (guideFrame.minX - originX) / scale
-        let cropY = (guideFrame.minY - originY) / scale
-        let cropWidth = guideFrame.width / scale
-        let cropHeight = guideFrame.height / scale
-
-        let clampedX = max(0, min(cropX, image.size.width))
-        let clampedY = max(0, min(cropY, image.size.height))
-        let clampedWidth = max(0, min(cropWidth, image.size.width - clampedX))
-        let clampedHeight = max(0, min(cropHeight, image.size.height - clampedY))
-
-        guard clampedWidth > 10, clampedHeight > 10 else {
-            return cropToCenterSquare(image: image)
-        }
-
-        let cropRect = CGRect(x: clampedX, y: clampedY, width: clampedWidth, height: clampedHeight)
-        return renderCroppedImage(image, in: cropRect)
+        croppingService.cropImageToGuideScope(
+            image: image,
+            guideFrame: guideFrame,
+            viewportSize: viewportSize
+        )
     }
 
     func cropToCenterSquare(image: UIImage) -> UIImage {
-        let side = min(image.size.width, image.size.height)
-        guard side > 0 else { return image }
-        let rect = CGRect(
-            x: (image.size.width - side) / 2.0,
-            y: (image.size.height - side) / 2.0,
-            width: side,
-            height: side
-        )
-        return renderCroppedImage(image, in: rect)
-    }
-
-    private func renderCroppedImage(_ image: UIImage, in rect: CGRect) -> UIImage {
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = image.scale
-        let renderer = UIGraphicsImageRenderer(size: rect.size, format: format)
-        return renderer.image { _ in
-            image.draw(at: CGPoint(x: -rect.origin.x, y: -rect.origin.y))
-        }
+        croppingService.cropToCenterSquare(image: image)
     }
 
     func retakePhoto() async {
         capturedImage = nil
         resetGuidance()
+        await cameraService.startSession()
         motionService.startUpdates()
         state = .live
     }

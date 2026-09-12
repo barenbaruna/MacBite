@@ -2,7 +2,7 @@
 //  DashboardFoodHistorySection.swift
 //  CallBite
 //
-//  Created by Codex on 10/09/26.
+//  Created by Joshua Valentine Manik on 10/09/26.
 //
 
 import SwiftUI

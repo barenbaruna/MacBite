@@ -39,10 +39,12 @@ final class MockCameraService: CameraServiceProtocol {
 
     func startSession() async {
         isSessionStarted = true
+        isSessionStopped = false
     }
 
     func stopSession() {
         isSessionStopped = true
+        isSessionStarted = false
     }
 
     func setTorchEnabled(_ isEnabled: Bool) async throws {
