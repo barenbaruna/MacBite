@@ -29,7 +29,8 @@ enum AppColor {
 
     // Activity Cards (Lifestyle)
     static let activityCardNormal = Color(hex: 0x1C1C1E)
-    static let activityCardSelected = Color(hex: 0x29292C)
+    static let activityCardSelected = Color(hex: 0x3D3E42)
+    static let activityCardSelectedBorder = Color.white.opacity(0.3)
 
     // Neutral / Grayscale Series
     static let white = Color(hex: 0xFFFFFF)

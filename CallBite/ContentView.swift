@@ -9,7 +9,9 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var screenState: AppScreenState = {
-        if ProcessInfo.processInfo.arguments.contains("-testProfile") {
+        if ProcessInfo.processInfo.arguments.contains("-testProfileChangeGoal") {
+            return .testProfileChangeGoal
+        } else if ProcessInfo.processInfo.arguments.contains("-testProfile") {
             return .testProfile
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboardReview") {
             return .testDashboardReview
@@ -25,6 +27,16 @@ struct ContentView: View {
             return .testLoggingOverlay
         } else if ProcessInfo.processInfo.arguments.contains("-testManualLogging") {
             return .testManualLogging
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalCutting") {
+            return .testWeightGoalCutting
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoalBulking") {
+            return .testWeightGoalBulking
+        } else if ProcessInfo.processInfo.arguments.contains("-testWeightGoal") {
+            return .testWeightGoal
+        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalizeEditing") {
+            return .testPersonalizeEditing
+        } else if ProcessInfo.processInfo.arguments.contains("-testPersonalize") {
+            return .testPersonalize
         } else if ProcessInfo.processInfo.arguments.contains("-testDashboard") {
             return .dashboard
         }
@@ -68,6 +80,23 @@ struct ContentView: View {
                     let viewModel = DashboardViewModel()
                     viewModel.isShowingAddFood = true
                     return viewModel
+                }()
+            )
+            .preferredColorScheme(.dark)
+
+        case .testProfileChangeGoal:
+            ProfileView(
+                viewModel: {
+                    let vm = ProfileViewModel(
+                        initialProfile: UserHealthProfile(
+                            age: 22,
+                            biologicalSex: .preferNotToSay,
+                            weightKg: 56.0,
+                            heightCm: 162.0
+                        )
+                    )
+                    vm.isShowingChangeGoal = true
+                    return vm
                 }()
             )
             .preferredColorScheme(.dark)
@@ -133,6 +162,54 @@ struct ContentView: View {
 
         case .testManualLogging:
             testManualLoggingView
+
+        case .testPersonalize:
+            NavigationStack {
+                PersonalizeHealthView(viewModel: OnboardingViewModel())
+            }
+            .preferredColorScheme(.dark)
+
+        case .testPersonalizeEditing:
+            NavigationStack {
+                PersonalizeHealthView(
+                    viewModel: OnboardingViewModel(),
+                    initialActiveField: .age
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoal:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: nil,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoalCutting:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 48.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
+
+        case .testWeightGoalBulking:
+            NavigationStack {
+                WeightGoalView(
+                    currentWeightKg: 60.0,
+                    targetWeightKg: 78.0,
+                    heightCm: 168.0,
+                    onBack: {}
+                )
+            }
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -214,12 +291,18 @@ private enum AppScreenState {
     case dashboard
     case testProfile
     case testDashboardReview
+    case testProfileChangeGoal
     case testFoodCard
     case testFoodCardFront
     case testEditSheet
     case testDashboardExpanded
     case testLoggingOverlay
     case testManualLogging
+    case testPersonalize
+    case testPersonalizeEditing
+    case testWeightGoal
+    case testWeightGoalCutting
+    case testWeightGoalBulking
 }
 
 #Preview {

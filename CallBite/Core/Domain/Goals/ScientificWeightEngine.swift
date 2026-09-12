@@ -32,6 +32,21 @@ enum ScientificWeightEngine {
         return minWeight...maxWeight
     }
 
+    /// Determines the scientifically sound initial target weight for onboarding.
+    /// If currentWeight is in the healthy range (BMI 18.5 - 24.9), it defaults to currentWeight (maintain).
+    /// If overweight, it defaults to the healthy upper bound (closest realistic healthy target).
+    /// If underweight, it defaults to the healthy lower bound.
+    static func recommendedInitialTarget(currentWeightKg: Double, heightCm: Double) -> Double {
+        let healthyRange = healthyWeightRange(heightCm: heightCm)
+        if healthyRange.contains(currentWeightKg) {
+            return (currentWeightKg * 2.0).rounded() / 2.0
+        } else if currentWeightKg > healthyRange.upperBound {
+            return (healthyRange.upperBound * 2.0).rounded() / 2.0
+        } else {
+            return (healthyRange.lowerBound * 2.0).rounded() / 2.0
+        }
+    }
+
     /// Evaluates weight goal trajectory against current weight and height.
     static func evaluate(
         currentWeightKg: Double,

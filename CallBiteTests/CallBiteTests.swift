@@ -55,6 +55,20 @@ struct CallBiteTests {
         #expect(insight.dailyCalorieAdjustment == 0.0)
     }
 
+    @Test func testRecommendedInitialTarget() async throws {
+        // Healthy BMI (60kg at 168cm -> BMI 21.3) should default to currentWeight
+        let normalTarget = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: 60.0, heightCm: 168.0)
+        #expect(normalTarget == 60.0)
+
+        // Overweight (85kg at 168cm -> healthy max ~70.3kg) should default to healthy upper bound
+        let overTarget = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: 85.0, heightCm: 168.0)
+        #expect(overTarget <= 70.5 && overTarget >= 70.0)
+
+        // Underweight (45kg at 168cm -> healthy min ~52.2kg) should default to healthy lower bound
+        let underTarget = ScientificWeightEngine.recommendedInitialTarget(currentWeightKg: 45.0, heightCm: 168.0)
+        #expect(underTarget >= 52.0 && underTarget <= 52.5)
+    }
+
     @Test func testWeightGoalViewModel() async throws {
         let vm = WeightGoalViewModel(currentWeightKg: 60.0, targetWeightKg: 56.0, heightCm: 162.0)
         #expect(vm.activeCategory == .cutting)
@@ -63,6 +77,11 @@ struct CallBiteTests {
         vm.targetWeightKg = 64.0
         #expect(vm.activeCategory == .bulking)
         #expect(vm.targetWeightKg == 64.0)
+
+        // Test default nil targetWeightKg
+        let vmDefault = WeightGoalViewModel(currentWeightKg: 60.0, targetWeightKg: nil, heightCm: 168.0)
+        #expect(vmDefault.targetWeightKg == 60.0)
+        #expect(vmDefault.activeCategory == .maintaining)
     }
 
     @Test func testWeightGoalDismissButtonDefault() throws {
@@ -290,13 +309,21 @@ struct CallBiteTests {
         #expect(vm.heightCm == 162.0)
         #expect(!vm.isShowingChangeGoal)
         #expect(vm.activeFieldForEdit == nil)
+        #expect(vm.targetWeightKg == nil)
 
         vm.age = 23
         vm.weightKg = 58.0
+        vm.updateGoal(targetWeight: 54.0, category: .cutting)
+        #expect(vm.targetWeightKg == 54.0)
+        #expect(vm.goalCategory == .cutting)
+        #expect(vm.goalSummaryText == "Lose Weight (54kg)")
+
         vm.saveProfile()
 
         #expect(savedProfile?.age == 23)
         #expect(savedProfile?.weightKg == 58.0)
+        #expect(savedProfile?.targetWeightKg == 54.0)
+        #expect(savedProfile?.goalCategory == .cutting)
     }
 }
 
