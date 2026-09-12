@@ -75,14 +75,8 @@ public struct AddFoodReviewCard: View {
     @ToolbarContentBuilder
     private var detailsToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button(action: onDismiss) {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(AppColor.white)
-            }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
-            .accessibilityLabel("Dismiss")
+            Button(role: .close, action: onDismiss)
+                .accessibilityLabel("Dismiss")
         }
     }
 
