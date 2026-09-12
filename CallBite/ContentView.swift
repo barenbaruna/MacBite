@@ -47,6 +47,19 @@ struct ContentView: View {
 
     @State private var isTestEditSheetPresented = false
 
+    // MUST be @StateObject, not created via DashboardFactory.makeView() inline
+    // in `body` — `body` (this switch) re-runs on every SwiftUI re-render for
+    // ANY reason, and a plain function call would construct a BRAND NEW
+    // DashboardViewModel every single time, silently orphaning whatever
+    // ViewModel the on-screen DashboardView was actually observing mid-flow.
+    // Confirmed via real device testing: an async operation (manual nutrition
+    // estimation) would complete and mutate its ViewModel's @Published state
+    // correctly, but the state change was invisible on screen because a
+    // second DashboardViewModel had already been created and was the one the
+    // currently-rendered DashboardView was bound to. @StateObject guarantees
+    // SwiftUI keeps this ONE instance for ContentView's entire lifetime.
+    @StateObject private var dashboardViewModel = DashboardViewModel()
+
     var body: some View {
         switch screenState {
         case .splash:
@@ -68,7 +81,7 @@ struct ContentView: View {
             })
 
         case .dashboard:
-            DashboardFactory.makeView()
+            DashboardView(viewModel: dashboardViewModel)
 
         case .testProfile:
             ProfileView()

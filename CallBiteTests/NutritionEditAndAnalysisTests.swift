@@ -8,6 +8,7 @@
 @testable import CallBite
 import Foundation
 import Testing
+import UIKit
 
 @Suite("NutritionEditTests")
 struct NutritionEditTests {
@@ -32,36 +33,47 @@ struct NutritionEditTests {
 
 @Suite("FoodAnalyzerTests")
 struct FoodAnalyzerTests {
-    @Test func testCoreMLFoodAnalyzerDefaultPhoto() async throws {
-        let analyzer = CoreMLFoodAnalyzer()
-        let food = try await analyzer.analyzePhoto(imageData: Data())
-        #expect(food.name == "Scanned Food")
-        #expect(food.calories == 475)
-        #expect(food.fiber == 4)
-    }
-
-    @Test func testGeminiFoodAnalyzerManualCalculation() async throws {
-        let analyzer = GeminiFoodAnalyzer()
-        let ingredients = [
-            IngredientDescriptor(name: "Chicken Breast", portionGrams: 150.0),
-            IngredientDescriptor(name: "Brown Rice", portionGrams: 100.0)
-        ]
-        let food = try await analyzer.analyzeManual(name: "Chicken & Rice", ingredients: ingredients)
-        #expect(food.name == "Chicken & Rice")
-        #expect(food.calories > 0)
-        #expect(food.protein > 0)
-    }
-
-    @Test func testMockFoodAnalyzer() async throws {
-        let mock = MockFoodAnalyzer(
-            stubbedPhotoFood: .chickenRiceBowl,
-            stubbedManualFood: .oatmealBerry
+    @Test func testMockFoodAnalyzerReturnsCandidate() async throws {
+        let expectedCandidate = FoodCandidate(
+            name: "Grilled Chicken Bowl",
+            components: ["Grilled Chicken", "Brown Rice"],
+            nutrition: NutritionFacts(
+                calories: 680,
+                protein: 48,
+                carbs: 65,
+                fat: 18,
+                fiber: 6
+            ),
+            portionGrams: 350,
+            foodProbability: 0.94
         )
-        let photoFood = try await mock.analyzePhoto(imageData: Data())
-        #expect(photoFood.name == FoodItem.chickenRiceBowl.name)
+        let analyzer = MockFoodAnalyzer(resultToReturn: expectedCandidate)
 
-        let manualFood = try await mock.analyzeManual(name: "Custom Oatmeal", ingredients: [])
-        #expect(manualFood.name == "Custom Oatmeal")
+        let candidate = try await analyzer.analyze(UIImage())
+
+        #expect(candidate == expectedCandidate)
+    }
+
+    @Test func testMockNutritionEstimatorReturnsNutrition() async throws {
+        let expectedNutrition = NutritionFacts(
+            calories: 460,
+            protein: 30,
+            carbs: 40,
+            fat: 15,
+            fiber: 2
+        )
+        let estimator = MockNutritionEstimator(resultToReturn: expectedNutrition)
+        let meal = ManualMealDescription(
+            foodName: "Chicken & Rice",
+            ingredients: [
+                .init(name: "Chicken Breast", portionGrams: 150, cookingMethod: "Grilled"),
+                .init(name: "Brown Rice", portionGrams: 100, cookingMethod: "Steamed")
+            ]
+        )
+
+        let nutrition = try await estimator.estimate(meal)
+
+        #expect(nutrition == expectedNutrition)
     }
 }
 

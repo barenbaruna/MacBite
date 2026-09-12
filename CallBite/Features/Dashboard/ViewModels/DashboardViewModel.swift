@@ -74,15 +74,29 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var triggerTapHaptic: Bool = false
     @Published public var triggerSuccessHaptic: Bool = false
 
+    // AI Analysis Feedback
+    @Published public var nonFoodWarningMessage: String?
+
+    // MARK: - Dependencies
+
     private let dateCalendar: Calendar
     private let normalizedToday: Date
     private var dailySummariesByDate: [Date: DailySummary]
     private var dailyFoodsByDate: [Date: [FoodItem]]
+    let foodAnalyzer: FoodAnalyzing
+    let nutritionEstimator: NutritionEstimating
 
     // MARK: - Initialization
 
-    public convenience init() {
-        self.init(dailySummary: .sampleDashboard)
+    public convenience init(
+        foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+    ) {
+        self.init(
+            dailySummary: .sampleDashboard,
+            foodAnalyzer: foodAnalyzer,
+            nutritionEstimator: nutritionEstimator
+        )
     }
 
     public init(
@@ -92,7 +106,9 @@ public final class DashboardViewModel: ObservableObject {
         today: Date = .now,
         dailySummaries: [Date: DailySummary] = [:],
         dailyFoods: [Date: [FoodItem]] = [:],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
     ) {
         let normalizedToday = calendar.startOfDay(for: today)
         let requestedDate = calendar.startOfDay(for: selectedDate)
@@ -118,9 +134,14 @@ public final class DashboardViewModel: ObservableObject {
         self.dailySummary = initialSummary
         self.foodsForSelectedDate = normalizedFoods[normalizedSelectedDate] ?? []
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
+        self.foodAnalyzer = foodAnalyzer
+        self.nutritionEstimator = nutritionEstimator
         let currentRatio = Self.rawProgress(for: initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
+        #if DEBUG
+        print("[DashboardViewModel] init (dailySummary:) -> \(ObjectIdentifier(self))")
+        #endif
     }
 
     // MARK: - Public Animation Methods
@@ -148,44 +169,6 @@ public final class DashboardViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: UInt64(MotionConfig.compressDuration * 1_000_000_000))
             await phaseHoldConfirmation(screenWidth: screenWidth, containerCenterY: containerCenterY)
         }
-    }
-
-    public func resetAndOpenAddFood() {
-        var food = FoodItem.dimsumMentai
-        food.mealType = FoodItem.currentMealType()
-        resetAndOpenAddFood(with: food)
-    }
-
-    public func resetAndOpenAddFood(with food: FoodItem) {
-        currentFood = food
-        isCardCompressed = false
-        flipAngle = 0.0
-        morphProgress = 0.0
-        cardContentOpacity = 1.0
-        orbGlowOpacity = 0.0
-        orbScale = 1.0
-        orbBlur = 0.0
-        cardOffsetX = 0.0
-        cardOffsetY = 0.0
-        rippleScale = 0.5
-        rippleOpacity = 0.0
-        let currentRatio = CGFloat(dailySummary.consumedCalories) / CGFloat(max(1, dailySummary.targetCalories))
-        ringProgress = currentRatio
-        orbProgress = Double(currentRatio)
-        ringScale = 1.0
-        phase = .idle
-
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
-            isShowingAddFood = true
-        }
-    }
-
-    public func toggleLoggingOptions() {
-        isShowingLoggingOptions.toggle()
-    }
-
-    public func hideLoggingOptions() {
-        isShowingLoggingOptions = false
     }
 
     // MARK: - Internal Animation Sequence

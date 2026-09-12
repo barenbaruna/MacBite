@@ -19,9 +19,9 @@ public struct AddFoodReviewCard: View {
     public let onSave: () -> Void
 
     @FocusState private var focusedField: EditableField?
+    @State private var isEditingName = false
 
     private enum EditableField: Hashable {
-        case foodName
         case nutrition(NutritionEditField)
     }
 
@@ -66,6 +66,9 @@ public struct AddFoodReviewCard: View {
                 .toolbar {
                     detailsToolbar
                     keyboardToolbar
+                }
+                .sheet(isPresented: $isEditingName) {
+                    nameEditModal
                 }
         }
     }
@@ -157,14 +160,7 @@ public struct AddFoodReviewCard: View {
 
     private var nutritionSummaryCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Food Name", text: $foodItem.name)
-                .font(AppTypography.title2.weight(.bold))
-                .foregroundStyle(Color(uiColor: .label))
-                .focused($focusedField, equals: .foodName)
-                .submitLabel(.done)
-                .onSubmit {
-                    focusedField = nil
-                }
+            editableNameRow
                 .padding(.bottom, AppSpacing.md)
 
             nutritionInputRow(field: .calories, value: $foodItem.calories)
@@ -298,6 +294,42 @@ public struct AddFoodReviewCard: View {
 }
 
 private extension AddFoodReviewCard {
+    var editableNameRow: some View {
+        Button {
+            isEditingName = true
+        } label: {
+            HStack(spacing: AppSpacing.xs) {
+                Text(foodItem.name)
+                    .font(AppTypography.title2.weight(.bold))
+                    .foregroundStyle(Color(uiColor: .label))
+                    .multilineTextAlignment(.leading)
+
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                    .accessibilityHidden(true)
+
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Edit food name, currently \(foodItem.name)")
+    }
+
+    var nameEditModal: some View {
+        FoodNameEditSheet(
+            initialValue: foodItem.name,
+            onSave: { updated in
+                foodItem.name = updated
+                isEditingName = false
+            },
+            onCancel: {
+                isEditingName = false
+            }
+        )
+    }
+
     var bottomButtonInset: CGFloat {
         if focusedField != nil {
             return AppSpacing.manualBottomButtonInset

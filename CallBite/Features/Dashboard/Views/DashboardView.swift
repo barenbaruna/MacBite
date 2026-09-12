@@ -66,11 +66,22 @@ public struct DashboardView: View {
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.triggerTapHaptic)
         .sensoryFeedback(.success, trigger: viewModel.triggerSuccessHaptic)
+        .alert(
+            "Not Food Detected",
+            isPresented: Binding(
+                get: { viewModel.nonFoodWarningMessage != nil },
+                set: { isPresented in
+                    if !isPresented { viewModel.dismissNonFoodWarning() }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                viewModel.dismissNonFoodWarning()
+            }
+        } message: {
+            Text(viewModel.nonFoodWarningMessage ?? "Please try again with a clear photo of your food.")
+        }
         .preferredColorScheme(.dark)
-    }
-
-    private var isPhaseOrbitingOrDissolving: Bool {
-        viewModel.phase == .orbitingAndLoading || viewModel.phase == .dissolvingOrb
     }
 
     // MARK: - Main Animation Container (Unified Coordinate Space)
@@ -79,6 +90,16 @@ public struct DashboardView: View {
         let safeArea = safeProxy.safeAreaInsets
         let fullWidth = safeProxy.size.width + safeArea.leading + safeArea.trailing
         let fullHeight = safeProxy.size.height + safeArea.top + safeArea.bottom
+
+        #if DEBUG
+        print(
+            "[DashboardView] render on \(ObjectIdentifier(viewModel)):",
+            "isShowingAddFood=\(viewModel.isShowingAddFood)",
+            "phase=\(viewModel.phase)",
+            "isPhaseOrbitingOrDissolving=\(isPhaseOrbitingOrDissolving)",
+            "presentedSheetRoute=\(String(describing: presentedSheetRoute))"
+        )
+        #endif
 
         return ZStack {
             dashboardNavigation(safeArea: safeArea)

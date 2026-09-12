@@ -11,6 +11,10 @@ import UIKit
 // MARK: - DashboardView Subviews & Actions
 
 extension DashboardView {
+    var isPhaseOrbitingOrDissolving: Bool {
+        viewModel.phase == .orbitingAndLoading || viewModel.phase == .dissolvingOrb
+    }
+
     var profileSheet: some View {
         ProfileView(
             initialProfile: UserHealthProfile(
@@ -149,61 +153,15 @@ extension DashboardView {
 
     func handlePhotoCaptured(_ image: UIImage) {
         presentedFullScreenRoute = nil
-        Task { @MainActor in
-            
-            let imageData = image.jpegData(compressionQuality: 0.82) ?? Data()
-            let currentMealType = FoodItem.currentMealType()
-            var food = FoodItem(
-                name: "Scanned Food",
-                mealType: currentMealType,
-                dateString: viewModel.dailySummary.dateString,
-                calories: 475,
-                protein: 24,
-                carbs: 45,
-                fat: 14,
-                fiber: 4,
-                photoSystemName: "camera.fill",
-                photoData: imageData
-            )
-            food.mealType = currentMealType
-            food.dateString = viewModel.dailySummary.dateString
-            navigateToSaveFood(food)
+        Task {
+            await viewModel.analyzeCapturedPhoto(image)
         }
     }
 
     func handleManualCalculation(name: String, ingredients: [ManualIngredientInput]) {
         presentedSheetRoute = nil
-        Task { @MainActor in
-            let descriptors = ingredients.map {
-                IngredientDescriptor(
-                    name: $0.ingredient,
-                    portionGrams: Double($0.portionGrams) ?? 0.0,
-                    cookingMethod: $0.cookingMethod.isEmpty ? nil : $0.cookingMethod
-                )
-            }
-            let currentMealType = FoodItem.currentMealType()
-            var food = FoodItem(
-                name: name.isEmpty ? "Healthy Meal" : name,
-                mealType: currentMealType,
-                dateString: viewModel.dailySummary.dateString,
-                calories: 450,
-                protein: 25,
-                carbs: 40,
-                fat: 12,
-                fiber: 4,
-                photoSystemName: "fork.knife"
-            )
-            food.mealType = currentMealType
-            food.dateString = viewModel.dailySummary.dateString
-            navigateToSaveFood(food)
-        }
-    }
-
-    private func navigateToSaveFood(_ foodItem: FoodItem) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
-                viewModel.resetAndOpenAddFood(with: foodItem)
-            }
+        Task {
+            await viewModel.calculateManualNutrition(name: name, ingredients: ingredients)
         }
     }
 }

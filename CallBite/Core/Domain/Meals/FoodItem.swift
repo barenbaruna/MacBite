@@ -19,7 +19,11 @@ public struct FoodItem: Identifiable, Equatable, Hashable, Sendable {
     public var fat: Int
     public var fiber: Int
     public var photoSystemName: String
+    /// Bundled image asset used by dashboard samples when no captured photo is available.
     public var photoAssetName: String?
+    /// Actual captured/picked photo, encoded as JPEG. `nil` for entries without
+    /// a real photo (e.g. manual logging) — the SF Symbol fallback
+    /// (`photoSystemName`) is used for display in that case.
     public var photoData: Data?
 
     public init(
@@ -97,4 +101,3 @@ public extension FoodItem {
         MealTimeSlot.slot(for: date, calendar: calendar).displayName
     }
 }
-
