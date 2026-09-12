@@ -32,18 +32,50 @@ enum ScientificWeightEngine {
         return minWeight...maxWeight
     }
 
+    /// Computes scientifically proportional lower and upper slider bounds based on height and current weight.
+    /// Ensures Zone 1 (Underweight), Zone 2 (WHO Healthy), and Zone 3 (Overweight) always have ample,
+    /// comfortable travel room (at least 15 kg headroom beyond current weight and healthy boundaries).
+    static func sliderRange(currentWeightKg: Double, heightCm: Double) -> ClosedRange<Double> {
+        let healthyRange = healthyWeightRange(heightCm: heightCm)
+        let effectiveCurrent = currentWeightKg > 0 ? currentWeightKg : 60.0
+
+        // Minimum bound: at least 15 kg below lower bound and current weight, with safety floor of 30 kg
+        let calculatedMin = floor(min(effectiveCurrent, healthyRange.lowerBound) - 15.0)
+        let minBound = max(30.0, min(40.0, calculatedMin))
+
+        // Maximum bound: at least 15 kg above upper bound and current weight, minimum ceiling of 95 kg
+        let calculatedMax = ceil(max(effectiveCurrent, healthyRange.upperBound) + 15.0)
+        let maxBound = max(95.0, calculatedMax)
+
+        return minBound...maxBound
+    }
+
     /// Determines the scientifically sound initial target weight for onboarding.
     /// If currentWeight is in the healthy range (BMI 18.5 - 24.9), it defaults to currentWeight (maintain).
-    /// If overweight, it defaults to the healthy upper bound (closest realistic healthy target).
-    /// If underweight, it defaults to the healthy lower bound.
+    /// If overweight/underweight:
+    /// - For moderate deviations (within 15 kg of healthy boundary), targets the closest healthy boundary.
+    /// - For large deviations (>15 kg from healthy boundary), suggests a clinical 10% milestone change,
+    ///   giving the user an achievable, evidence-based initial goal.
     static func recommendedInitialTarget(currentWeightKg: Double, heightCm: Double) -> Double {
         let healthyRange = healthyWeightRange(heightCm: heightCm)
         if healthyRange.contains(currentWeightKg) {
             return (currentWeightKg * 2.0).rounded() / 2.0
         } else if currentWeightKg > healthyRange.upperBound {
-            return (healthyRange.upperBound * 2.0).rounded() / 2.0
+            let distanceToHealthy = currentWeightKg - healthyRange.upperBound
+            if distanceToHealthy <= 15.0 {
+                return (healthyRange.upperBound * 2.0).rounded() / 2.0
+            } else {
+                let milestoneTarget = currentWeightKg * 0.90
+                return (milestoneTarget * 2.0).rounded() / 2.0
+            }
         } else {
-            return (healthyRange.lowerBound * 2.0).rounded() / 2.0
+            let distanceToHealthy = healthyRange.lowerBound - currentWeightKg
+            if distanceToHealthy <= 10.0 {
+                return (healthyRange.lowerBound * 2.0).rounded() / 2.0
+            } else {
+                let milestoneTarget = currentWeightKg * 1.10
+                return (milestoneTarget * 2.0).rounded() / 2.0
+            }
         }
     }
 
