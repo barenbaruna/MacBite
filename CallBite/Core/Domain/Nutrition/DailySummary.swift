@@ -31,18 +31,6 @@ public struct DailySummary: Equatable, Hashable, Sendable {
         return min(1.0, Double(consumedCalories) / Double(targetCalories))
     }
 
-    public var coachInsight: String {
-        if remainingCalories <= 0 {
-            return "Goal reached! You've met your target for today."
-        } else if remainingCalories <= 300 {
-            return "Heads up! You have \(remainingCalories) kcal remaining.\n" +
-                "Consider a lighter option for your next meal."
-        } else {
-            return "Heads up! You have 200 kcal remaining.\n" +
-                "Consider a lighter option for your next meal."
-        }
-    }
-
     public init(
         dateString: String = "Today, 4 Sep 2026",
         targetCalories: Int = 2654,

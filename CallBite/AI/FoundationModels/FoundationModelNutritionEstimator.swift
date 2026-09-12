@@ -5,9 +5,18 @@
 //  Created by Fathimah Az Zahra Sanjani on 11/09/26.
 //
 //  Estimates total nutrition for a manually-typed meal (name + ingredients +
-//  gram portions + cooking method) using Apple's on-device Foundation Model.
-//  No Vision/CoreML involved here — the input is already structured text
-//  from the user, not an ambiguous photo.
+//  gram portions) using Apple's on-device Foundation Model. No Vision/CoreML
+//  involved here — the input is already structured text from the user, not
+//  an ambiguous photo.
+//
+//  NO PER-INGREDIENT COOKING METHOD: `ManualIngredientInput` still has that
+//  UI field, but it's deliberately not mapped into `ManualMealDescription`
+//  or this prompt anymore. Testing found the model didn't weigh a per-
+//  ingredient cooking method reliably against the meal name (e.g. a meal
+//  named "fried rice" still pulled estimates toward "fried" even when an
+//  ingredient explicitly said "steamed"). The meal name alone is now the
+//  single source of preparation-style context — simpler, and no worse in
+//  practice than a second, easily-contradicted signal.
 //
 //  LANGUAGE ASSUMPTION: manual input is expected in English. A pre-implementation
 //  spike confirmed the on-device model throws `.unsupportedLanguageOrLocale`
@@ -32,8 +41,7 @@ public final class FoundationModelNutritionEstimator: NutritionEstimating, @unch
         @Guide(description: """
         Total calories in kcal for the entire meal, computed as the SUM of each \
         ingredient's own calorie estimate (based on that ingredient's specific \
-        gram portion and cooking method) — not a single per-100g rate applied \
-        to the whole meal.
+        gram portion) — not a single per-100g rate applied to the whole meal.
         """)
         var calories: Int
 
@@ -64,25 +72,20 @@ public final class FoundationModelNutritionEstimator: NutritionEstimating, @unch
 
     private static let instructions = """
     You estimate total nutrition facts for a meal from its name and a list of \
-    ingredients with gram portions and cooking methods.
+    ingredients with gram portions.
 
-    BOTH the meal name and the ingredient list matter, and you should use them \
-    together:
-    - The meal name gives you the overall dish identity/context — it can imply \
-      typical accompaniments or preparation details (e.g. oil, seasoning, sauce) \
-      that aren't spelled out as separate ingredient entries.
-    - Each ingredient's OWN gram portion and cooking method tells you specifically \
-      how THAT ingredient was prepared — use it to adjust that ingredient's \
-      estimate (e.g. fried adds more fat than steamed/boiled/grilled for the same \
-      ingredient). Do not apply one ingredient's cooking method to a different one.
+    The meal name gives you the overall dish identity and preparation style — \
+    use it to infer things not spelled out as separate ingredient entries (e.g. \
+    a meal named "fried rice" implies oil/frying was involved, "grilled chicken \
+    salad" implies grilling and likely a light dressing). Apply that inferred \
+    preparation style to the ingredients as a whole when estimating each one.
 
     To produce an accurate total, work ingredient by ingredient: for EACH \
     ingredient, first estimate its own calories/protein/carbs/fat/fiber using \
-    typical macros per 100g for that ingredient, adjusted for its specific \
-    gram portion and cooking method, while keeping the overall meal name in mind \
-    for context. THEN sum all ingredients together into ONE combined total for \
-    the whole meal — the final numbers you output must be that sum, not a single \
-    rate applied to the meal as a whole.
+    typical macros per 100g for that ingredient, adjusted for its specific gram \
+    portion and the meal's inferred preparation style. THEN sum all ingredients \
+    together into ONE combined total for the whole meal — the final numbers you \
+    output must be that sum, not a single rate applied to the meal as a whole.
 
     Rules:
     - Assume standard/typical nutrition values for named ingredients. If an
@@ -153,9 +156,6 @@ public final class FoundationModelNutritionEstimator: NutritionEstimating, @unch
 
         if let grams = ingredient.portionGrams {
             parts.append("\(Int(grams))g")
-        }
-        if let method = ingredient.cookingMethod, !method.isEmpty {
-            parts.append("cooking method: \(method)")
         }
 
         return "\(index + 1)) \(parts.joined(separator: ", "))."

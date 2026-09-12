@@ -132,4 +132,57 @@ struct DashboardViewModelTests {
         #expect(viewModel.currentFood.calories == 440)
         #expect(viewModel.isShowingAddFood)
     }
+
+    /// `analyzeCapturedPhoto`/`calculateManualNutrition` use their own 0.35s
+    /// `DispatchQueue.main.asyncAfter` delay (see `waitForCardOpenDelay`
+    /// above). `refreshCoachInsight`'s AI call has no such artificial delay —
+    /// this just needs to outlast one real async round-trip through the mock.
+    private func waitForInsightRefresh() async {
+        try? await Task.sleep(nanoseconds: 200_000_000)
+    }
+
+    @Test("Coach insight starts as the rule-based fallback immediately, synchronously")
+    @MainActor
+    func coachInsightStartsAsFallbackImmediately() {
+        let summary = DailySummary(targetCalories: 2000, consumedCalories: 1800)
+        let viewModel = DashboardViewModel(
+            dailySummary: summary,
+            insightGenerator: MockInsightGenerator()
+        )
+
+        // No `await` here on purpose — this checks the value set synchronously
+        // inside `init`, before the AI Task has any chance to run.
+        #expect(viewModel.coachInsight == "Heads up! You have 200 kcal remaining.\n" +
+            "Consider a lighter option for your next meal.")
+    }
+
+    @Test("Coach insight is replaced by the Foundation Model's text once generation succeeds")
+    @MainActor
+    func coachInsightUpdatesFromGenerator() async {
+        let generator = MockInsightGenerator(resultToReturn: "Great protein intake today — keep it up!")
+        let viewModel = DashboardViewModel(
+            dailySummary: .sampleDashboard,
+            insightGenerator: generator
+        )
+
+        await waitForInsightRefresh()
+
+        #expect(viewModel.coachInsight == "Great protein intake today — keep it up!")
+    }
+
+    @Test("A failed insight generation leaves the rule-based fallback in place")
+    @MainActor
+    func coachInsightKeepsFallbackOnGeneratorFailure() async {
+        let generator = MockInsightGenerator(errorToThrow: .modelNotFound("Foundation Models"))
+        let summary = DailySummary(targetCalories: 2000, consumedCalories: 0)
+        let viewModel = DashboardViewModel(
+            dailySummary: summary,
+            insightGenerator: generator
+        )
+
+        await waitForInsightRefresh()
+
+        #expect(viewModel.coachInsight == "You have 2000 kcal remaining today.\n" +
+            "You're on track — keep it balanced for your next meal.")
+    }
 }

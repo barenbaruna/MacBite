@@ -81,7 +81,7 @@ extension DashboardViewModel {
                 "with name=\"\(name)\" rawIngredientCount=\(ingredients.count)"
         )
         let ingredientDescription = meal.ingredients.map {
-            "\($0.name)/\($0.portionGrams ?? -1)g/\($0.cookingMethod ?? "-")"
+            "\($0.name)/\($0.portionGrams ?? -1)g"
         }
         print(
             "[ManualNutrition] mapped meal: foodName=\"\(meal.foodName)\" " +
@@ -152,11 +152,11 @@ extension DashboardViewModel {
             let trimmedIngredient = input.ingredient.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedIngredient.isEmpty else { return nil }
 
-            let trimmedMethod = input.cookingMethod.trimmingCharacters(in: .whitespacesAndNewlines)
+            // NOTE: input.cookingMethod (still a valid UI field) is intentionally
+            // not mapped — see the language note atop FoundationModelNutritionEstimator.
             return ManualMealDescription.Ingredient(
                 name: trimmedIngredient,
-                portionGrams: Double(input.portionGrams.trimmingCharacters(in: .whitespacesAndNewlines)),
-                cookingMethod: trimmedMethod.isEmpty ? nil : trimmedMethod
+                portionGrams: Double(input.portionGrams.trimmingCharacters(in: .whitespacesAndNewlines))
             )
         }
 

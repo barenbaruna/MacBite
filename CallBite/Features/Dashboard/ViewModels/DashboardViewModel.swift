@@ -77,6 +77,11 @@ public final class DashboardViewModel: ObservableObject {
     // AI Analysis Feedback
     @Published public var nonFoodWarningMessage: String?
 
+    // AI Coach Insight — always has a value (rule-based fallback set
+    // synchronously in init, potentially replaced by the AI-generated
+    // version shortly after; see DashboardViewModel+Insight.swift).
+    @Published public var coachInsight: String = ""
+
     // MARK: - Dependencies
 
     private let dateCalendar: Calendar
@@ -85,17 +90,20 @@ public final class DashboardViewModel: ObservableObject {
     private var dailyFoodsByDate: [Date: [FoodItem]]
     let foodAnalyzer: FoodAnalyzing
     let nutritionEstimator: NutritionEstimating
+    let insightGenerator: InsightGenerating
 
     // MARK: - Initialization
 
     public convenience init(
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
-        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        insightGenerator: InsightGenerating = FoundationModelInsightGenerator()
     ) {
         self.init(
             dailySummary: .sampleDashboard,
             foodAnalyzer: foodAnalyzer,
-            nutritionEstimator: nutritionEstimator
+            nutritionEstimator: nutritionEstimator,
+            insightGenerator: insightGenerator
         )
     }
 
@@ -108,7 +116,8 @@ public final class DashboardViewModel: ObservableObject {
         dailyFoods: [Date: [FoodItem]] = [:],
         calendar: Calendar = .current,
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
-        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator()
+        nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
+        insightGenerator: InsightGenerating = FoundationModelInsightGenerator()
     ) {
         let normalizedToday = calendar.startOfDay(for: today)
         let requestedDate = calendar.startOfDay(for: selectedDate)
@@ -136,12 +145,14 @@ public final class DashboardViewModel: ObservableObject {
         self.currentFood = initialFood ?? FoodItem.dimsumMentai
         self.foodAnalyzer = foodAnalyzer
         self.nutritionEstimator = nutritionEstimator
+        self.insightGenerator = insightGenerator
         let currentRatio = Self.rawProgress(for: initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
         #if DEBUG
         print("[DashboardViewModel] init (dailySummary:) -> \(ObjectIdentifier(self))")
         #endif
+        refreshCoachInsight()
     }
 
     // MARK: - Public Animation Methods
@@ -215,6 +226,7 @@ public final class DashboardViewModel: ObservableObject {
         dailySummary.totalFat += currentFood.fat
         dailySummary.totalFiber += currentFood.fiber
         appendCurrentFoodAndStoreDay()
+        refreshCoachInsight()
         let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
 
         withAnimation(MotionConfig.progressSpring) {
@@ -266,6 +278,7 @@ public final class DashboardViewModel: ObservableObject {
         dailySummary.totalFat += currentFood.fat
         dailySummary.totalFiber += currentFood.fiber
         appendCurrentFoodAndStoreDay()
+        refreshCoachInsight()
         let targetRatio = CGFloat(newConsumed) / CGFloat(max(1, dailySummary.targetCalories))
 
         withAnimation(.easeInOut(duration: 0.25)) {
@@ -349,6 +362,7 @@ public extension DashboardViewModel {
         foodsForSelectedDate = dailyFoodsByDate[normalizedDate] ?? []
         syncProgressWithDailySummary()
         hideLoggingOptions()
+        refreshCoachInsight()
         return true
     }
 
