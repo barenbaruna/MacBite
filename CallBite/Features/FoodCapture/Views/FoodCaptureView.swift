@@ -245,17 +245,14 @@ struct FoodCaptureView: View {
         HStack {
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.body.weight(.bold))
                     .foregroundStyle(AppColor.dark950)
                     .accessibilityHidden(true)
             }
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.circle)
+            .controlSize(.extraLarge)
             .tint(AppColor.white)
-            .frame(
-                width: AppSize.cameraRoundControl,
-                height: AppSize.cameraRoundControl
-            )
             .accessibilityLabel("Close Camera")
 
             Spacer()
@@ -279,17 +276,14 @@ struct FoodCaptureView: View {
     private var galleryPickerButton: some View {
         PhotosPicker(selection: $selectedPhoto, matching: .images) {
             Image(systemName: "photo")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(AppColor.dark950)
                 .accessibilityHidden(true)
         }
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.circle)
+        .controlSize(.extraLarge)
         .tint(AppColor.white)
-        .frame(
-            width: AppSize.cameraSecondaryControl,
-            height: AppSize.cameraSecondaryControl
-        )
         .accessibilityLabel("Choose from Gallery")
     }
 
@@ -310,17 +304,14 @@ struct FoodCaptureView: View {
             }
         } label: {
             Image(systemName: viewModel.isFlashEnabled ? "bolt.fill" : "bolt.slash.fill")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(viewModel.isFlashEnabled ? AppColor.circleOne : AppColor.dark950)
                 .accessibilityHidden(true)
         }
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.circle)
+        .controlSize(.extraLarge)
         .tint(AppColor.white)
-        .frame(
-            width: AppSize.cameraSecondaryControl,
-            height: AppSize.cameraSecondaryControl
-        )
         .disabled(!viewModel.isFlashAvailable || viewModel.state != .live)
         .accessibilityLabel(viewModel.isFlashEnabled ? "Turn Flash Off" : "Turn Flash On")
     }

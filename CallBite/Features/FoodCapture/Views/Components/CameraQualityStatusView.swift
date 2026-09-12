@@ -19,12 +19,12 @@ struct CameraQualityStatusView: View {
             )
             statusLabel(
                 title: "Angle",
-                systemImage: "gyroscope",
+                systemImage: "angle",
                 isPassing: checks.hasAcceptableAngle
             )
             statusLabel(
                 title: "Steady",
-                systemImage: "hand.raised.fill",
+                systemImage: "checkmark",
                 isPassing: checks.isSteady
             )
         }
