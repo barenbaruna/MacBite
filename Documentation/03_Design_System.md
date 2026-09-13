@@ -147,24 +147,24 @@ enum AppColor {
     static let accentSuccess = Color.green
     static let accentWarning = Color.orange
 
-    // MARK: - Palet Domain Nutrisi (PRD Section 6)
-    /// Indikator energi dan kalori (Orange)
-    static let calorie = Color.orange
+    // MARK: - Palet Domain Nutrisi (Design System Official Accents)
+    /// Indikator energi dan kalori (Orange #D85F34)
+    static let calorie = orange500
     
-    /// Indikator pembentukan otot dan protein (Blue)
-    static let protein = Color.blue
+    /// Indikator pembentukan otot dan protein (LossWeight Accent #02FBF4)
+    static let protein = lossWeight
     
-    /// Indikator sumber tenaga karbohidrat (Amber / Yellow)
-    static let carbs = Color.yellow
+    /// Indikator sumber tenaga karbohidrat (MainWeight Accent #65FE4E)
+    static let carbs = mainWeight
     
-    /// Indikator lemak sehat (Purple / Rose)
-    static let fat = Color.purple
+    /// Indikator lemak sehat (GainWeight Accent #FF6B35)
+    static let fat = gainWeight
 
     // MARK: - Soft Tint Backgrounds (Untuk Badge & Progress Bar Track)
-    static let calorieSoft = Color.orange.opacity(0.15)
-    static let proteinSoft = Color.blue.opacity(0.15)
-    static let carbsSoft = Color.yellow.opacity(0.15)
-    static let fatSoft = Color.purple.opacity(0.15)
+    static let calorieSoft = calorie.opacity(0.15)
+    static let proteinSoft = protein.opacity(0.15)
+    static let carbsSoft = carbs.opacity(0.15)
+    static let fatSoft = fat.opacity(0.15)
 }
 ```
 
