@@ -73,7 +73,7 @@ Salin seluruh konten berikut ke file `.swiftlint.yml`:
 
 ```yaml
 # ==================================================================
-# .swiftlint.yml -- CallBite
+# .swiftlint.yml -- MacBite
 # ==================================================================
 # Referensi lengkap semua rules:
 # https://realm.github.io/SwiftLint/rule-directory.html
@@ -342,7 +342,7 @@ enum AppSpacing {
 
 **Apa yang dilakukan:** Memastikan `Image` yang memberikan informasi punya accessibility label, atau secara eksplisit disembunyikan dari VoiceOver dengan `.accessibilityHidden(true)`.
 
-**Mengapa diaktifkan:** HIG Apple secara eksplisit menyatakan bahwa semua konten yang bermakna harus accessible. Di proyek CallBite, ikon nutrisi dan gambar makanan perlu label agar pengguna VoiceOver bisa memahami konteks layar. Aturan ini juga merupakan salah satu item di [05_HIG_Checklist.md](./05_HIG_Checklist.md).
+**Mengapa diaktifkan:** HIG Apple secara eksplisit menyatakan bahwa semua konten yang bermakna harus accessible. Di proyek MacBite, ikon nutrisi dan gambar makanan perlu label agar pengguna VoiceOver bisa memahami konteks layar. Aturan ini juga merupakan salah satu item di [05_HIG_Checklist.md](./05_HIG_Checklist.md).
 
 **Referensi:** Apple HIG, "Accessibility > Images" -- https://developer.apple.com/design/human-interface-guidelines/accessibility
 

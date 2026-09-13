@@ -1,4 +1,4 @@
-# Dokumentasi Teknis -- CallBite
+# Dokumentasi Teknis -- MacBite
 
 Dokumentasi ini adalah panduan utama bagi tim pengembang (Baren Baruna Harahap, Joshua Valentine Manik, Fathimah Az Zahra Sanjani) untuk memahami bagaimana proyek ini dibangun, mengapa keputusan teknis tertentu diambil, dan bagaimana kita berkolaborasi secara efektif.
 

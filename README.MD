@@ -1,6 +1,6 @@
-# CallBite
+# MacBite
 
-CallBite adalah aplikasi iOS native yang dirancang untuk membantu individu dengan target fisik spesifik (seperti menaikkan massa otot/bulking, menurunkan lemak/cutting, atau menjaga berat badan/maintaining) dalam memantau asupan kalori dan makronutrien harian secara efisien.
+MacBite adalah aplikasi iOS native yang dirancang untuk membantu individu dengan target fisik spesifik (seperti menaikkan massa otot/bulking, menurunkan lemak/cutting, atau menjaga berat badan/maintaining) dalam memantau asupan kalori dan makronutrien harian secara efisien.
 
 Aplikasi ini mentransformasikan alur interaksi bot berbasis teks ke dalam pengalaman aplikasi native yang intuitif, cepat, dan terstruktur dengan memanfaatkan analisis foto berbasis Artificial Intelligence (AI), konfirmasi porsi interaktif, visualisasi progres target harian, serta rekomendasi makanan berikutnya (actionable insights).
 

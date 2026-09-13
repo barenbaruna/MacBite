@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-CallBite menggunakan arsitektur **MVVM (Model-View-ViewModel) + Feature-Based** dengan SwiftUI sebagai framework UI.
+MacBite menggunakan arsitektur **MVVM (Model-View-ViewModel) + Feature-Based** dengan SwiftUI sebagai framework UI.
 
 | Item | Value |
 |------|-------|
@@ -24,7 +24,7 @@ Sebelum menulis kode, kita perlu memahami mengapa arsitektur ini dipilih dan apa
 **MVC (Model-View-Controller)**
 - Arsitektur paling sederhana dari Apple.
 - Masalah: Dalam SwiftUI, tidak ada "Controller" secara eksplisit. Logika bisnis cenderung menumpuk di dalam View, sehingga sulit diuji dan sulit dibaca saat fitur bertambah kompleks.
-- Kesimpulan: Tidak cocok untuk proyek dengan 8+ fitur yang saling terhubung seperti CallBite.
+- Kesimpulan: Tidak cocok untuk proyek dengan 8+ fitur yang saling terhubung seperti MacBite.
 
 **VIPER (View-Interactor-Presenter-Entity-Router)**
 - Arsitektur yang sangat terstruktur, cocok untuk tim besar (10+ developer) dengan proyek berskala enterprise.
@@ -248,7 +248,7 @@ Contoh domain model yang benar:
 ```swift
 //
 //  FoodItem.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Joshua Valentine Manik on 01/09/26.
 //

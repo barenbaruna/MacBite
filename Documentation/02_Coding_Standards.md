@@ -18,7 +18,7 @@ Setiap file Swift yang dibuat harus memiliki header komentar standar di bagian a
 ```swift
 //
 //  NamaFile.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Nama Developer on DD/MM/YY.
 //
@@ -29,7 +29,7 @@ Contoh untuk masing-masing anggota tim:
 ```swift
 //
 //  FoodScanViewModel.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Baren Baruna Harahap on 31/08/26.
 //
@@ -38,7 +38,7 @@ Contoh untuk masing-masing anggota tim:
 ```swift
 //
 //  NutritionCalculator.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Joshua Valentine Manik on 01/09/26.
 //
@@ -47,14 +47,14 @@ Contoh untuk masing-masing anggota tim:
 ```swift
 //
 //  FoodClassifierService.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Fathimah Az Zahra Sanjani on 02/09/26.
 //
 ```
 
 Aturan:
-- Nama project harus **CallBite** (bukan nama lain).
+- Nama project/aplikasi harus **MacBite** (bukan nama lain).
 - Nama developer menggunakan nama lengkap atau nama yang konsisten di seluruh proyek.
 - Tanggal mengikuti format yang dihasilkan Xcode secara otomatis (DD/MM/YY).
 - Jangan menghapus header ini. Jangan menambahkan informasi lain (seperti copyright atau license) kecuali disepakati tim.

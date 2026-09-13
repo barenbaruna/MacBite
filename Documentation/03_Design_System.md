@@ -2,7 +2,7 @@
 
 ## Overview
 
-CallBite menggunakan design system berbasis token yang konsisten di seluruh aplikasi. Semua nilai visual (warna, spacing, typography, corner radius) didefinisikan sebagai konstanta di `Core/DesignSystem/Tokens/`.
+MacBite menggunakan design system berbasis token yang konsisten di seluruh aplikasi. Semua nilai visual (warna, spacing, typography, corner radius) didefinisikan sebagai konstanta di `Core/DesignSystem/Tokens/`.
 
 Tujuan dari design system ini: jika designer mengubah warna aksen atau ukuran spacing, kita hanya perlu mengubah satu file token, dan seluruh aplikasi otomatis terupdate.
 
@@ -89,7 +89,7 @@ Gunakan `RoundedRectangle(cornerRadius: radius, style: .continuous)`. Gaya `.con
 ```swift
 import SwiftUI
 
-/// Tipografi CallBite yang sepenuhnya patuh pada Dynamic Type dan Apple HIG.
+/// Tipografi MacBite yang sepenuhnya patuh pada Dynamic Type dan Apple HIG.
 enum AppTypography {
     // MARK: - Hierarki Standar (Dynamic Type Adaptive)
     static let largeTitle = Font.largeTitle.weight(.bold)
@@ -129,7 +129,7 @@ extension View {
 ```swift
 import SwiftUI
 
-/// Palet warna semantik adaptif (Light/Dark Mode) dan palet domain nutrisi CallBite.
+/// Palet warna semantik adaptif (Light/Dark Mode) dan palet domain nutrisi MacBite.
 enum AppColor {
     // MARK: - Surfaces & Backgrounds (Semantic)
     static let backgroundPrimary = Color(uiColor: .systemBackground)
@@ -179,7 +179,7 @@ enum AppColor {
 ```swift
 import SwiftUI
 
-/// Kurva animasi standar CallBite yang selaras dengan fluid interaction physics Apple HIG.
+/// Kurva animasi standar MacBite yang selaras dengan fluid interaction physics Apple HIG.
 enum AppAnimation {
     /// Spring responsif untuk interaksi sentuh cepat (tap button, toggle chip)
     static let quick = Animation.spring(response: 0.28, dampingFraction: 0.72)

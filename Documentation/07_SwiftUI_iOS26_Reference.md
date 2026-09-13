@@ -18,7 +18,7 @@ Di iOS 26, seluruh navigation dan toolbar container otomatis mengadopsi material
 ```swift
 NavigationStack {
     ContentView()
-        .navigationTitle("CallBite")
+        .navigationTitle("MacBite")
         .toolbarTitleDisplayMode(.inline)    // Opsi: .inline, .inlineLarge, atau default large
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {

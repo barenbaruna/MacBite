@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-**Nama Produk:** CallBite (Food Analysis Camera Companion)
+**Nama Produk:** MacBite (Food Analysis Camera Companion)
 
 **Deskripsi Singkat:** Transformasi bot nutrisi WhatsApp menjadi aplikasi iOS native.
 
@@ -10,7 +10,7 @@
 
 ## 1. Product Overview
 
-CallBite dibangun berdasarkan bot nutrisi AI yang sudah ada di WhatsApp. Bot tersebut dapat menganalisis makanan melalui perintah percakapan dan input foto, tetapi memiliki keterbatasan:
+MacBite dibangun berdasarkan bot nutrisi AI yang sudah ada di WhatsApp. Bot tersebut dapat menganalisis makanan melalui perintah percakapan dan input foto, tetapi memiliki keterbatasan:
 
 | Keterbatasan Bot | Dampak bagi Pengguna |
 |---|---|

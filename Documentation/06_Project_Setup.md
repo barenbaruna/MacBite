@@ -58,10 +58,10 @@ Fitur-fitur di PRD membutuhkan permission berikut:
 
 ```xml
 <key>NSCameraUsageDescription</key>
-<string>CallBite membutuhkan akses kamera untuk memfoto makanan dan menganalisis nutrisinya.</string>
+<string>MacBite membutuhkan akses kamera untuk memfoto makanan dan menganalisis nutrisinya.</string>
 
 <key>NSPhotoLibraryUsageDescription</key>
-<string>CallBite membutuhkan akses galeri foto untuk memilih foto makanan yang ingin dianalisis.</string>
+<string>MacBite membutuhkan akses galeri foto untuk memilih foto makanan yang ingin dianalisis.</string>
 ```
 
 Permission tambahan yang mungkin dibutuhkan di fase selanjutnya:
@@ -69,7 +69,7 @@ Permission tambahan yang mungkin dibutuhkan di fase selanjutnya:
 ```xml
 <!-- HealthKit (fase eksplorasi) -->
 <key>NSHealthShareUsageDescription</key>
-<string>CallBite ingin mengakses data kesehatan untuk menyinkronkan data nutrisi.</string>
+<string>MacBite ingin mengakses data kesehatan untuk menyinkronkan data nutrisi.</string>
 ```
 
 Tambahkan key baru di `Info.plist` jika fitur baru membutuhkan permission. Selalu diskusikan dengan tim sebelum menambahkan permission baru.
