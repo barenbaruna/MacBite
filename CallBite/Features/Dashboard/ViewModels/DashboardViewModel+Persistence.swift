@@ -62,6 +62,7 @@ extension DashboardViewModel {
         storeCurrentDay()
         try? mealStore.saveMeal(currentFood, for: selectedDate)
         refreshCoachInsight()
+        synchronizeWidgetIfNeeded()
         return CGFloat(dailySummary.consumedCalories) / CGFloat(max(1, dailySummary.targetCalories))
     }
 
@@ -85,6 +86,7 @@ extension DashboardViewModel {
         syncProgressWithDailySummary()
         try? mealStore.deleteMeal(id: food.id)
         refreshCoachInsight()
+        synchronizeWidgetIfNeeded()
     }
 
     func syncProgressWithDailySummary() {
@@ -110,6 +112,7 @@ extension DashboardViewModel {
 
         dailySummariesByDate[selectedDate] = dailySummary
         syncProgressWithDailySummary()
+        synchronizeWidgetIfNeeded()
     }
 
     // MARK: - Date Navigation
@@ -156,10 +159,19 @@ extension DashboardViewModel {
         syncProgressWithDailySummary()
         hideLoggingOptions()
         refreshCoachInsight()
+        synchronizeWidgetIfNeeded()
         return true
     }
 
     public func returnToToday() {
         selectDate(normalizedToday)
+    }
+
+    private func synchronizeWidgetIfNeeded() {
+        widgetSnapshotSynchronizer.synchronize(
+            dailySummary,
+            for: selectedDate,
+            today: normalizedToday
+        )
     }
 }

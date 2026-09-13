@@ -114,6 +114,20 @@ extension DashboardView {
         presentedSheetRoute = .manualLogging
     }
 
+    func presentRequestedLoggingRoute() {
+        guard let route = requestedLoggingRoute else { return }
+        requestedLoggingRoute = nil
+
+        switch route {
+        case .foodCapture:
+            showCamera()
+        case .manualLogging:
+            showManualInput()
+        case .dashboard:
+            break
+        }
+    }
+
     func showCalendar() {
         AppHaptics.selectionChanged()
         viewModel.hideLoggingOptions()
