@@ -29,11 +29,18 @@ struct WidgetMacroValueView: View {
 
             Spacer(minLength: WidgetSpacing.extraSmall)
 
-            Text("\(consumed)/\(target) g")
-                .font(.caption.bold())
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.65)
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text(verbatim: "\(consumed)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+
+                Text(verbatim: "/\(target)g")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)

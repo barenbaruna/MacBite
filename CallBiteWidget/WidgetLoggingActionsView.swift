@@ -14,13 +14,13 @@ struct WidgetLoggingActionsView: View {
                 title: "Kamera",
                 systemImage: "camera.fill",
                 action: .camera,
-                tint: WidgetColor.calorie
+                tint: WidgetColor.cameraActionTint
             )
             actionLink(
                 title: "Manual",
                 systemImage: "pencil",
                 action: .manual,
-                tint: .primary
+                tint: WidgetColor.manualActionTint
             )
         }
     }
@@ -33,13 +33,17 @@ struct WidgetLoggingActionsView: View {
     ) -> some View {
         Link(destination: action.url) {
             Label(title, systemImage: systemImage)
-                .font(.caption.bold())
+                .font(.caption.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity, minHeight: WidgetSpacing.minimumTouchTarget)
                 .foregroundStyle(tint)
-                .background(WidgetColor.actionFill)
-                .clipShape(.rect(cornerRadius: WidgetCornerRadius.action))
+                .background(WidgetColor.actionBackground)
+                .clipShape(RoundedRectangle(cornerRadius: WidgetCornerRadius.action, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WidgetCornerRadius.action, style: .continuous)
+                        .strokeBorder(WidgetColor.borderSubtle, lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
         .contentShape(.rect)
