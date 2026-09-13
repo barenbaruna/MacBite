@@ -8,24 +8,24 @@
 import SwiftUI
 
 /// Semantic and harmonious color tokens for the MacBite Widget,
-/// aligned with MacBite's Core Design System.
+/// strictly following MacBite's Core Design System.
 enum WidgetColor {
     // MARK: - Surfaces & Backgrounds
     static let background = Color(uiColor: .secondarySystemGroupedBackground)
     static let borderSubtle = Color(uiColor: .separator).opacity(0.35)
     static let actionBackground = Color(uiColor: .tertiarySystemFill)
 
-    // MARK: - Energy / Calories (MacBite Signature Brand Palette)
-    static let calorie = Color(hex: 0xFA6934)
-    static let calorieOverlimit = Color(hex: 0xF83623)
+    // MARK: - Energy / Calories (Official Designer Palette: GainWeight #FF6B35)
+    static let calorie = Color(hex: 0xFF6B35)
+    static let calorieOverlimit = Color(hex: 0xEF3826)
 
-    // MARK: - Macronutrients (Harmonious Fitness Tracking Trio)
-    static let protein = Color(hex: 0x3898EC)
-    static let carbs = Color(hex: 0xF7D843)
-    static let fat = Color(hex: 0xBF5AF2)
+    // MARK: - Macronutrients (Design System PRD Section 6: Blue, Yellow, Purple)
+    static let protein = Color.blue
+    static let carbs = Color.yellow
+    static let fat = Color.purple
 
     // MARK: - Actions
-    static let cameraActionTint = Color(hex: 0xFA6934)
+    static let cameraActionTint = Color(hex: 0xFF6B35)
     static let manualActionTint = Color.primary
 }
 

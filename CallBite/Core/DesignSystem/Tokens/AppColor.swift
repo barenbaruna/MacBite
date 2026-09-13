@@ -54,10 +54,10 @@ enum AppColor {
     static let buttonDisabled = Color(hex: 0x5A5A5E)
 
     // Nutrition Domain (PRD & Design System)
-    static let calorie = orange500
-    static let protein = Color(hex: 0x3898EC)
-    static let carbs = Color(hex: 0xF7D843)
-    static let fat = Color(hex: 0xBF5AF2)
+    static let calorie = gainWeight
+    static let protein = Color.blue
+    static let carbs = Color.yellow
+    static let fat = Color.purple
 
     // Ring Classic Angular Gradient Series (Figma #F7E43F -> Orange -> Red)
     static let ringYellow = Color(hex: 0xFFE43D)
