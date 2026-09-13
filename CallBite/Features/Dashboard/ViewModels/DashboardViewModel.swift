@@ -92,6 +92,7 @@ public final class DashboardViewModel: ObservableObject {
     let nutritionEstimator: NutritionEstimating
     let insightGenerator: InsightGenerating
     let mealStore: MealStoreProtocol
+    let widgetSnapshotSynchronizer: WidgetSnapshotSynchronizer
 
     // MARK: - Initialization
 
@@ -99,7 +100,8 @@ public final class DashboardViewModel: ObservableObject {
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
         nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
         insightGenerator: InsightGenerating = FoundationModelInsightGenerator(),
-        mealStore: MealStoreProtocol? = nil
+        mealStore: MealStoreProtocol? = nil,
+        widgetSnapshotSynchronizer: WidgetSnapshotSynchronizer? = nil
     ) {
         let goal = UserProfileStore.shared.nutritionGoal
         let summary = DailySummary(
@@ -124,7 +126,8 @@ public final class DashboardViewModel: ObservableObject {
             foodAnalyzer: foodAnalyzer,
             nutritionEstimator: nutritionEstimator,
             insightGenerator: insightGenerator,
-            mealStore: mealStore
+            mealStore: mealStore,
+            widgetSnapshotSynchronizer: widgetSnapshotSynchronizer
         )
     }
 
@@ -139,9 +142,11 @@ public final class DashboardViewModel: ObservableObject {
         foodAnalyzer: FoodAnalyzing = CoreMLFoodAnalyzer(),
         nutritionEstimator: NutritionEstimating = FoundationModelNutritionEstimator(),
         insightGenerator: InsightGenerating = FoundationModelInsightGenerator(),
-        mealStore: MealStoreProtocol? = nil
+        mealStore: MealStoreProtocol? = nil,
+        widgetSnapshotSynchronizer: WidgetSnapshotSynchronizer? = nil
     ) {
         let resolvedStore = mealStore ?? SwiftDataMealStore.defaultStore()
+        let resolvedWidgetSnapshotSynchronizer = widgetSnapshotSynchronizer ?? .live()
         let normalizedToday = calendar.startOfDay(for: today)
         let requestedDate = calendar.startOfDay(for: selectedDate)
         let normalizedSelectedDate = min(requestedDate, normalizedToday)
@@ -169,11 +174,17 @@ public final class DashboardViewModel: ObservableObject {
         self.nutritionEstimator = nutritionEstimator
         self.insightGenerator = insightGenerator
         self.mealStore = resolvedStore
+        self.widgetSnapshotSynchronizer = resolvedWidgetSnapshotSynchronizer
 
         let currentRatio = Self.rawProgress(for: initialData.initialSummary)
         self.ringProgress = currentRatio
         self.orbProgress = Double(currentRatio)
         refreshCoachInsight()
+        resolvedWidgetSnapshotSynchronizer.synchronize(
+            initialData.initialSummary,
+            for: normalizedSelectedDate,
+            today: normalizedToday
+        )
     }
 
     private static func prepareInitialData(context: DashboardInitContext) -> InitialDashboardData {

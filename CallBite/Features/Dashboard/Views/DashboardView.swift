@@ -20,9 +20,16 @@ public struct DashboardView: View {
     @State var presentedSheetRoute: AppRoute?
     @State var isShowingCalendar = false
     @State var selectedHistoryFood: FoodItem?
+    @Binding var requestedLoggingRoute: AppRoute?
 
     public init(viewModel: DashboardViewModel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self._requestedLoggingRoute = .constant(nil)
+    }
+
+    init(viewModel: DashboardViewModel, requestedLoggingRoute: Binding<AppRoute?>) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self._requestedLoggingRoute = requestedLoggingRoute
     }
 
     public var body: some View {
@@ -81,6 +88,10 @@ public struct DashboardView: View {
             }
         } message: {
             Text(viewModel.nonFoodWarningMessage ?? "Please try again with a clear photo of your food.")
+        }
+        .onAppear(perform: presentRequestedLoggingRoute)
+        .onChange(of: requestedLoggingRoute) { _, _ in
+            presentRequestedLoggingRoute()
         }
         .preferredColorScheme(.dark)
     }
