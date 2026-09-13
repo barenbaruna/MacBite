@@ -88,23 +88,21 @@ Struktur berikut dirancang berdasarkan fitur-fitur yang tercantum dalam PRD (Foo
 ```
 CallBite/
 ├── App/                              # App lifecycle dan navigasi
-│   ├── CallBiteApp.swift
-│   ├── AppContainer.swift            # Dependency container utama
-│   └── AppRoute.swift                # Enum semua route navigasi
+│   ├── AppRoute.swift                # Enum semua route navigasi
+│   ├── CallBiteWidgetAction+AppRoute.swift
+│   └── LoggingDestinationView.swift  # Destination view handler
 │
 ├── Core/                             # Kode yang dipakai bersama oleh semua fitur
 │   ├── Domain/                       # Domain models (dipakai lintas fitur)
 │   │   ├── Meals/
-│   │   │   ├── MealDraft.swift       # Draft sebelum disimpan (saat user masih edit)
-│   │   │   ├── MealEntry.swift       # Meal yang sudah dikonfirmasi dan disimpan
-│   │   │   └── FoodItem.swift        # Satu item makanan (nama, porsi, preparation)
+│   │   │   ├── FoodItem.swift        # Satu item makanan (nama, porsi, nutrisi)
+│   │   │   └── MealTimeSlot.swift    # Slot waktu makan (sarapan, siang, dll)
 │   │   ├── Nutrition/
-│   │   │   ├── NutritionFacts.swift   # Data nutrisi: kalori, protein, carbs, fat
-│   │   │   ├── DailySummary.swift     # Ringkasan harian: intake vs target
-│   │   │   └── NutritionSource.swift  # Enum sumber data (USDA, FatSecret, manual)
+│   │   │   ├── NutritionFacts.swift  # Data nutrisi: kalori, protein, carbs, fat
+│   │   │   └── DailySummary.swift    # Ringkasan harian: intake vs target
 │   │   ├── Goals/
-│   │   │   ├── NutritionGoal.swift    # Target harian user (kalori, protein, dll)
-│   │   │   └── GoalCalculator.swift   # Logika hitung sisa target
+│   │   │   ├── NutritionGoal.swift   # Target harian user (kalori, protein, dll)
+│   │   │   └── GoalCalculator.swift  # Logika hitung sisa target
 │   │   └── Analysis/
 │   │       ├── FoodCandidate.swift    # Hasil deteksi AI (nama + confidence score)
 │   │       └── FoodAnalyzing.swift    # Protocol untuk analyzer (Gemini/CoreML/Mock)
@@ -126,72 +124,85 @@ CallBite/
 │   └── Extensions/                   # Extension Swift/SwiftUI yang dipakai global
 │
 ├── Features/                         # Semua fitur, masing-masing folder mandiri
-│   ├── Dashboard/                    # Goal Based Progress + ringkasan harian
+│   ├── Splash/                       # Layar animasi awal
+│   │   └── View/
+│   │       └── SplashScreenView.swift
+│   ├── Onboarding/                   # Setup awal: HealthKit, Biometrik, Target
+│   │   ├── OnboardingFactory.swift
+│   │   ├── Models/
+│   │   ├── ViewModels/
+│   │   └── Views/
+│   ├── Dashboard/                    # Goal Based Progress, ringkasan harian, dan meal history
 │   │   ├── DashboardFactory.swift
 │   │   ├── ViewModels/
-│   │   │   └── DashboardViewModel.swift
+│   │   │   ├── DashboardViewModel.swift
+│   │   │   ├── DashboardViewModel+Analysis.swift
+│   │   │   ├── DashboardViewModel+Animation.swift
+│   │   │   ├── DashboardViewModel+Insight.swift
+│   │   │   └── DashboardViewModel+Persistence.swift
 │   │   └── Views/
 │   │       ├── DashboardView.swift
-│   │       └── Components/           # Sub-views khusus Dashboard
-│   │           ├── CalorieProgressView.swift
-│   │           └── MacroProgressView.swift
-│   │
-│   ├── FoodCapture/                  # Camera capture + AI food detection
-│   │   ├── FoodCaptureFactory.swift
-│   │   ├── Models/                   # Model khusus fitur ini (CameraState, dsb)
-│   │   ├── ViewModels/
-│   │   │   └── FoodCaptureViewModel.swift
-│   │   └── Views/
-│   │       ├── FoodCaptureView.swift
+│   │       ├── DashboardView+Subviews.swift
 │   │       └── Components/
-│   │           ├── CameraPreview.swift
-│   │           └── CaptureButton.swift
-│   │
-│   ├── MealReview/                   # Konfirmasi porsi + ingredient
-│   │   ├── MealReviewFactory.swift
+│   ├── Calendar/                     # Kalender mingguan & navigasi riwayat
+│   │   ├── CalorieCalendarFactory.swift
+│   │   ├── Models/
 │   │   ├── ViewModels/
 │   │   └── Views/
-│   │
-│   ├── ManualLogging/                # Manual food search dan input
+│   ├── FoodCapture/                  # Camera capture + orientasi + AI food detection
+│   │   ├── FoodCaptureFactory.swift
+│   │   ├── Models/
+│   │   ├── ViewModels/
+│   │   ├── Services/
+│   │   └── Views/
+│   ├── ManualLogging/                # Input manual makanan dan kalkulasi nutrisi
 │   │   ├── ManualLoggingFactory.swift
-│   │   ├── Models/                   # Model khusus (SearchResult, dsb)
+│   │   ├── Models/
 │   │   ├── ViewModels/
 │   │   └── Views/
-│   │
-│   ├── MealHistory/                  # Riwayat makanan harian
-│   │   ├── MealHistoryFactory.swift
-│   │   ├── ViewModels/
-│   │   └── Views/
-│   │
-│   ├── Goals/                        # Pengaturan target nutrisi
+│   ├── Goals/                        # Pengaturan target nutrisi & scientific slider
 │   │   ├── GoalsFactory.swift
 │   │   ├── ViewModels/
 │   │   └── Views/
-│   │
-│   └── Settings/                     # Pengaturan aplikasi dan profil
-│       ├── SettingsFactory.swift
+│   └── Profile/                      # Profil biometrik dan target personal
+│       ├── ProfileFactory.swift
 │       ├── ViewModels/
 │       └── Views/
 │
-├── AI/                               # Semua implementasi AI/ML
-│   ├── Gemini/
-│   │   ├── GeminiFoodAnalyzer.swift  # Implementasi FoodAnalyzing via Gemini
-│   │   ├── GeminiAnalysisResponse.swift
-│   │   └── GeminiResponseMapper.swift
-│   ├── CoreML/
-│   │   ├── CoreMLFoodAnalyzer.swift  # Implementasi FoodAnalyzing via Core ML
-│   │   └── FoodClassifier.mlmodel    # Model file (dikelola Fathimah Az Zahra Sanjani)
-│   └── Mock/
-│       └── MockFoodAnalyzer.swift    # Untuk testing tanpa model asli
+├── AI/                               # Implementasi on-device AI/ML
+│   ├── CoreML/                       # Klasifikasi makanan & regresi massa
+│   │   ├── CoreMLFoodAnalyzer.swift
+│   │   ├── FoodGateService.swift
+│   │   ├── NutritionRegressionService.swift
+│   │   └── ImagePreprocessingService.swift
+│   ├── FoundationModels/             # Apple Foundation Models untuk estimasi & coach insight
+│   │   ├── FoundationModelFoodNamer.swift
+│   │   ├── FoundationModelNutritionEstimator.swift
+│   │   ├── FoundationModelInsightGenerator.swift
+│   │   └── VisionEvidenceExtractor.swift
+│   └── Mock/                         # Mock analyzer untuk preview & unit tests
+│       ├── MockFoodAnalyzer.swift
+│       ├── MockNutritionEstimator.swift
+│       └── MockInsightGenerator.swift
 │
-└── Services/                         # Service yang dipakai lintas fitur
-    ├── NutritionService/             # Facade: USDA + FatSecret API
-    │   ├── NutritionServiceProtocol.swift
-    │   ├── NutritionServiceFacade.swift
-    │   ├── USDAClient.swift
-    │   └── FatSecretClient.swift
-    └── Health/
-        └── HealthKitClient.swift     # Integrasi HealthKit (eksplorasi)
+├── Services/                         # Service integrasi sistem
+│   └── Health/
+│       ├── HealthKitClient.swift
+│       ├── HealthServiceProtocol.swift
+│       └── MockHealthKitService.swift
+│
+├── CallBiteShared/                   # Model & store yang dibagi dengan extension
+│   └── Widget/
+│       ├── CallBiteWidgetSnapshot.swift
+│       ├── CallBiteWidgetSnapshotStore.swift
+│       ├── CallBiteWidgetConfiguration.swift
+│       └── CallBiteWidgetAction.swift
+│
+└── CallBiteWidget/                   # Target Home Screen Widget Extension
+    ├── CallBiteWidget.swift
+    ├── CallBiteWidgetProvider.swift
+    ├── CallBiteWidgetEntry.swift
+    └── CallBiteWidgetView.swift
 ```
 
 ---
@@ -291,18 +302,18 @@ Aturan sederhana:
 
 ## Mengapa Persistence Models Terpisah dari Domain Models?
 
-Di `Core/Persistence/Models/` ada `MealRecord.swift` yang terlihat mirip dengan `MealEntry.swift` di `Core/Domain/Meals/`. Mengapa tidak pakai satu model saja?
+Di `Core/Persistence/Models/` ada `FoodItemRecord.swift` yang menyimpan data terpisah dari `FoodItem.swift` di `Core/Domain/Meals/`. Mengapa tidak pakai satu model saja?
 
 Jawaban: **Domain model dan persistence model punya lifecycle yang berbeda.**
 
-- `MealEntry` (domain) adalah representasi data yang dimengerti oleh seluruh aplikasi. Strukturnya ditentukan oleh kebutuhan fitur.
-- `MealRecord` (persistence) adalah representasi data yang dimengerti oleh database (SwiftData). Strukturnya ditentukan oleh kebutuhan penyimpanan.
+- `FoodItem` (domain) adalah representasi data yang dimengerti oleh seluruh fitur aplikasi. Strukturnya ditentukan oleh kebutuhan fitur dan UI.
+- `FoodItemRecord` & `MealRecord` (persistence) adalah representasi entitas database (SwiftData). Strukturnya ditentukan oleh kebutuhan penyimpanan data lokal.
 
-Saat ini mungkin terlihat identik. Tapi saat aplikasi berkembang, keduanya akan berevolusi secara independen:
-- Database mungkin perlu menyimpan field tambahan (timestamp sinkronisasi, versi schema).
-- Domain model mungkin perlu computed property yang tidak ada di database.
+Saat ini mungkin terlihat mirip. Tapi saat aplikasi berkembang, keduanya berevolusi secara independen:
+- Database mungkin perlu menyimpan field tambahan (timestamp sinkronisasi, relasi SwiftData `@Relationship`).
+- Domain model berfokus pada value type (`struct`), formatting, dan computed properties.
 
-Mapping antara keduanya dilakukan di `SwiftDataMealStore.swift`. Ini memastikan bahwa jika kita mengganti database (dari SwiftData ke yang lain), hanya store yang berubah -- bukan seluruh aplikasi.
+Mapping antara keduanya dilakukan di persistence service (`SwiftDataMealStore` / `MealDataService`). Ini memastikan jika skema database berubah, fitur-fitur UI tidak langsung terdampak.
 
 ---
 

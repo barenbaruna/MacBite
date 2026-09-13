@@ -30,8 +30,9 @@ final class ManualLoggingViewModel: ObservableObject {
     }
 
     func updatePortionGrams(_ portionGrams: String, id: UUID) {
+        let digitsOnly = portionGrams.filter { $0.isNumber }
         updateIngredientGroup(id: id) { group in
-            group.portionGrams = portionGrams
+            group.portionGrams = digitsOnly
         }
     }
 

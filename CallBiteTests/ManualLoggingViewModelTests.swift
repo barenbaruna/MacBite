@@ -82,4 +82,17 @@ struct ManualLoggingViewModelTests {
         viewModel.updateFoodName("")
         #expect(!viewModel.canCalculate)
     }
+
+    @Test("Portion grams filters non-numeric characters")
+    @MainActor
+    func filtersNonNumericPortion() {
+        let viewModel = ManualLoggingViewModel()
+        let ingredientID = viewModel.ingredients[0].id
+
+        viewModel.updatePortionGrams("150g", id: ingredientID)
+        #expect(viewModel.ingredients[0].portionGrams == "150")
+
+        viewModel.updatePortionGrams("abc", id: ingredientID)
+        #expect(viewModel.ingredients[0].portionGrams.isEmpty)
+    }
 }
