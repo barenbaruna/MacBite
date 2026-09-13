@@ -1,6 +1,6 @@
 # Apple HIG Checklist — iOS 26 & SwiftUI
 
-Checklist ini wajib dipenuhi dan diverifikasi sebelum setiap Pull Request (PR) di-merge ke branch `main` atau `develop`. Standar ini berpatokan langsung pada dokumentasi resmi Apple:
+Checklist ini wajib dipenuhi dan diverifikasi sebelum setiap Pull Request (PR) di-merge ke branch `main` atau `development`. Standar ini berpatokan langsung pada dokumentasi resmi Apple:
 - [Apple Human Interface Guidelines (HIG)](https://developer.apple.com/design/human-interface-guidelines/)
 - [Adopting Liquid Glass — Technology Overviews](https://developer.apple.com/documentation/TechnologyOverviews/adopting-liquid-glass)
 - [SwiftUI Documentation (iOS 26+)](https://developer.apple.com/documentation/swiftui)

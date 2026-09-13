@@ -30,6 +30,7 @@ struct ManualIngredientGroupView: View {
                 placeholder: "100",
                 text: ingredient.portionGrams,
                 suffix: "g",
+                keyboardType: .numberPad,
                 onTextChanged: onPortionChanged
             )
         }

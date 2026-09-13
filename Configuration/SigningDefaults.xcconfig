@@ -1,0 +1,5 @@
+// Committed signing defaults used by Baren's release and CI builds.
+CALLBITE_DEVELOPMENT_TEAM = V36823696A
+CALLBITE_APP_BUNDLE_IDENTIFIER = com.barenbaruna.CallBite
+CALLBITE_WIDGET_BUNDLE_IDENTIFIER = $(CALLBITE_APP_BUNDLE_IDENTIFIER).MacBiteWidget
+CALLBITE_APP_GROUP_IDENTIFIER = group.com.barenbaruna.MacBite

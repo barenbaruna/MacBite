@@ -12,6 +12,7 @@ struct ManualTextInputRow: View {
     let placeholder: String
     let text: String
     let suffix: String?
+    let keyboardType: UIKeyboardType
     let onTextChanged: (String) -> Void
 
     init(
@@ -19,12 +20,14 @@ struct ManualTextInputRow: View {
         placeholder: String,
         text: String,
         suffix: String? = nil,
+        keyboardType: UIKeyboardType = .default,
         onTextChanged: @escaping (String) -> Void
     ) {
         self.title = title
         self.placeholder = placeholder
         self.text = text
         self.suffix = suffix
+        self.keyboardType = keyboardType
         self.onTextChanged = onTextChanged
     }
 
@@ -41,6 +44,7 @@ struct ManualTextInputRow: View {
                 TextField(placeholder, text: textBinding)
                     .font(AppTypography.body)
                     .foregroundStyle(AppColor.manualInputForeground)
+                    .keyboardType(keyboardType)
                     .multilineTextAlignment(.trailing)
                     .accessibilityLabel(title)
 

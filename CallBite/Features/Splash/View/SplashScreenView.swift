@@ -27,16 +27,15 @@ struct SplashScreenView: View {
             Color(AppColor.dark950)
                 .ignoresSafeArea()
 
-            VStack(spacing: 15) {
-                logoPlaceholder
+            VStack(spacing: AppSpacing.medium) {
+                logoView
 
-                VStack(spacing: 5) {
+                VStack(spacing: AppSpacing.medium) {
                     Text(appName)
                         .font(AppTypography.largeTitle)
                         .foregroundStyle(.primary)
                     Text(tagline)
-                        .font(AppTypography.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(AppTypography.body)
                 }
             }
             .padding(.horizontal, 12)
@@ -53,9 +52,10 @@ struct SplashScreenView: View {
         .preferredColorScheme(.dark)
     }
 
-    private var logoPlaceholder: some View {
-        Circle()
-            .fill(AppColor.orange500)
+    private var logoView: some View {
+        Image("Splash")
+            .resizable()
+            .scaledToFit()
             .frame(width: 148, height: 148)
             .accessibilityLabel("MacBite Logo")
     }

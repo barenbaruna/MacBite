@@ -194,7 +194,7 @@ enum NutritionResultFactory {
 
 ### 7. Tambahkan Route (Jika Navigasi dari Halaman Lain)
 
-Tambahkan case baru di `App/Navigation/AppRoute.swift`:
+Tambahkan case baru di `App/AppRoute.swift`:
 
 ```swift
 enum AppRoute: Hashable {

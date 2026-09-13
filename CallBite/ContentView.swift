@@ -11,38 +11,45 @@ struct ContentView: View {
     @State private var screenState: AppScreenState = ContentView.initialScreenState()
     @State var testFoodItem: FoodItem = .dimsumMentai
     @State var isTestEditSheetPresented = false
+    @State private var requestedLoggingRoute: AppRoute?
 
     @StateObject private var dashboardViewModel = DashboardViewModel()
 
     var body: some View {
-        switch screenState {
-        case .splash:
-            SplashScreenView(
-                appName: "MacBite",
-                tagline: "Your Macros, In a Snap",
-                onFinish: {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                        screenState = .onboarding
+        Group {
+            switch screenState {
+            case .splash:
+                SplashScreenView(
+                    appName: "MacBite",
+                    tagline: "Your Macros, In a Snap",
+                    onFinish: {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                            screenState = .onboarding
+                        }
                     }
-                }
-            )
+                )
 
-        case .onboarding:
-            OnboardingFactory.makeView(onFinish: {
-                if let goal = UserProfileStore.shared.nutritionGoal {
-                    dashboardViewModel.updateNutritionTargets(goal)
-                }
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    screenState = .dashboard
-                }
-            })
+            case .onboarding:
+                OnboardingFactory.makeView(onFinish: {
+                    if let goal = UserProfileStore.shared.nutritionGoal {
+                        dashboardViewModel.updateNutritionTargets(goal)
+                    }
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                        screenState = .dashboard
+                    }
+                })
 
-        case .dashboard:
-            DashboardView(viewModel: dashboardViewModel)
+            case .dashboard:
+                DashboardView(
+                    viewModel: dashboardViewModel,
+                    requestedLoggingRoute: $requestedLoggingRoute
+                )
 
-        default:
-            testView(for: screenState)
+            default:
+                testView(for: screenState)
+            }
         }
+        .onOpenURL(perform: handleWidgetDeepLink)
     }
 
     private static let testScreenArguments: [(String, AppScreenState)] = [
@@ -74,6 +81,15 @@ struct ContentView: View {
         }
 
         return .splash
+    }
+
+    private func handleWidgetDeepLink(_ url: URL) {
+        guard let action = CallBiteWidgetAction(url: url) else { return }
+        requestedLoggingRoute = action.appRoute
+
+        if UserProfileStore.shared.hasCompletedOnboarding {
+            screenState = .dashboard
+        }
     }
 }
 

@@ -1,0 +1,4 @@
+// Copy this file to LocalSigning.xcconfig and replace the values with your local signing identity.
+// LocalSigning.xcconfig is ignored by Git and is included by Debug builds only.
+CALLBITE_DEVELOPMENT_TEAM = YOUR_TEAM_ID
+CALLBITE_APP_BUNDLE_IDENTIFIER = com.yourname.CallBite
