@@ -71,8 +71,7 @@ public extension FoodItem {
         carbs: 81,
         fat: 12,
         fiber: 4,
-        photoSystemName: "fork.knife",
-        photoAssetName: "FoodDemoOne"
+        photoSystemName: "fork.knife"
     )
 
     static let chickenRiceBowl = FoodItem(
@@ -84,8 +83,7 @@ public extension FoodItem {
         carbs: 65,
         fat: 18,
         fiber: 6,
-        photoSystemName: "takeoutbag.and.cup.and.straw.fill",
-        photoAssetName: "FoodDemoTwo"
+        photoSystemName: "takeoutbag.and.cup.and.straw.fill"
     )
 
     static let oatmealBerry = FoodItem(

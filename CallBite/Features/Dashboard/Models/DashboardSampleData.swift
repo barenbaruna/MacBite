@@ -108,8 +108,7 @@ enum DashboardSampleData {
                 protein: 14,
                 carbs: 81,
                 fat: 12,
-                fiber: 4,
-                photoAssetName: "FoodDemoOne"
+                fiber: 4
             ),
             FoodItem(
                 name: "Roti Bakar",
@@ -129,8 +128,7 @@ enum DashboardSampleData {
                 protein: 18,
                 carbs: 42,
                 fat: 19,
-                fiber: 3,
-                photoAssetName: "FoodDemoTwo"
+                fiber: 3
             )
         ]
     }
