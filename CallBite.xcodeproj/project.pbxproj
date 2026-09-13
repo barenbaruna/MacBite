@@ -102,7 +102,7 @@
 				A828899E3045A1300017ABEA /* Sources */,
 				A828899F3045A1300017ABEA /* Frameworks */,
 				A82889A03045A1300017ABEA /* Resources */,
-				A82889CC3045A14A0017ABEA /* ShellScript */,
+				A82889CC3045A14A0017ABEA /* Swiftlint */,
 			);
 			buildRules = (
 			);
@@ -233,7 +233,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		A82889CC3045A14A0017ABEA /* ShellScript */ = {
+		A82889CC3045A14A0017ABEA /* Swiftlint */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -242,6 +242,7 @@
 			);
 			inputPaths = (
 			);
+			name = Swiftlint;
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -423,10 +424,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MacBite;
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "MacBite needs access to your camera to scan and analyze your meal's nutrition.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "MacBite needs access to your health data to personalize your daily calorie and macronutrient goals.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MacBite needs permission to update health data to track your daily progress.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "CallBite uses device motion to help you hold the camera at a suitable angle and keep it steady while photographing meals.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "MacBite uses device motion to help you hold the camera at a suitable angle and keep it steady while photographing meals.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MacBite needs access to your photo library to select food photos for nutritional analysis.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -462,10 +465,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MacBite;
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "MacBite needs access to your camera to scan and analyze your meal's nutrition.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "MacBite needs access to your health data to personalize your daily calorie and macronutrient goals.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MacBite needs permission to update health data to track your daily progress.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "CallBite uses device motion to help you hold the camera at a suitable angle and keep it steady while photographing meals.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "MacBite uses device motion to help you hold the camera at a suitable angle and keep it steady while photographing meals.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MacBite needs access to your photo library to select food photos for nutritional analysis.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
