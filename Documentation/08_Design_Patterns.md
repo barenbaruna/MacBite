@@ -4,7 +4,7 @@
 
 Design pattern adalah solusi yang sudah teruji untuk masalah-masalah umum dalam pengembangan perangkat lunak. Tapi bukan berarti kita harus menggunakan semuanya. Setiap pattern yang kita adopsi harus punya alasan yang jelas terkait kebutuhan proyek. Jika sebuah pattern tidak menyelesaikan masalah nyata yang kita hadapi, maka menambahkannya hanya menambah kompleksitas.
 
-Dokumen ini menjelaskan pattern apa saja yang kita gunakan di CallBite, mengapa kita memilihnya, dan yang sama pentingnya, pattern apa yang sengaja tidak kita gunakan.
+Dokumen ini menjelaskan pattern apa saja yang kita gunakan di MacBite, mengapa kita memilihnya, dan yang sama pentingnya, pattern apa yang sengaja tidak kita gunakan.
 
 ---
 

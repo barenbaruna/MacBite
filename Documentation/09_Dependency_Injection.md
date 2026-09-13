@@ -28,7 +28,7 @@ class FoodScanViewModel: ObservableObject {
 
 ## Mengapa Kita Perlu DI di Proyek Ini
 
-Ada tiga alasan utama mengapa DI penting untuk CallBite:
+Ada tiga alasan utama mengapa DI penting untuk MacBite:
 
 ### 1. Testing
 

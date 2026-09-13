@@ -1,0 +1,97 @@
+//
+//  HealthPermissionPromptView.swift
+//  CallBite
+//
+//  Created by Baren Baruna Harahap on 09/09/26.
+//
+
+import HealthKit
+import SwiftUI
+
+/// Onboarding screen educating user about Apple Health sync permissions.
+struct HealthPermissionPromptView: View {
+    @ObservedObject private var viewModel: OnboardingViewModel
+
+    init(viewModel: OnboardingViewModel) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            headerSection
+                .padding(.top, AppSpacing.large)
+
+            Spacer()
+
+            actionSection
+        }
+        .padding(.top, AppSpacing.extraLarge)
+        .padding(.horizontal, AppSpacing.large)
+        .padding(.bottom, AppSpacing.extraLarge)
+    }
+
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            Text("Let’s Sync with Apple Health")
+                .font(AppTypography.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+
+            Text("Sharing your activity data helps MacBite automatically adjust your daily calorie and macro goals.")
+                .font(AppTypography.body)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var actionSection: some View {
+        VStack(spacing: AppSpacing.medium) {
+            connectToHealthButton
+            privacyDisclaimerSection
+        }
+    }
+
+    private var connectToHealthButton: some View {
+        Button {
+            Task {
+                await viewModel.connectToHealth()
+            }
+        } label: {
+            if viewModel.isLoading {
+                ProgressView()
+                    .tint(.white)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Text("Connect to Health")
+                    .font(AppTypography.button)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .buttonStyle(.glassProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .disabled(viewModel.isLoading)
+    }
+
+    private var privacyDisclaimerSection: some View {
+        VStack(spacing: AppSpacing.extraSmall) {
+            Text("Your health data will never leave this device.")
+                .font(AppTypography.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text(
+                "MacBite is not a substitute for professional medical advice. "
+                    + "Always consult your physician first."
+            )
+            .font(AppTypography.footnote)
+            .foregroundStyle(.secondary)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        HealthPermissionPromptView(viewModel: OnboardingFactory.makePreviewViewModel(initialStep: .healthPrompt))
+    }
+}

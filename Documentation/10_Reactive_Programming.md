@@ -2,7 +2,7 @@
 
 ## Konteks
 
-Dalam CallBite, ada dua jenis operasi asinkron yang berbeda bentuknya:
+Dalam MacBite, ada dua jenis operasi asinkron yang berbeda bentuknya:
 
 1. **Operasi satu kali (one-shot):** User memfoto makanan, AI menganalisis, dan mengembalikan hasil. Ini terjadi sekali per aksi.
 2. **Aliran data yang berubah terus-menerus (stream):** User mengetik di search bar, dan setiap perubahan teks harus memicu pencarian ke API -- tapi tidak pada setiap ketukan tombol, melainkan setelah jeda singkat (debounce).

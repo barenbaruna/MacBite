@@ -18,7 +18,7 @@ Setiap file Swift yang dibuat harus memiliki header komentar standar di bagian a
 ```swift
 //
 //  NamaFile.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Nama Developer on DD/MM/YY.
 //
@@ -29,7 +29,7 @@ Contoh untuk masing-masing anggota tim:
 ```swift
 //
 //  FoodScanViewModel.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Baren Baruna Harahap on 31/08/26.
 //
@@ -38,7 +38,7 @@ Contoh untuk masing-masing anggota tim:
 ```swift
 //
 //  NutritionCalculator.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Joshua Valentine Manik on 01/09/26.
 //
@@ -47,14 +47,14 @@ Contoh untuk masing-masing anggota tim:
 ```swift
 //
 //  FoodClassifierService.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Fathimah Az Zahra Sanjani on 02/09/26.
 //
 ```
 
 Aturan:
-- Nama project harus **CallBite** (bukan nama lain).
+- Nama project/aplikasi harus **MacBite** (bukan nama lain).
 - Nama developer menggunakan nama lengkap atau nama yang konsisten di seluruh proyek.
 - Tanggal mengikuti format yang dihasilkan Xcode secara otomatis (DD/MM/YY).
 - Jangan menghapus header ini. Jangan menambahkan informasi lain (seperti copyright atau license) kecuali disepakati tim.
@@ -101,6 +101,24 @@ Penamaan yang baik membuat komentar menjadi tidak perlu. Jika kamu perlu menulis
 | Enum case | camelCase | `.scanning`, `.confirmed` | Mengikuti Swift standard library |
 | Protocol | PascalCase, deskriptif | `NutritionProviding`, `FoodDetectable` | Gunakan kata kerja "-ing"/"-able" untuk protocol yang mendeskripsikan kemampuan |
 | Boolean | prefix `is`/`has`/`should`/`can` | `isLoading`, `hasReachedGoal`, `canRetake` | Membuat kondisi if/guard terbaca seperti kalimat |
+
+### Penamaan Token Desain & Larangan Singkatan
+
+Mengikuti **Swift API Design Guidelines**:
+> *"Clarity at the point of use is your most important goal. Avoid abbreviation. Abbreviations—especially non-standard ones—are effectively the same as inventing a new language."*
+
+1. **Dilarang Menggunakan Singkatan Web/CSS**:
+   - Jangan gunakan `xs`, `sm`, `md`, `lg`, `xl` pada token desain.
+   - Gunakan nama lengkap bahasa Inggris: `extraSmall`, `small`, `regular`, `medium`, `large`, `extraLarge`.
+2. **Kombinasi Scale Primitives & Semantic Role Aliases**:
+   - Token geometri memiliki dua tingkatan:
+     - **Scale Primitives** (ukuran fisik skala 8-point): `AppCornerRadius.medium`, `AppSpacing.large`.
+     - **Semantic Role Aliases** (maksud penggunaan): `AppCornerRadius.button = medium`, `AppCornerRadius.card = large`.
+   - Di View, prioritaskan penggunaan *Semantic Role* (`AppCornerRadius.card`) agar jika standar visual button atau card berubah, perubahannya terpusat di satu titik.
+3. **Pemisahan Framework Import pada Tokens**:
+   - **Skalar Geometri (`AppSpacing`, `AppCornerRadius`)**: Hanya `import CoreGraphics` (bukan `SwiftUI`). Geometri adalah nilai `CGFloat` murni. Hal ini menjaga token tetap modular dan dapat diakses di luar UI tree tanpa mengotori layer logika.
+   - **Visual Tokens (`AppColor`, `AppTypography`, `AppAnimation`)**: Mengimpor `SwiftUI` karena menggunakan tipe resmi `Color`, `Font`, dan `Animation`.
+   - **Sensory Tokens (`AppHaptics`)**: Mengimpor `UIKit` untuk mengontrol Taptic Engine (`UIFeedbackGenerator`).
 
 ### Penamaan Folder
 

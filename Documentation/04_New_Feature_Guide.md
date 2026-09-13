@@ -25,7 +25,7 @@ Definisikan data model yang dibutuhkan fitur ini.
 ```swift
 //
 //  NutritionData.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Joshua Valentine Manik on 31/08/26.
 //
@@ -59,7 +59,7 @@ Hanya buat service jika ada logika kompleks yang terpisah dari UI. Lihat [08_Des
 ```swift
 //
 //  InsightService.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Fathimah Az Zahra Sanjani on 31/08/26.
 //
@@ -84,7 +84,7 @@ ViewModel mengikuti aturan di [02_Coding_Standards.md](./02_Coding_Standards.md)
 ```swift
 //
 //  NutritionResultViewModel.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Joshua Valentine Manik on 31/08/26.
 //
@@ -133,7 +133,7 @@ final class NutritionResultViewModel: ObservableObject {
 ```swift
 //
 //  NutritionResultView.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Baren Baruna Harahap on 31/08/26.
 //
@@ -168,7 +168,7 @@ Factory menghubungkan semua dependency. Lihat [08_Design_Patterns.md](./08_Desig
 ```swift
 //
 //  NutritionResultFactory.swift
-//  CallBite
+//  MacBite
 //
 //  Created by Baren Baruna Harahap on 31/08/26.
 //
@@ -226,18 +226,19 @@ Dari FoodScanView atau halaman lain:
 
 Sebelum membuat Pull Request untuk fitur baru, pastikan:
 
-- [ ] File header standar Xcode (`//  NamaFile.swift`, `CallBite`, `Created by ...`) ada di setiap file baru
+- [ ] File header standar Xcode (`//  NamaFile.swift`, `MacBite`, `Created by ...`) ada di setiap file baru
 - [ ] Folder fitur dibuat di `Features/[NamaFitur]/`
 - [ ] Factory method tersedia
 - [ ] ViewModel menggunakan `@MainActor` + `ObservableObject`
 - [ ] View menerima ViewModel via init (bukan buat sendiri)
 - [ ] Dependencies di-inject via constructor (lihat [09_Dependency_Injection.md](./09_Dependency_Injection.md))
 - [ ] Error ditampilkan dalam Bahasa Indonesia
-- [ ] Menggunakan design tokens (`AppSpacing`, `AppColor`, `AppTypography`)
+- [ ] Menggunakan design tokens (`AppSpacing`, `AppCornerRadius`, `AppColor`, `AppTypography`, `AppAnimation`, `AppHaptics`)
+- [ ] Memenuhi semua kriteria [05_HIG_Checklist.md](./05_HIG_Checklist.md) (Dynamic Type xSmall-AX5, minimum 44×44pt touch target, semantic modal dismiss/confirm, Liquid Glass layer compliance)
 - [ ] Tidak ada kode yang duplikat dengan Core
 - [ ] Commit message sesuai Conventional Commits
 - [ ] Minimal satu unit test untuk ViewModel (jika ada logika bisnis)
-- [ ] SwiftLint tidak menampilkan error
+- [ ] SwiftLint tidak menampilkan error atau warning yang melanggar rules
 
 ---
 

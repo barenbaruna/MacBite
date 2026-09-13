@@ -11,54 +11,84 @@ Referensi cepat API dan pattern yang digunakan di project ini. Untuk detail leng
 
 ---
 
-## Navigation (iOS 26 Style)
+## Navigation & Toolbars (iOS 26 Style)
+
+Di iOS 26, seluruh navigation dan toolbar container otomatis mengadopsi material **Liquid Glass**. Elemen toolbar melayang di atas konten dalam kapsul adaptif yang secara otomatis memisahkan diri dari tombol navigasi sistem (seperti back button).
 
 ```swift
 NavigationStack {
     ContentView()
-        .navigationTitle("Judul")
-        .toolbarTitleDisplayMode(.inline)    // Title di toolbar row
-        .toolbarRole(.editor)               // Left-align title
+        .navigationTitle("MacBite")
+        .toolbarTitleDisplayMode(.inline)    // Opsi: .inline, .inlineLarge, atau default large
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { } label: { Image(systemName: "plus") }
-                    .buttonStyle(.glassProminent)
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button { /* Scan Makanan */ } label: {
+                    Image(systemName: "camera.fill")
+                }
+                Button { /* Tambah Manual */ } label: {
+                    Image(systemName: "plus")
+                }
+            }
+            
+            // 🌟 Baru di iOS 26: Memisahkan kapsul Liquid Glass secara visual
+            ToolbarSpacer(.fixed)
+            
+            ToolbarItem(placement: .primaryAction) {
+                Button { /* Pengaturan */ } label: {
+                    Image(systemName: "gearshape")
+                }
             }
         }
 }
 ```
 
+### Fitur Baru Toolbar di iOS 26 (WWDC25 Session 256 & 323):
+- **`ToolbarSpacer(.fixed)` & `ToolbarSpacer(.flexible)`**: Digunakan untuk memecah toolbar items menjadi beberapa kapsul Liquid Glass terpisah atau memberi jarak fleksibel (misal di bottom bar).
+- **`.sharedBackgroundVisibility(.hidden)`**: Digunakan untuk melepas kapsul background glass pada item tertentu (contohnya avatar user).
+- **`.badge(_:)` pada ToolbarItem**: Menampilkan indikator angka/badge langsung pada tombol toolbar.
+- **Monochrome Rendering Default**: Icon di toolbar sekarang menggunakan palet monokrom untuk menjaga fokus pada konten. Gunakan `.tint(...)` hanya untuk aksi yang butuh penekanan semantik (CTA).
+
 ## Toolbar Placements
 
-| Placement | Posisi |
-|-----------|--------|
-| `.title` | Title area (inline mode) |
-| `.topBarLeading` | Kiri navigation bar |
-| `.topBarTrailing` | Kanan navigation bar |
-| `.navigation` | Close/back di modal |
-| `.primaryAction` | Primary action slot |
-| `.bottomBar` | Bottom toolbar |
+| Placement | Posisi / Semantik | Penggunaan |
+|-----------|-------------------|------------|
+| `.cancellationAction` | Kiri atas di modal (iOS) | Tombol Batal / Tutup |
+| `.confirmationAction` | Kanan atas di modal (iOS) | Tombol Simpan / Selesai |
+| `.primaryAction` | Trailing action slot | Aksi utama di toolbar |
+| `.secondaryAction` | Overflow menu / secondary | Aksi pendukung |
+| `.topBarLeading` | Posisi eksplisit kiri | Custom leading item |
+| `.topBarTrailing` | Posisi eksplisit kanan | Custom trailing item |
+| `.bottomBar` | Floating / bottom toolbar | Tool actions di bawah |
+| `.principal` | Tengah toolbar | Custom title / segmented control |
 
-## Modal/Sheet Pattern
+## Modal/Sheet Pattern (iOS 26 Style)
+
+Di iOS 26+, Apple memperluas `ButtonRole` dengan menambahkan `.close` dan `.confirm`. Tombol dengan role ini dapat dideklarasikan langsung di dalam `.toolbar`, dan sistem secara otomatis menentukan posisi semantik serta menampilkan icon native yang sesuai (icon close "X" untuk `.close`, icon confirm untuk `.confirm`):
 
 ```swift
 .sheet(isPresented: $showForm) {
     NavigationStack {
         FormView()
-            .navigationTitle("Judul")
+            .navigationTitle("Konfirmasi Porsi")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigation) {
-                    Button(role: .close) { dismiss() }    // Auto X icon
+                Button(role: .close) {
+                    dismiss()
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    Button(role: .confirm) { save() }     // Auto checkmark
+                Button(role: .confirm) {
+                    save()
                 }
             }
             .interactiveDismissDisabled(hasChanges)
     }
 }
 ```
+
+> **Dokumentasi Resmi Apple (`SwiftUI.ButtonRole` di iOS 26+):**
+> - **`ButtonRole.close` ([Documentation](https://developer.apple.com/documentation/swiftui/buttonrole/close))**: Menutup operasi yang sedang berlangsung. Berbeda dari `.cancel`, aksi `.close` tidak membuang progres user. Sistem otomatis menampilkan icon close di toolbar.
+> - **`ButtonRole.confirm` ([Documentation](https://developer.apple.com/documentation/swiftui/buttonrole/confirm))**: Mengonfirmasi operasi (misalnya menyimpan meal / konfirmasi porsi). Sistem otomatis menampilkannya sebagai tombol konfirmasi di toolbar.
+> - **`ButtonRole.cancel`**: Mengindikasikan operasi dibatalkan secara eksplisit.
+> - **`ButtonRole.destructive`**: Mengindikasikan operasi destruktif (hapus data).
 
 ## Liquid Glass — Kapan Pakai
 
@@ -91,13 +121,46 @@ ScrollView {
 
 ```swift
 TabView {
-    Tab("Home", systemImage: "house.fill") { HomeView() }
-    Tab("Scan", systemImage: "face.dashed") { ScanView() }
-    Tab(role: .search) { SearchView() }       // Built-in search tab
+    Tab("Dashboard", systemImage: "chart.pie.fill") { DashboardView() }
+    Tab("Scan", systemImage: "camera.fill") { FoodScanView() }
+    Tab("Riwayat", systemImage: "clock.fill") { MealHistoryView() }
+    Tab(role: .search) { ManualSearchView() } // Dedicated search tab
 }
-.tabViewStyle(.sidebarAdaptable)              // Tab → Sidebar di iPad
-.tabBarMinimizeBehavior(.onScrollDown)        // Hide saat scroll
+.tabViewStyle(.sidebarAdaptable)              // Tab otomatis menjadi Sidebar di iPad/Mac
+.tabBarMinimizeBehavior(.onScrollDown)        // Tab bar mengecil saat scroll ke bawah
 ```
+
+## Search (iOS 26 Style)
+
+1. **Bottom-Aligned Search di iPhone (Otomatis)**:
+   Pada iOS 26, saat kamu memasang `.searchable(text: $query)` pada `NavigationStack` atau `NavigationSplitView`, sistem iPhone secara otomatis memindahkan kolom pencarian ke **bagian bawah layar** (ergonomis untuk satu tangan).
+2. **Minimized Search Behavior**:
+   ```swift
+   .searchable(text: $query, prompt: "Cari makanan...")
+   .searchToolbarBehavior(.minimize) // Mengecil menjadi tombol icon, membesar saat di-tap
+   ```
+
+## Controls Baru (iOS 26)
+
+1. **Button Styles Liquid Glass**:
+   - `.buttonStyle(.glass)` — Tombol standar dengan material Liquid Glass.
+   - `.buttonStyle(.glassProminent)` — Tombol aksi utama floating dengan aksen liquid glass.
+   - `.controlSize(.extraLarge)` — Tombol ukuran besar untuk aksi paling utama (Call to Action).
+   - Tombol ber-border secara default berbentuk **Capsule** di iOS 26.
+2. **Slider dengan Tick Marks & Neutral Value**:
+   ```swift
+   // Slider porsi dengan tick mark otomatis
+   Slider(value: $portionMultiplier, in: 0.5...3.0, step: 0.5)
+   
+   // Slider dengan neutral value (titik awal pengisian track)
+   Slider(value: $calorieOffset, in: -500...500, neutralValue: 0)
+   ```
+3. **Corner Concentricity**:
+   Agar radius sudut tombol sejajar secara konsentris dengan lengkungan layar atau sheet container:
+   ```swift
+   Rectangle()
+       .corner(.containerConcentric)
+   ```
 
 ## Typography
 
@@ -137,7 +200,7 @@ Color(.systemGroupedBackground)          // List/grouped
 Color(hex: "...")                        // ❌ Hardcode
 ```
 
-## SF Symbols 7
+## SF Symbols & Effects
 
 ```swift
 // Rendering modes
@@ -146,9 +209,10 @@ Image(systemName: "sparkles")
     .symbolEffect(.bounce, value: trigger)       // Animate on trigger
     .contentTransition(.symbolEffect(.replace))  // Magic replace
 
-// Baru iOS 26
-    .symbolEffect(.draw)                         // Draw animation
-    .symbolEffect(.draw.byLayer)                 // Draw per layer
+// Draw Transition Effects (iOS 26)
+Image(systemName: "checkmark.circle.fill")
+    .transition(.symbolEffect(.drawOn))          // Draw on appearance
+    .transition(.symbolEffect(.drawOn.byLayer))  // Draw layer-by-layer
 ```
 
 ## State Management
